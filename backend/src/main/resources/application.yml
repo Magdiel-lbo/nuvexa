@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: nuvexa-backend
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:nuvexa}
+    username: ${DB_USER:nuvexa}
+    password: ${DB_PASSWORD:nuvexa}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+server:
+  port: ${SERVER_PORT:8080}
+
+app:
+  cors:
+    allowed-origin: ${FRONTEND_URL:http://localhost:5173}
+  jwt:
+    secret: ${JWT_SECRET:change-this-secret-change-this-secret-change-this-secret}
+    expiration-minutes: ${JWT_EXPIRATION_MINUTES:60}

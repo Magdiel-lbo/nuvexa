@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+MIGRATION_DIR="src/main/resources/db/migration"
+
+if [ $# -eq 0 ]; then
+  echo "Uso: ./gerar_migration <nome_da_migration>"
+  echo "Exemplo: ./gerar_migration add_orders_table"
+  exit 1
+fi
+
+RAW_NAME="$*"
+
+NOME=$(echo "$RAW_NAME" \
+  | tr '[:upper:]' '[:lower:]' \
+  | tr ' ' '_' \
+  | tr -cd 'a-z0-9_')
+
+if [ -z "$NOME" ]; then
+  echo "Erro: nome da migration inválido após sanitização."
+  exit 1
+fi
+
+if [ ! -d "$MIGRATION_DIR" ]; then
+  echo "Erro: diretório de migrations não encontrado em '$MIGRATION_DIR'."
+  echo "Rode este script a partir da raiz do backend."
+  exit 1
+fi
+
+DATA=$(date +%Y%m%d%H%M%S)
+ARQUIVO="${MIGRATION_DIR}/V${DATA}__${NOME}.sql"
+
+if [ -e "$ARQUIVO" ]; then
+  echo "Erro: já existe um arquivo '$ARQUIVO'."
+  exit 1
+fi
+
+touch "$ARQUIVO"
+
+echo "Migration criada: $ARQUIVO"

@@ -1,0 +1,16 @@
+name: nuvexa
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: nuvexa
+      POSTGRES_PASSWORD: nuvexa
+      POSTGRES_DB: nuvexa
+    ports:
+      - "5432:5432"
+    volumes:
+      - nuvexa-db-data:/var/lib/postgresql/data
+
+volumes:
+  nuvexa-db-data:

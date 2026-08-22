@@ -1,0 +1,54 @@
+.nuvexa-field {
+  flex: 1 1 160px;
+  max-width: 220px;
+
+  :deep(.v-field) {
+    background: transparent !important;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  :deep(.v-field__overlay) {
+    background: transparent !important;
+    opacity: 0 !important;
+  }
+
+  :deep(.v-field__field) {
+    padding-top: 4px;
+  }
+
+  :deep(.v-label) {
+    font-size: 0.78rem;
+    opacity: 1;
+    color: rgb(var(--v-theme-on-surface-variant));
+  }
+
+  :deep(.v-select__selection-text),
+  :deep(.v-field__input input) {
+    font-size: 0.95rem;
+    font-weight: 500;
+  }
+
+  :deep(.v-field__input) {
+    padding-bottom: 6px;
+    min-height: 0;
+  }
+
+  :deep(.v-field--variant-underlined) .v-field__outline::before {
+    border-color: rgb(var(--v-theme-outline));
+    opacity: 1;
+  }
+
+  :deep(.v-field--variant-underlined):hover .v-field__outline::before {
+    border-bottom-color: rgb(var(--v-theme-on-surface-variant));
+  }
+
+  :deep(.v-field--variant-underlined.v-field--focused) .v-field__outline::after {
+    border-bottom-color: rgb(var(--v-theme-primary));
+    border-bottom-width: 2px;
+  }
+
+  :deep(.v-field--variant-underlined.v-field--disabled) .v-field__outline::before {
+    opacity: 0.4;
+  }
+}
