@@ -1,6 +1,6 @@
 package com.nuvexa.core.paciente.model;
 
-import com.nuvexa.plataforma.persistencia.ModeloAbstrato;
+import com.nuvexa.platform.persistence.ModeloAbstrato;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
