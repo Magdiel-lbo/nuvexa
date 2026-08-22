@@ -1,8 +1,8 @@
 package com.nuvexa.verticais.nutricao.model;
 
 public enum Objetivo {
-    LOSE_WEIGHT,
-    MAINTAIN_WEIGHT,
-    GAIN_MUSCLE_MASS,
-    IMPROVE_CONDITIONING
+    EMAGRECIMENTO,
+    MANUTENCAO_PESO,
+    GANHO_MASSA_MUSCULAR,
+    CONDICIONAMENTO_FISICO
 }

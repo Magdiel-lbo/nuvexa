@@ -1,8 +1,8 @@
-package com.nuvexa.nucleo.organizacao.repository;
+package com.nuvexa.core.organizacao.repository;
 
-import com.nuvexa.nucleo.organizacao.model.Organizacao;
-import com.nuvexa.nucleo.organizacao.model.StatusOrganizacao;
-import com.nuvexa.nucleo.organizacao.model.TipoOrganizacao;
+import com.nuvexa.core.organizacao.model.Organizacao;
+import com.nuvexa.core.organizacao.model.StatusOrganizacao;
+import com.nuvexa.core.organizacao.model.TipoOrganizacao;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -19,9 +19,9 @@ class OrganizacaoRepositoryTest {
 
     private Organizacao novaOrganizacaoIndividual(String name) {
         return Organizacao.builder()
-                .name(name)
-                .type(TipoOrganizacao.INDIVIDUAL)
-                .status(StatusOrganizacao.ACTIVE)
+                .nome(name)
+                .tipo(TipoOrganizacao.INDIVIDUAL)
+                .status(StatusOrganizacao.ATIVA)
                 .build();
     }
 
@@ -32,43 +32,43 @@ class OrganizacaoRepositoryTest {
         Organizacao found = organizationRepository.findById(saved.getId()).orElseThrow();
 
         assertThat(found.getId()).isNotNull();
-        assertThat(found.getName()).isEqualTo("Dra. Ana Nutricionista");
-        assertThat(found.getLegalName()).isNull();
-        assertThat(found.getDocument()).isNull();
-        assertThat(found.getType()).isEqualTo(TipoOrganizacao.INDIVIDUAL);
-        assertThat(found.getStatus()).isEqualTo(StatusOrganizacao.ACTIVE);
-        assertThat(found.getCreatedAt()).isNotNull();
-        assertThat(found.getUpdatedAt()).isNotNull();
+        assertThat(found.getNome()).isEqualTo("Dra. Ana Nutricionista");
+        assertThat(found.getRazaoSocial()).isNull();
+        assertThat(found.getDocumento()).isNull();
+        assertThat(found.getTipo()).isEqualTo(TipoOrganizacao.INDIVIDUAL);
+        assertThat(found.getStatus()).isEqualTo(StatusOrganizacao.ATIVA);
+        assertThat(found.getCriadoEm()).isNotNull();
+        assertThat(found.getAtualizadoEm()).isNotNull();
     }
 
     @Test
     void shouldPersistClinicWithLegalNameAndDocument() {
         Organizacao clinic = Organizacao.builder()
-                .name("Clínica Bem Estar")
-                .legalName("Bem Estar Serviços de Saúde LTDA")
-                .document("12345678000199")
-                .type(TipoOrganizacao.CLINIC)
-                .status(StatusOrganizacao.ACTIVE)
+                .nome("Clínica Bem Estar")
+                .razaoSocial("Bem Estar Serviços de Saúde LTDA")
+                .documento("12345678000199")
+                .tipo(TipoOrganizacao.CLINICA)
+                .status(StatusOrganizacao.ATIVA)
                 .build();
 
         Organizacao saved = organizationRepository.saveAndFlush(clinic);
         Organizacao found = organizationRepository.findById(saved.getId()).orElseThrow();
 
-        assertThat(found.getLegalName()).isEqualTo("Bem Estar Serviços de Saúde LTDA");
-        assertThat(found.getDocument()).isEqualTo("12345678000199");
-        assertThat(found.getType()).isEqualTo(TipoOrganizacao.CLINIC);
+        assertThat(found.getRazaoSocial()).isEqualTo("Bem Estar Serviços de Saúde LTDA");
+        assertThat(found.getDocumento()).isEqualTo("12345678000199");
+        assertThat(found.getTipo()).isEqualTo(TipoOrganizacao.CLINICA);
     }
 
     @Test
     void shouldUpdateUpdatedAtOnChange() {
         Organizacao saved = organizationRepository.saveAndFlush(novaOrganizacaoIndividual("Dr. João Fisioterapeuta"));
-        var firstUpdatedAt = saved.getUpdatedAt();
+        var firstUpdatedAt = saved.getAtualizadoEm();
 
-        saved.setStatus(StatusOrganizacao.SUSPENDED);
+        saved.setStatus(StatusOrganizacao.SUSPENSA);
         Organizacao updated = organizationRepository.saveAndFlush(saved);
 
-        assertThat(updated.getStatus()).isEqualTo(StatusOrganizacao.SUSPENDED);
-        assertThat(updated.getUpdatedAt()).isAfterOrEqualTo(firstUpdatedAt);
-        assertThat(updated.getCreatedAt()).isEqualTo(saved.getCreatedAt());
+        assertThat(updated.getStatus()).isEqualTo(StatusOrganizacao.SUSPENSA);
+        assertThat(updated.getAtualizadoEm()).isAfterOrEqualTo(firstUpdatedAt);
+        assertThat(updated.getCriadoEm()).isEqualTo(saved.getCriadoEm());
     }
 }

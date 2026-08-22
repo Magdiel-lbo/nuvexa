@@ -30,7 +30,7 @@ public class JwtAccessDeniedHandler implements AccessDeniedHandler {
         ApiErro error = new ApiErro(
                 LocalDateTime.now(),
                 HttpStatus.FORBIDDEN.value(),
-                messageSource.getMessage("error.forbidden", null, MESSAGE_LOCALE),
+                messageSource.getMessage("erro.acessoNegado", null, MESSAGE_LOCALE),
                 request.getRequestURI());
 
         response.setStatus(HttpStatus.FORBIDDEN.value());

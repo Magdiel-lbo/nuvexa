@@ -1,17 +1,17 @@
-export type Gender = 'MALE' | 'FEMALE'
+export type Gender = 'MASCULINO' | 'FEMININO'
 
 export type Goal =
-  | 'LOSE_WEIGHT'
-  | 'MAINTAIN_WEIGHT'
-  | 'GAIN_MUSCLE_MASS'
-  | 'IMPROVE_CONDITIONING'
+  | 'EMAGRECIMENTO'
+  | 'MANUTENCAO_PESO'
+  | 'GANHO_MASSA_MUSCULAR'
+  | 'CONDICIONAMENTO_FISICO'
 
 export type ActivityLevel =
-  | 'SEDENTARY'
-  | 'LIGHTLY_ACTIVE'
-  | 'MODERATELY_ACTIVE'
-  | 'VERY_ACTIVE'
-  | 'EXTRA_ACTIVE'
+  | 'SEDENTARIO'
+  | 'LEVEMENTE_ATIVO'
+  | 'MODERADAMENTE_ATIVO'
+  | 'MUITO_ATIVO'
+  | 'EXTREMAMENTE_ATIVO'
 
 export interface PatientResponse {
   id: number

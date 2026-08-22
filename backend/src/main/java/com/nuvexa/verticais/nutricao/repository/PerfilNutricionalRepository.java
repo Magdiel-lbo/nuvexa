@@ -7,5 +7,5 @@ import java.util.Optional;
 
 public interface PerfilNutricionalRepository extends JpaRepository<PerfilNutricional, Long> {
 
-    Optional<PerfilNutricional> findByPacienteId(Long patientId);
+    Optional<PerfilNutricional> findByPacienteId(Long pacienteId);
 }

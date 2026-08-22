@@ -22,8 +22,8 @@
 
     <v-card variant="flat" color="surface-variant" class="patient-lista__table-card">
       <v-data-table :headers="headers" :items="pacientes" :loading="loading" :no-data-text="$t('paciente.nenhumEncontrado')">
-        <template #item.gender="{ item }">{{ $t(`sexo.${item.gender}`) }}</template>
-        <template #item.goal="{ item }">{{ $t(`objetivo.${item.goal}`) }}</template>
+        <template #item.gender="{ item }">{{ rotulos[item.gender] ?? item.gender }}</template>
+        <template #item.goal="{ item }">{{ rotulos[item.goal] ?? item.goal }}</template>
         <template #item.acoes="{ item }">
           <div class="d-flex justify-end ga-1">
             <v-tooltip :text="$t('dashboardPacientes.acoes.visualizar')" location="top">
@@ -54,10 +54,12 @@ import patientService from '../../service/patient-service'
 import type { PatientResponse } from '../../types/patient'
 import { extrairMensagemErro } from '../../util/api-util'
 import { useAppStore } from '../../store/app.store'
+import { carregarRotulosEnum } from '../../util/enum-rotulos'
 
 @Component({ name: 'PatientLista' })
 export default class PatientLista extends Vue {
   pacientes: PatientResponse[] = []
+  rotulos: Record<string, string> = {}
   busca = ''
   loading = false
 
@@ -76,6 +78,7 @@ export default class PatientLista extends Vue {
   }
 
   async mounted() {
+    this.rotulos = await carregarRotulosEnum()
     await this.carregar()
   }
 

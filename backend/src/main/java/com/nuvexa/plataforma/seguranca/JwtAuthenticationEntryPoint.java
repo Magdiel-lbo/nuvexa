@@ -30,7 +30,7 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
         ApiErro error = new ApiErro(
                 LocalDateTime.now(),
                 HttpStatus.UNAUTHORIZED.value(),
-                messageSource.getMessage("error.unauthenticated", null, MESSAGE_LOCALE),
+                messageSource.getMessage("erro.naoAutenticado", null, MESSAGE_LOCALE),
                 request.getRequestURI());
 
         response.setStatus(HttpStatus.UNAUTHORIZED.value());

@@ -1,7 +1,7 @@
 package com.nuvexa.verticais.nutricao.dto.request;
 
 import com.nuvexa.verticais.nutricao.model.NivelAtividade;
-import com.nuvexa.nucleo.paciente.model.Sexo;
+import com.nuvexa.core.paciente.model.Sexo;
 import com.nuvexa.verticais.nutricao.model.Objetivo;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -21,25 +21,25 @@ import java.time.LocalDate;
 @Builder
 public class PacienteUpdateRequestDTO {
 
-    @NotBlank(message = "{patient.name.required}")
+    @NotBlank(message = "{paciente.nome.obrigatorio}")
     private String name;
 
-    @NotNull(message = "{patient.birthDate.required}")
+    @NotNull(message = "{paciente.dataNascimento.obrigatoria}")
     private LocalDate birthDate;
 
-    @NotNull(message = "{patient.gender.required}")
+    @NotNull(message = "{paciente.sexo.obrigatorio}")
     private Sexo gender;
 
-    @NotNull(message = "{patient.height.required}")
+    @NotNull(message = "{paciente.altura.obrigatoria}")
     private BigDecimal height;
 
-    @NotNull(message = "{patient.weight.required}")
+    @NotNull(message = "{paciente.peso.obrigatorio}")
     private BigDecimal weight;
 
-    @NotNull(message = "{patient.goal.required}")
+    @NotNull(message = "{paciente.objetivo.obrigatorio}")
     private Objetivo goal;
 
-    @NotNull(message = "{patient.activityLevel.required}")
+    @NotNull(message = "{paciente.nivelAtividade.obrigatorio}")
     private NivelAtividade activityLevel;
 
     private BigDecimal manualDailyCalories;

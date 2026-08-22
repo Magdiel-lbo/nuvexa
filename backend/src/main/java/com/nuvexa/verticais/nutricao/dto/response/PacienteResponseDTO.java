@@ -1,7 +1,7 @@
 package com.nuvexa.verticais.nutricao.dto.response;
 
 import com.nuvexa.verticais.nutricao.model.NivelAtividade;
-import com.nuvexa.nucleo.paciente.model.Sexo;
+import com.nuvexa.core.paciente.model.Sexo;
 import com.nuvexa.verticais.nutricao.model.Objetivo;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -29,11 +29,11 @@ export default class PatientFormulario extends Vue {
   form: PatientCreateRequest = {
     name: '',
     birthDate: '',
-    gender: 'FEMALE',
+    gender: 'FEMININO',
     height: 0,
     weight: 0,
-    goal: 'MAINTAIN_WEIGHT',
-    activityLevel: 'SEDENTARY',
+    goal: 'MANUTENCAO_PESO',
+    activityLevel: 'SEDENTARIO',
     manualDailyCalories: null,
     notes: null,
   }

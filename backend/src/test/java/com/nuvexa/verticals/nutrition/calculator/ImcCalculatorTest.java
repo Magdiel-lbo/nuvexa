@@ -37,18 +37,18 @@ class ImcCalculatorTest {
 
     @ParameterizedTest
     @CsvSource({
-            "17.0, bmi.classification.underweight",
-            "18.4, bmi.classification.underweight",
-            "18.5, bmi.classification.normal",
-            "24.9, bmi.classification.normal",
-            "25.0, bmi.classification.overweight",
-            "29.9, bmi.classification.overweight",
-            "30.0, bmi.classification.obese1",
-            "34.9, bmi.classification.obese1",
-            "35.0, bmi.classification.obese2",
-            "39.9, bmi.classification.obese2",
-            "40.0, bmi.classification.obese3",
-            "50.0, bmi.classification.obese3"
+            "17.0, imc.classificacao.abaixoPeso",
+            "18.4, imc.classificacao.abaixoPeso",
+            "18.5, imc.classificacao.normal",
+            "24.9, imc.classificacao.normal",
+            "25.0, imc.classificacao.sobrepeso",
+            "29.9, imc.classificacao.sobrepeso",
+            "30.0, imc.classificacao.obesidadeGrau1",
+            "34.9, imc.classificacao.obesidadeGrau1",
+            "35.0, imc.classificacao.obesidadeGrau2",
+            "39.9, imc.classificacao.obesidadeGrau2",
+            "40.0, imc.classificacao.obesidadeGrau3",
+            "50.0, imc.classificacao.obesidadeGrau3"
     })
     void shouldClassifyBmiIntoTheCorrectRange(String bmiValue, String expectedKey) {
         String classification = imcCalculator.classify(new BigDecimal(bmiValue));

@@ -1,6 +1,6 @@
 package com.nuvexa.verticais.nutricao.relatorio.dto.request;
 
-import com.nuvexa.nucleo.paciente.model.Sexo;
+import com.nuvexa.core.paciente.model.Sexo;
 import com.nuvexa.verticais.nutricao.model.NivelAtividade;
 import com.nuvexa.verticais.nutricao.model.Objetivo;
 import lombok.AllArgsConstructor;

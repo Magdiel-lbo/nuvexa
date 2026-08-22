@@ -14,11 +14,11 @@ import java.util.Map;
 public class GastoCaloricoCalculator {
 
     private static final Map<NivelAtividade, BigDecimal> ACTIVITY_FACTORS = Map.of(
-            NivelAtividade.SEDENTARY, new BigDecimal("1.2"),
-            NivelAtividade.LIGHTLY_ACTIVE, new BigDecimal("1.375"),
-            NivelAtividade.MODERATELY_ACTIVE, new BigDecimal("1.55"),
-            NivelAtividade.VERY_ACTIVE, new BigDecimal("1.725"),
-            NivelAtividade.EXTRA_ACTIVE, new BigDecimal("1.9")
+            NivelAtividade.SEDENTARIO, new BigDecimal("1.2"),
+            NivelAtividade.LEVEMENTE_ATIVO, new BigDecimal("1.375"),
+            NivelAtividade.MODERADAMENTE_ATIVO, new BigDecimal("1.55"),
+            NivelAtividade.MUITO_ATIVO, new BigDecimal("1.725"),
+            NivelAtividade.EXTREMAMENTE_ATIVO, new BigDecimal("1.9")
     );
 
     public BigDecimal calculate(BigDecimal bmr, NivelAtividade activityLevel) {

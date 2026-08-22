@@ -1,8 +1,8 @@
 package com.nuvexa.verticais.nutricao.service;
 
-import com.nuvexa.nucleo.paciente.model.Sexo;
-import com.nuvexa.nucleo.paciente.model.Paciente;
-import com.nuvexa.nucleo.paciente.repository.PacienteRepository;
+import com.nuvexa.core.paciente.model.Sexo;
+import com.nuvexa.core.paciente.model.Paciente;
+import com.nuvexa.core.paciente.repository.PacienteRepository;
 import com.nuvexa.plataforma.config.MessageConfig;
 import com.nuvexa.plataforma.config.querydsl.QuerydslConfig;
 import com.nuvexa.verticais.nutricao.calculadora.ImcCalculator;
@@ -43,17 +43,17 @@ class PacienteServiceSearchIntegrationTest {
 
     private void novoPacienteRequest(String name) {
         Paciente paciente = pacienteRepository.saveAndFlush(Paciente.builder()
-                .name(name)
-                .birthDate(LocalDate.of(1990, 5, 20))
-                .gender(Sexo.FEMALE)
+                .nome(name)
+                .dataNascimento(LocalDate.of(1990, 5, 20))
+                .sexo(Sexo.FEMININO)
                 .build());
 
         perfilNutricionalRepository.saveAndFlush(PerfilNutricional.builder()
                 .paciente(paciente)
-                .height(new BigDecimal("1.65"))
-                .weight(new BigDecimal("62.50"))
-                .goal(Objetivo.LOSE_WEIGHT)
-                .activityLevel(NivelAtividade.MODERATELY_ACTIVE)
+                .altura(new BigDecimal("1.65"))
+                .peso(new BigDecimal("62.50"))
+                .objetivo(Objetivo.EMAGRECIMENTO)
+                .nivelAtividade(NivelAtividade.MODERADAMENTE_ATIVO)
                 .build());
     }
 

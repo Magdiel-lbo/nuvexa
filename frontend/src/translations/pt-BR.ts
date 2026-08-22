@@ -64,23 +64,6 @@ export default {
     excluir: 'Excluir',
     voltar: 'Voltar',
   },
-  sexo: {
-    MALE: 'Masculino',
-    FEMALE: 'Feminino',
-  },
-  objetivo: {
-    LOSE_WEIGHT: 'Emagrecimento',
-    MAINTAIN_WEIGHT: 'Manutenção do peso',
-    GAIN_MUSCLE_MASS: 'Ganho de massa muscular',
-    IMPROVE_CONDITIONING: 'Condicionamento físico',
-  },
-  nivelAtividade: {
-    SEDENTARY: 'Sedentário',
-    LIGHTLY_ACTIVE: 'Levemente ativo',
-    MODERATELY_ACTIVE: 'Moderadamente ativo',
-    VERY_ACTIVE: 'Muito ativo',
-    EXTRA_ACTIVE: 'Extremamente ativo',
-  },
   validacao: {
     obrigatorio: 'Campo obrigatório',
     emailInvalido: 'E-mail inválido',
@@ -199,7 +182,7 @@ export default {
   },
   role: {
     ADMIN: 'Administrador',
-    PROFESSIONAL: 'Profissional',
+    PROFISSIONAL: 'Profissional',
   },
   relatorioPacientes: {
     titulo: 'Relatório de pacientes',

@@ -1,6 +1,6 @@
 package com.nuvexa.verticais.nutricao.calculadora;
 
-import com.nuvexa.nucleo.paciente.model.Sexo;
+import com.nuvexa.core.paciente.model.Sexo;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -21,7 +21,7 @@ public class TaxaMetabolicaCalculator {
 
     public BigDecimal calculate(BigDecimal weightKg, BigDecimal heightM, int age, Sexo gender) {
         BigDecimal heightCm = heightM.multiply(CM_PER_METER);
-        BigDecimal genderConstant = gender == Sexo.MALE ? MALE_CONSTANT : FEMALE_CONSTANT;
+        BigDecimal genderConstant = gender == Sexo.MASCULINO ? MALE_CONSTANT : FEMALE_CONSTANT;
 
         BigDecimal result = weightKg.multiply(WEIGHT_FACTOR)
                 .add(heightCm.multiply(HEIGHT_FACTOR))

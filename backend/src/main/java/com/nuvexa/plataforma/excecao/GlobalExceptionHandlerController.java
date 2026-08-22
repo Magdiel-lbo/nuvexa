@@ -43,23 +43,23 @@ public class GlobalExceptionHandlerController {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiErro> handleUnreadableBody(HttpServletRequest request) {
-        return buildResponse(HttpStatus.BAD_REQUEST, messageSource.getMessage("error.invalidBody", null, MESSAGE_LOCALE), request);
+        return buildResponse(HttpStatus.BAD_REQUEST, messageSource.getMessage("erro.corpoInvalido", null, MESSAGE_LOCALE), request);
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ApiErro> handleTypeMismatch(HttpServletRequest request) {
-        return buildResponse(HttpStatus.BAD_REQUEST, messageSource.getMessage("error.invalidParameter", null, MESSAGE_LOCALE), request);
+        return buildResponse(HttpStatus.BAD_REQUEST, messageSource.getMessage("erro.parametroInvalido", null, MESSAGE_LOCALE), request);
     }
 
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ApiErro> handleNoResourceFound(HttpServletRequest request) {
-        return buildResponse(HttpStatus.NOT_FOUND, messageSource.getMessage("error.notFound", null, MESSAGE_LOCALE), request);
+        return buildResponse(HttpStatus.NOT_FOUND, messageSource.getMessage("erro.naoEncontrado", null, MESSAGE_LOCALE), request);
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErro> handleUnexpectedError(Exception ex, HttpServletRequest request) {
         log.error("Erro inesperado", ex);
-        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, messageSource.getMessage("error.unexpected", null, MESSAGE_LOCALE), request);
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, messageSource.getMessage("erro.inesperado", null, MESSAGE_LOCALE), request);
     }
 
     private ResponseEntity<ApiErro> buildResponse(HttpStatus status, String message, HttpServletRequest request) {

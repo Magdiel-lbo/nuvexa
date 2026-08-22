@@ -6,7 +6,7 @@ import com.nuvexa.verticais.nutricao.dto.request.PacienteCreateRequestDTO;
 import com.nuvexa.verticais.nutricao.dto.request.PacienteUpdateRequestDTO;
 import com.nuvexa.verticais.nutricao.dto.response.PacienteResponseDTO;
 import com.nuvexa.verticais.nutricao.model.NivelAtividade;
-import com.nuvexa.nucleo.paciente.model.Sexo;
+import com.nuvexa.core.paciente.model.Sexo;
 import com.nuvexa.verticais.nutricao.model.Objetivo;
 import com.nuvexa.plataforma.excecao.NegocioException;
 import com.nuvexa.verticais.nutricao.service.PacienteService;
@@ -52,11 +52,11 @@ class PacienteControllerTest {
         PacienteCreateRequestDTO request = new PacienteCreateRequestDTO();
         request.setName("Maria Souza");
         request.setBirthDate(LocalDate.of(1990, 5, 20));
-        request.setGender(Sexo.FEMALE);
+        request.setGender(Sexo.FEMININO);
         request.setHeight(new BigDecimal("1.65"));
         request.setWeight(new BigDecimal("62.50"));
-        request.setGoal(Objetivo.LOSE_WEIGHT);
-        request.setActivityLevel(NivelAtividade.MODERATELY_ACTIVE);
+        request.setGoal(Objetivo.EMAGRECIMENTO);
+        request.setActivityLevel(NivelAtividade.MODERADAMENTE_ATIVO);
         return request;
     }
 
@@ -65,11 +65,11 @@ class PacienteControllerTest {
         response.setId(id);
         response.setName(name);
         response.setBirthDate(LocalDate.of(1990, 5, 20));
-        response.setGender(Sexo.FEMALE);
+        response.setGender(Sexo.FEMININO);
         response.setHeight(new BigDecimal("1.65"));
         response.setWeight(new BigDecimal("62.50"));
-        response.setGoal(Objetivo.LOSE_WEIGHT);
-        response.setActivityLevel(NivelAtividade.MODERATELY_ACTIVE);
+        response.setGoal(Objetivo.EMAGRECIMENTO);
+        response.setActivityLevel(NivelAtividade.MODERADAMENTE_ATIVO);
         return response;
     }
 
@@ -115,11 +115,11 @@ class PacienteControllerTest {
         PacienteUpdateRequestDTO request = new PacienteUpdateRequestDTO();
         request.setName("Maria Souza");
         request.setBirthDate(LocalDate.of(1990, 5, 20));
-        request.setGender(Sexo.FEMALE);
+        request.setGender(Sexo.FEMININO);
         request.setHeight(new BigDecimal("1.65"));
         request.setWeight(new BigDecimal("62.50"));
-        request.setGoal(Objetivo.LOSE_WEIGHT);
-        request.setActivityLevel(NivelAtividade.MODERATELY_ACTIVE);
+        request.setGoal(Objetivo.EMAGRECIMENTO);
+        request.setActivityLevel(NivelAtividade.MODERADAMENTE_ATIVO);
         return request;
     }
 

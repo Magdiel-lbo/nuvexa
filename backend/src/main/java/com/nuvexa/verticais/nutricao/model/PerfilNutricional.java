@@ -1,6 +1,6 @@
 package com.nuvexa.verticais.nutricao.model;
 
-import com.nuvexa.nucleo.paciente.model.Paciente;
+import com.nuvexa.core.paciente.model.Paciente;
 import com.nuvexa.plataforma.persistencia.ModeloAbstrato;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -17,7 +17,7 @@ import lombok.experimental.SuperBuilder;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "nutrition_profiles")
+@Table(name = "perfis_nutricionais")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -25,26 +25,26 @@ import java.math.BigDecimal;
 public class PerfilNutricional extends ModeloAbstrato {
 
     @OneToOne
-    @JoinColumn(name = "patient_id", nullable = false, unique = true)
+    @JoinColumn(name = "paciente_id", nullable = false, unique = true)
     private Paciente paciente;
 
     @Column(nullable = false, precision = 4, scale = 2)
-    private BigDecimal height;
+    private BigDecimal altura;
 
     @Column(nullable = false, precision = 5, scale = 2)
-    private BigDecimal weight;
+    private BigDecimal peso;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
-    private Objetivo goal;
+    private Objetivo objetivo;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "activity_level", nullable = false, length = 30)
-    private NivelAtividade activityLevel;
+    @Column(name = "nivel_atividade", nullable = false, length = 30)
+    private NivelAtividade nivelAtividade;
 
-    @Column(name = "manual_daily_calories", precision = 6, scale = 2)
-    private BigDecimal manualDailyCalories;
+    @Column(name = "calorias_diarias_manuais", precision = 6, scale = 2)
+    private BigDecimal caloriasDiariasManuais;
 
     @Column(columnDefinition = "TEXT")
-    private String notes;
+    private String observacoes;
 }

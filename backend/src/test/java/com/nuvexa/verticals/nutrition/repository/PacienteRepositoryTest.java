@@ -1,8 +1,8 @@
 package com.nuvexa.verticais.nutricao.repository;
 
-import com.nuvexa.nucleo.paciente.model.Sexo;
-import com.nuvexa.nucleo.paciente.model.Paciente;
-import com.nuvexa.nucleo.paciente.repository.PacienteRepository;
+import com.nuvexa.core.paciente.model.Sexo;
+import com.nuvexa.core.paciente.model.Paciente;
+import com.nuvexa.core.paciente.repository.PacienteRepository;
 import com.nuvexa.verticais.nutricao.model.NivelAtividade;
 import com.nuvexa.verticais.nutricao.model.Objetivo;
 import com.nuvexa.verticais.nutricao.model.PerfilNutricional;
@@ -28,19 +28,19 @@ class PacienteRepositoryTest {
 
     private Paciente novoPaciente(String name) {
         return Paciente.builder()
-                .name(name)
-                .birthDate(LocalDate.of(1990, 5, 20))
-                .gender(Sexo.FEMALE)
+                .nome(name)
+                .dataNascimento(LocalDate.of(1990, 5, 20))
+                .sexo(Sexo.FEMININO)
                 .build();
     }
 
     private PerfilNutricional novoPerfilNutricional(Paciente paciente) {
         return PerfilNutricional.builder()
                 .paciente(paciente)
-                .height(new BigDecimal("1.65"))
-                .weight(new BigDecimal("62.50"))
-                .goal(Objetivo.LOSE_WEIGHT)
-                .activityLevel(NivelAtividade.MODERATELY_ACTIVE)
+                .altura(new BigDecimal("1.65"))
+                .peso(new BigDecimal("62.50"))
+                .objetivo(Objetivo.EMAGRECIMENTO)
+                .nivelAtividade(NivelAtividade.MODERADAMENTE_ATIVO)
                 .build();
     }
 
@@ -53,30 +53,30 @@ class PacienteRepositoryTest {
 
         assertThat(found.getId()).isNotNull();
         assertThat(found.getPaciente().getId()).isEqualTo(paciente.getId());
-        assertThat(found.getPaciente().getName()).isEqualTo("Maria Souza");
-        assertThat(found.getPaciente().getBirthDate()).isEqualTo(LocalDate.of(1990, 5, 20));
-        assertThat(found.getPaciente().getGender()).isEqualTo(Sexo.FEMALE);
-        assertThat(found.getHeight()).isEqualByComparingTo("1.65");
-        assertThat(found.getWeight()).isEqualByComparingTo("62.50");
-        assertThat(found.getGoal()).isEqualTo(Objetivo.LOSE_WEIGHT);
-        assertThat(found.getActivityLevel()).isEqualTo(NivelAtividade.MODERATELY_ACTIVE);
-        assertThat(found.getManualDailyCalories()).isNull();
-        assertThat(found.getNotes()).isNull();
-        assertThat(found.getCreatedAt()).isNotNull();
-        assertThat(found.getUpdatedAt()).isNotNull();
+        assertThat(found.getPaciente().getNome()).isEqualTo("Maria Souza");
+        assertThat(found.getPaciente().getDataNascimento()).isEqualTo(LocalDate.of(1990, 5, 20));
+        assertThat(found.getPaciente().getSexo()).isEqualTo(Sexo.FEMININO);
+        assertThat(found.getAltura()).isEqualByComparingTo("1.65");
+        assertThat(found.getPeso()).isEqualByComparingTo("62.50");
+        assertThat(found.getObjetivo()).isEqualTo(Objetivo.EMAGRECIMENTO);
+        assertThat(found.getNivelAtividade()).isEqualTo(NivelAtividade.MODERADAMENTE_ATIVO);
+        assertThat(found.getCaloriasDiariasManuais()).isNull();
+        assertThat(found.getObservacoes()).isNull();
+        assertThat(found.getCriadoEm()).isNotNull();
+        assertThat(found.getAtualizadoEm()).isNotNull();
     }
 
     @Test
     void shouldUpdateUpdatedAtOnChange() {
         Paciente paciente = pacienteRepository.saveAndFlush(novoPaciente("Pedro Alves"));
         PerfilNutricional saved = perfilNutricionalRepository.saveAndFlush(novoPerfilNutricional(paciente));
-        var firstUpdatedAt = saved.getUpdatedAt();
+        var firstUpdatedAt = saved.getAtualizadoEm();
 
-        saved.setWeight(new BigDecimal("70.00"));
+        saved.setPeso(new BigDecimal("70.00"));
         PerfilNutricional updated = perfilNutricionalRepository.saveAndFlush(saved);
 
-        assertThat(updated.getUpdatedAt()).isAfterOrEqualTo(firstUpdatedAt);
-        assertThat(updated.getCreatedAt()).isEqualTo(saved.getCreatedAt());
+        assertThat(updated.getAtualizadoEm()).isAfterOrEqualTo(firstUpdatedAt);
+        assertThat(updated.getCriadoEm()).isEqualTo(saved.getCriadoEm());
     }
 
     @Test

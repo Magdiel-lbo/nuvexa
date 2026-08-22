@@ -1,6 +1,6 @@
 package com.nuvexa.verticais.nutricao.relatorio.service;
 
-import com.nuvexa.nucleo.paciente.model.QPaciente;
+import com.nuvexa.core.paciente.model.QPaciente;
 import com.nuvexa.plataforma.relatorio.RelatorioColuna;
 import com.nuvexa.plataforma.relatorio.RelatorioResponseDTO;
 import com.nuvexa.plataforma.relatorio.excel.RelatorioExcelWriter;
@@ -62,29 +62,29 @@ public class PacienteRelatorioService {
 
         BooleanExpression searchFilter = filter.getSearch() == null || filter.getSearch().isBlank()
                 ? null
-                : paciente.name.containsIgnoreCase(filter.getSearch().trim());
-        BooleanExpression genderFilter = filter.getGender() == null ? null : paciente.gender.eq(filter.getGender());
-        BooleanExpression goalFilter = filter.getGoal() == null ? null : perfilNutricional.goal.eq(filter.getGoal());
+                : paciente.nome.containsIgnoreCase(filter.getSearch().trim());
+        BooleanExpression genderFilter = filter.getGender() == null ? null : paciente.sexo.eq(filter.getGender());
+        BooleanExpression goalFilter = filter.getGoal() == null ? null : perfilNutricional.objetivo.eq(filter.getGoal());
         BooleanExpression activityLevelFilter = filter.getActivityLevel() == null
                 ? null
-                : perfilNutricional.activityLevel.eq(filter.getActivityLevel());
+                : perfilNutricional.nivelAtividade.eq(filter.getActivityLevel());
 
         return queryFactory
                 .selectFrom(perfilNutricional)
                 .join(perfilNutricional.paciente, paciente)
                 .where(searchFilter, genderFilter, goalFilter, activityLevelFilter)
-                .orderBy(paciente.name.asc())
+                .orderBy(paciente.nome.asc())
                 .fetch();
     }
 
     private PacienteRelatorioLinhaDTO toRow(PerfilNutricional perfilNutricional) {
-        int age = Period.between(perfilNutricional.getPaciente().getBirthDate(), LocalDate.now()).getYears();
-        BigDecimal bmi = imcCalculator.calculate(perfilNutricional.getWeight(), perfilNutricional.getHeight());
+        int age = Period.between(perfilNutricional.getPaciente().getDataNascimento(), LocalDate.now()).getYears();
+        BigDecimal bmi = imcCalculator.calculate(perfilNutricional.getPeso(), perfilNutricional.getAltura());
         BigDecimal bmr = taxaMetabolicaCalculator.calculate(
-                perfilNutricional.getWeight(), perfilNutricional.getHeight(), age, perfilNutricional.getPaciente().getGender());
-        BigDecimal dailyCalorieExpenditure = perfilNutricional.getManualDailyCalories() != null
-                ? perfilNutricional.getManualDailyCalories()
-                : gastoCaloricoCalculator.calculate(bmr, perfilNutricional.getActivityLevel());
+                perfilNutricional.getPeso(), perfilNutricional.getAltura(), age, perfilNutricional.getPaciente().getSexo());
+        BigDecimal dailyCalorieExpenditure = perfilNutricional.getCaloriasDiariasManuais() != null
+                ? perfilNutricional.getCaloriasDiariasManuais()
+                : gastoCaloricoCalculator.calculate(bmr, perfilNutricional.getNivelAtividade());
 
         return pacienteRelatorioMapper.toRow(perfilNutricional, age, bmi, imcCalculator.classify(bmi), dailyCalorieExpenditure);
     }

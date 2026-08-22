@@ -24,17 +24,17 @@ public class ImcCalculator {
     public String classify(BigDecimal bmi) {
         String key;
         if (bmi.compareTo(new BigDecimal("18.5")) < 0) {
-            key = "bmi.classification.underweight";
+            key = "imc.classificacao.abaixoPeso";
         } else if (bmi.compareTo(new BigDecimal("25.0")) < 0) {
-            key = "bmi.classification.normal";
+            key = "imc.classificacao.normal";
         } else if (bmi.compareTo(new BigDecimal("30.0")) < 0) {
-            key = "bmi.classification.overweight";
+            key = "imc.classificacao.sobrepeso";
         } else if (bmi.compareTo(new BigDecimal("35.0")) < 0) {
-            key = "bmi.classification.obese1";
+            key = "imc.classificacao.obesidadeGrau1";
         } else if (bmi.compareTo(new BigDecimal("40.0")) < 0) {
-            key = "bmi.classification.obese2";
+            key = "imc.classificacao.obesidadeGrau2";
         } else {
-            key = "bmi.classification.obese3";
+            key = "imc.classificacao.obesidadeGrau3";
         }
         return messageSource.getMessage(key, null, MESSAGE_LOCALE);
     }

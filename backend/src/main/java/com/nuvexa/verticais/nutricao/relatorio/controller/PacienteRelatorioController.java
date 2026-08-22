@@ -1,6 +1,6 @@
 package com.nuvexa.verticais.nutricao.relatorio.controller;
 
-import com.nuvexa.nucleo.paciente.model.Sexo;
+import com.nuvexa.core.paciente.model.Sexo;
 import com.nuvexa.plataforma.relatorio.RelatorioResponseDTO;
 import com.nuvexa.verticais.nutricao.model.NivelAtividade;
 import com.nuvexa.verticais.nutricao.model.Objetivo;

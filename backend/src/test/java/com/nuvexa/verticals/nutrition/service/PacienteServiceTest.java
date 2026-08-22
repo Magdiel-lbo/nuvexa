@@ -1,8 +1,8 @@
 package com.nuvexa.verticais.nutricao.service;
 
-import com.nuvexa.nucleo.paciente.model.Sexo;
-import com.nuvexa.nucleo.paciente.model.Paciente;
-import com.nuvexa.nucleo.paciente.repository.PacienteRepository;
+import com.nuvexa.core.paciente.model.Sexo;
+import com.nuvexa.core.paciente.model.Paciente;
+import com.nuvexa.core.paciente.repository.PacienteRepository;
 import com.nuvexa.plataforma.excecao.NegocioException;
 import com.nuvexa.verticais.nutricao.calculadora.ImcCalculator;
 import com.nuvexa.verticais.nutricao.calculadora.GastoCaloricoCalculator;
@@ -86,11 +86,11 @@ class PacienteServiceTest {
         PacienteCreateRequestDTO request = new PacienteCreateRequestDTO();
         request.setName("Maria Souza");
         request.setBirthDate(LocalDate.of(1990, 5, 20));
-        request.setGender(Sexo.FEMALE);
+        request.setGender(Sexo.FEMININO);
         request.setHeight(new BigDecimal("1.65"));
         request.setWeight(new BigDecimal("62.50"));
-        request.setGoal(Objetivo.LOSE_WEIGHT);
-        request.setActivityLevel(NivelAtividade.MODERATELY_ACTIVE);
+        request.setGoal(Objetivo.EMAGRECIMENTO);
+        request.setActivityLevel(NivelAtividade.MODERADAMENTE_ATIVO);
         return request;
     }
 
@@ -135,14 +135,14 @@ class PacienteServiceTest {
         request.setBirthDate(LocalDate.now().minusYears(30));
         request.setWeight(new BigDecimal("80"));
         request.setHeight(new BigDecimal("1.80"));
-        request.setGender(Sexo.MALE);
-        request.setActivityLevel(NivelAtividade.SEDENTARY);
+        request.setGender(Sexo.MASCULINO);
+        request.setActivityLevel(NivelAtividade.SEDENTARIO);
 
         PacienteResponseDTO response = pacienteService.create(request);
 
         assertThat(response.getAge()).isEqualTo(30);
         assertThat(response.getBmi()).isEqualByComparingTo("24.69");
-        assertThat(response.getBmiClassification()).isEqualTo("bmi.classification.normal");
+        assertThat(response.getBmiClassification()).isEqualTo("imc.classificacao.normal");
         // Mifflin-St Jeor: 10*80 + 6.25*180 - 5*30 + 5 = 1780
         assertThat(response.getBmr()).isEqualByComparingTo("1780.00");
         // TDEE = BMR * fator sedentário (1.2)
@@ -162,39 +162,39 @@ class PacienteServiceTest {
     private PerfilNutricional existingProfile(Long patientId, String name, Sexo gender, Objetivo goal, NivelAtividade activityLevel) {
         Paciente paciente = Paciente.builder()
                 .id(patientId)
-                .name(name)
-                .birthDate(LocalDate.of(1985, 1, 1))
-                .gender(gender)
+                .nome(name)
+                .dataNascimento(LocalDate.of(1985, 1, 1))
+                .sexo(gender)
                 .build();
         return PerfilNutricional.builder()
                 .id(50L)
                 .paciente(paciente)
-                .height(new BigDecimal("1.80"))
-                .weight(new BigDecimal("90.00"))
-                .goal(goal)
-                .activityLevel(activityLevel)
+                .altura(new BigDecimal("1.80"))
+                .peso(new BigDecimal("90.00"))
+                .objetivo(goal)
+                .nivelAtividade(activityLevel)
                 .build();
     }
 
     @Test
     void shouldUpdateExistingPatient() {
-        PerfilNutricional existing = existingProfile(1L, "Old Name", Sexo.MALE, Objetivo.MAINTAIN_WEIGHT, NivelAtividade.SEDENTARY);
+        PerfilNutricional existing = existingProfile(1L, "Old Name", Sexo.MASCULINO, Objetivo.MANUTENCAO_PESO, NivelAtividade.SEDENTARIO);
         when(perfilNutricionalRepository.findByPacienteId(1L)).thenReturn(Optional.of(existing));
 
         PacienteUpdateRequestDTO request = new PacienteUpdateRequestDTO();
         request.setName("New Name");
         request.setBirthDate(LocalDate.of(1985, 1, 1));
-        request.setGender(Sexo.MALE);
+        request.setGender(Sexo.MASCULINO);
         request.setHeight(new BigDecimal("1.80"));
         request.setWeight(new BigDecimal("88.00"));
-        request.setGoal(Objetivo.LOSE_WEIGHT);
-        request.setActivityLevel(NivelAtividade.LIGHTLY_ACTIVE);
+        request.setGoal(Objetivo.EMAGRECIMENTO);
+        request.setActivityLevel(NivelAtividade.LEVEMENTE_ATIVO);
 
         PacienteResponseDTO response = pacienteService.update(1L, request);
 
         assertThat(response.getName()).isEqualTo("New Name");
         assertThat(response.getWeight()).isEqualByComparingTo("88.00");
-        assertThat(response.getGoal()).isEqualTo(Objetivo.LOSE_WEIGHT);
+        assertThat(response.getGoal()).isEqualTo(Objetivo.EMAGRECIMENTO);
     }
 
     @Test
@@ -225,7 +225,7 @@ class PacienteServiceTest {
 
     @Test
     void shouldDeleteOnlyNutritionProfileAndPreservePatientCore() {
-        PerfilNutricional existing = existingProfile(1L, "Maria Souza", Sexo.FEMALE, Objetivo.MAINTAIN_WEIGHT, NivelAtividade.SEDENTARY);
+        PerfilNutricional existing = existingProfile(1L, "Maria Souza", Sexo.FEMININO, Objetivo.MANUTENCAO_PESO, NivelAtividade.SEDENTARIO);
         when(perfilNutricionalRepository.findByPacienteId(1L)).thenReturn(Optional.of(existing));
 
         pacienteService.delete(1L);
@@ -239,11 +239,11 @@ class PacienteServiceTest {
         PacienteUpdateRequestDTO request = new PacienteUpdateRequestDTO();
         request.setName("Someone");
         request.setBirthDate(LocalDate.of(1990, 1, 1));
-        request.setGender(Sexo.MALE);
+        request.setGender(Sexo.MASCULINO);
         request.setHeight(new BigDecimal("1.75"));
         request.setWeight(new BigDecimal("75.00"));
-        request.setGoal(Objetivo.MAINTAIN_WEIGHT);
-        request.setActivityLevel(NivelAtividade.SEDENTARY);
+        request.setGoal(Objetivo.MANUTENCAO_PESO);
+        request.setActivityLevel(NivelAtividade.SEDENTARIO);
         return request;
     }
 }

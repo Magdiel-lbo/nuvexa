@@ -9,7 +9,7 @@
         </v-avatar>
         <div class="patient-detalhe__title-group">
           <h1 class="patient-detalhe__title">{{ paciente.name }}</h1>
-          <p class="patient-detalhe__subtitle">{{ $t(`sexo.${paciente.gender}`) }} · {{ paciente.age }} {{ $t('paciente.detalhe.anos') }}</p>
+          <p class="patient-detalhe__subtitle">{{ rotulos[paciente.gender] ?? paciente.gender }} · {{ paciente.age }} {{ $t('paciente.detalhe.anos') }}</p>
         </div>
       </template>
 
@@ -52,11 +52,11 @@
             <dl class="patient-detalhe__list">
               <div class="patient-detalhe__item">
                 <dt>{{ $t('paciente.objetivo') }}</dt>
-                <dd>{{ $t(`objetivo.${paciente.goal}`) }}</dd>
+                <dd>{{ rotulos[paciente.goal] ?? paciente.goal }}</dd>
               </div>
               <div class="patient-detalhe__item">
                 <dt>{{ $t('paciente.nivelAtividade') }}</dt>
-                <dd>{{ $t(`nivelAtividade.${paciente.activityLevel}`) }}</dd>
+                <dd>{{ rotulos[paciente.activityLevel] ?? paciente.activityLevel }}</dd>
               </div>
               <div class="patient-detalhe__item">
                 <dt>{{ $t('paciente.dataNascimento') }}</dt>
@@ -103,11 +103,13 @@ import patientService from '../../service/patient-service'
 import type { PatientResponse } from '../../types/patient'
 import { extrairMensagemErro } from '../../util/api-util'
 import { useAppStore } from '../../store/app.store'
+import { carregarRotulosEnum } from '../../util/enum-rotulos'
 import PatientConsultaHistorico from './components/PatientConsultaHistorico.vue'
 
 @Component({ name: 'PatientDetalhe', components: { PatientConsultaHistorico } })
 export default class PatientDetalhe extends Vue {
   paciente: PatientResponse | null = null
+  rotulos: Record<string, string> = {}
   loading = false
 
   get appStore() {
@@ -119,6 +121,7 @@ export default class PatientDetalhe extends Vue {
   }
 
   async mounted() {
+    this.rotulos = await carregarRotulosEnum()
     this.loading = true
     try {
       this.paciente = await patientService.buscarPorId(this.patientId)

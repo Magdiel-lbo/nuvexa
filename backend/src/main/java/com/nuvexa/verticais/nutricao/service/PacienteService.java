@@ -1,8 +1,8 @@
 package com.nuvexa.verticais.nutricao.service;
 
-import com.nuvexa.nucleo.paciente.model.Sexo;
-import com.nuvexa.nucleo.paciente.model.Paciente;
-import com.nuvexa.nucleo.paciente.repository.PacienteRepository;
+import com.nuvexa.core.paciente.model.Sexo;
+import com.nuvexa.core.paciente.model.Paciente;
+import com.nuvexa.core.paciente.repository.PacienteRepository;
 import com.nuvexa.plataforma.excecao.NegocioException;
 import com.nuvexa.plataforma.util.EnumOpcaoResolver;
 import com.nuvexa.verticais.nutricao.calculadora.ImcCalculator;
@@ -83,9 +83,9 @@ public class PacienteService {
 
     public PacienteEnumsResponseDTO getEnums() {
         return PacienteEnumsResponseDTO.builder()
-                .genders(EnumOpcaoResolver.resolve(Sexo.class, "enum.gender", messageSource, MESSAGE_LOCALE))
-                .goals(EnumOpcaoResolver.resolve(Objetivo.class, "enum.goal", messageSource, MESSAGE_LOCALE))
-                .activityLevels(EnumOpcaoResolver.resolve(NivelAtividade.class, "enum.activityLevel", messageSource, MESSAGE_LOCALE))
+                .genders(EnumOpcaoResolver.resolve(Sexo.class, "enum.sexo", messageSource, MESSAGE_LOCALE))
+                .goals(EnumOpcaoResolver.resolve(Objetivo.class, "enum.objetivo", messageSource, MESSAGE_LOCALE))
+                .activityLevels(EnumOpcaoResolver.resolve(NivelAtividade.class, "enum.nivelAtividade", messageSource, MESSAGE_LOCALE))
                 .build();
     }
 
@@ -98,12 +98,12 @@ public class PacienteService {
     private List<PerfilNutricional> searchProfiles(String name) {
         QPerfilNutricional perfilNutricional = QPerfilNutricional.perfilNutricional;
 
-        BooleanExpression nameFilter = name == null ? null : perfilNutricional.paciente.name.containsIgnoreCase(name);
+        BooleanExpression nameFilter = name == null ? null : perfilNutricional.paciente.nome.containsIgnoreCase(name);
 
         return queryFactory
                 .selectFrom(perfilNutricional)
                 .where(nameFilter)
-                .orderBy(perfilNutricional.paciente.name.asc())
+                .orderBy(perfilNutricional.paciente.nome.asc())
                 .fetch();
     }
 
@@ -113,24 +113,24 @@ public class PacienteService {
 
     private PerfilNutricional findProfileOrThrow(Long id) {
         return perfilNutricionalRepository.findByPacienteId(id)
-                .orElseThrow(() -> new NegocioException(HttpStatus.NOT_FOUND, resolveMessage("patient.notFound", id)));
+                .orElseThrow(() -> new NegocioException(HttpStatus.NOT_FOUND, resolveMessage("paciente.naoEncontrado", id)));
     }
 
     private void validate(String name, LocalDate birthDate, BigDecimal height, BigDecimal weight, BigDecimal manualDailyCalories) {
         if (name == null || name.isBlank()) {
-            throw new NegocioException(HttpStatus.BAD_REQUEST, resolveMessage("patient.name.required"));
+            throw new NegocioException(HttpStatus.BAD_REQUEST, resolveMessage("paciente.nome.obrigatorio"));
         }
         if (birthDate == null || birthDate.isAfter(LocalDate.now())) {
-            throw new NegocioException(HttpStatus.BAD_REQUEST, resolveMessage("patient.birthDate.future"));
+            throw new NegocioException(HttpStatus.BAD_REQUEST, resolveMessage("paciente.dataNascimento.futura"));
         }
         if (height == null || height.signum() <= 0) {
-            throw new NegocioException(HttpStatus.BAD_REQUEST, resolveMessage("patient.height.invalid"));
+            throw new NegocioException(HttpStatus.BAD_REQUEST, resolveMessage("paciente.altura.invalida"));
         }
         if (weight == null || weight.signum() <= 0) {
-            throw new NegocioException(HttpStatus.BAD_REQUEST, resolveMessage("patient.weight.invalid"));
+            throw new NegocioException(HttpStatus.BAD_REQUEST, resolveMessage("paciente.peso.invalido"));
         }
         if (manualDailyCalories != null && manualDailyCalories.signum() <= 0) {
-            throw new NegocioException(HttpStatus.BAD_REQUEST, resolveMessage("patient.manualDailyCalories.invalid"));
+            throw new NegocioException(HttpStatus.BAD_REQUEST, resolveMessage("paciente.caloriasDiariasManuais.invalida"));
         }
     }
 
@@ -142,12 +142,12 @@ public class PacienteService {
         PacienteResponseDTO response = pacienteMapper.toResponse(perfilNutricional);
         Paciente paciente = perfilNutricional.getPaciente();
 
-        int age = Period.between(paciente.getBirthDate(), LocalDate.now()).getYears();
-        BigDecimal bmi = imcCalculator.calculate(perfilNutricional.getWeight(), perfilNutricional.getHeight());
-        BigDecimal bmr = taxaMetabolicaCalculator.calculate(perfilNutricional.getWeight(), perfilNutricional.getHeight(), age, paciente.getGender());
-        BigDecimal dailyCalorieExpenditure = perfilNutricional.getManualDailyCalories() != null
-                ? perfilNutricional.getManualDailyCalories()
-                : gastoCaloricoCalculator.calculate(bmr, perfilNutricional.getActivityLevel());
+        int age = Period.between(paciente.getDataNascimento(), LocalDate.now()).getYears();
+        BigDecimal bmi = imcCalculator.calculate(perfilNutricional.getPeso(), perfilNutricional.getAltura());
+        BigDecimal bmr = taxaMetabolicaCalculator.calculate(perfilNutricional.getPeso(), perfilNutricional.getAltura(), age, paciente.getSexo());
+        BigDecimal dailyCalorieExpenditure = perfilNutricional.getCaloriasDiariasManuais() != null
+                ? perfilNutricional.getCaloriasDiariasManuais()
+                : gastoCaloricoCalculator.calculate(bmr, perfilNutricional.getNivelAtividade());
 
         response.setAge(age);
         response.setBmi(bmi);

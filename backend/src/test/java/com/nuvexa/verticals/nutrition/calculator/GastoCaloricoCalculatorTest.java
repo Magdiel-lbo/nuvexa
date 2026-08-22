@@ -15,11 +15,11 @@ class GastoCaloricoCalculatorTest {
 
     @ParameterizedTest
     @CsvSource({
-            "SEDENTARY, 1800.00",
-            "LIGHTLY_ACTIVE, 2062.50",
-            "MODERATELY_ACTIVE, 2325.00",
-            "VERY_ACTIVE, 2587.50",
-            "EXTRA_ACTIVE, 2850.00"
+            "SEDENTARIO, 1800.00",
+            "LEVEMENTE_ATIVO, 2062.50",
+            "MODERADAMENTE_ATIVO, 2325.00",
+            "MUITO_ATIVO, 2587.50",
+            "EXTREMAMENTE_ATIVO, 2850.00"
     })
     void shouldApplyActivityFactorToBmr(NivelAtividade activityLevel, String expected) {
         BigDecimal result = calculator.calculate(new BigDecimal("1500"), activityLevel);
