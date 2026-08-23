@@ -2,12 +2,12 @@
   <v-form ref="form" v-model="formValido" :disabled="readonly" @submit.prevent="salvar">
     <v-row>
       <v-col cols="6">
-        <v-text-field v-model="model.name" :label="$t('paciente.nome')" :rules="[rules.obrigatorio]" />
+        <v-text-field v-model="model.nome" :label="$t('paciente.nome')" :rules="[rules.obrigatorio]" />
       </v-col>
 
       <v-col cols="12" md="6">
         <v-text-field
-          v-model="model.birthDate"
+          v-model="model.dataNascimento"
           type="date"
           :label="$t('paciente.dataNascimento')"
           :rules="[rules.obrigatorio]"
@@ -16,10 +16,10 @@
 
       <v-col cols="12" md="6">
         <v-select
-          v-model="model.gender"
-          :items="sexoOptions"
-          item-title="label"
-          item-value="value"
+          v-model="model.sexo"
+          :items="opcoesSexo"
+          item-title="rotulo"
+          item-value="valor"
           :label="$t('paciente.sexo')"
           :rules="[rules.obrigatorio]"
         />
@@ -27,7 +27,7 @@
 
       <v-col cols="12" md="6">
         <v-text-field
-          v-model.number="model.height"
+          v-model.number="model.altura"
           type="number"
           step="0.01"
           :label="$t('paciente.altura')"
@@ -37,7 +37,7 @@
 
       <v-col cols="12" md="6">
         <v-text-field
-          v-model.number="model.weight"
+          v-model.number="model.peso"
           type="number"
           step="0.01"
           :label="$t('paciente.peso')"
@@ -47,10 +47,10 @@
 
       <v-col cols="12" md="6">
         <v-select
-          v-model="model.goal"
-          :items="objetivoOptions"
-          item-title="label"
-          item-value="value"
+          v-model="model.objetivo"
+          :items="opcoesObjetivo"
+          item-title="rotulo"
+          item-value="valor"
           :label="$t('paciente.objetivo')"
           :rules="[rules.obrigatorio]"
         />
@@ -58,10 +58,10 @@
 
       <v-col cols="12" md="6">
         <v-select
-          v-model="model.activityLevel"
-          :items="nivelAtividadeOptions"
-          item-title="label"
-          item-value="value"
+          v-model="model.nivelAtividade"
+          :items="opcoesNivelAtividade"
+          item-title="rotulo"
+          item-value="valor"
           :label="$t('paciente.nivelAtividade')"
           :rules="[rules.obrigatorio]"
         />
@@ -69,7 +69,7 @@
 
       <v-col cols="12" md="6">
         <v-text-field
-          v-model.number="model.manualDailyCalories"
+          v-model.number="model.caloriasDiariasManuais"
           type="number"
           step="0.01"
           :label="$t('paciente.gastoCaloricoManual')"
@@ -77,7 +77,7 @@
       </v-col>
 
       <v-col cols="6">
-        <v-textarea v-model="model.notes" :label="$t('paciente.observacoes')" rows="3" />
+        <v-textarea v-model="model.observacoes" :label="$t('paciente.observacoes')" rows="3" />
       </v-col>
     </v-row>
 
@@ -90,13 +90,13 @@
 
 <script lang="ts">
 import { Component, Prop, VModel, Emit, Vue } from 'vue-facing-decorator'
-import patientService from '../../../service/patient-service'
-import type { EnumOption, PatientCreateRequest } from '../../../types/patient'
+import pacienteService from '../../../service/paciente-service'
+import type { EnumOpcao, PacienteCreateRequest } from '../../../types/paciente'
 
-@Component({ name: 'PatientForm' })
-export default class PatientForm extends Vue {
+@Component({ name: 'PacienteForm' })
+export default class PacienteForm extends Vue {
   @VModel({ required: true })
-  model!: PatientCreateRequest
+  model!: PacienteCreateRequest
 
   @Prop({ default: '' })
   submitLabel!: string
@@ -108,9 +108,9 @@ export default class PatientForm extends Vue {
   readonly!: boolean
 
   formValido = true
-  sexoOptions: EnumOption[] = []
-  objetivoOptions: EnumOption[] = []
-  nivelAtividadeOptions: EnumOption[] = []
+  opcoesSexo: EnumOpcao[] = []
+  opcoesObjetivo: EnumOpcao[] = []
+  opcoesNivelAtividade: EnumOpcao[] = []
 
   get rules() {
     return {
@@ -119,10 +119,10 @@ export default class PatientForm extends Vue {
   }
 
   async created() {
-    const enums = await patientService.enums()
-    this.sexoOptions = enums.genders
-    this.objetivoOptions = enums.goals
-    this.nivelAtividadeOptions = enums.activityLevels
+    const enums = await pacienteService.enums()
+    this.opcoesSexo = enums.sexos
+    this.opcoesObjetivo = enums.objetivos
+    this.opcoesNivelAtividade = enums.niveisAtividade
   }
 
   @Emit('cancel')

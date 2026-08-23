@@ -180,7 +180,7 @@ export default {
   app: {
     nome: 'Nuvexa',
   },
-  role: {
+  perfil: {
     ADMIN: 'Administrador',
     PROFISSIONAL: 'Profissional',
   },

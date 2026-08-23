@@ -13,7 +13,7 @@ import java.util.Map;
 @Component
 public class GastoCaloricoCalculator {
 
-    private static final Map<NivelAtividade, BigDecimal> ACTIVITY_FACTORS = Map.of(
+    private static final Map<NivelAtividade, BigDecimal> FATORES_ATIVIDADE = Map.of(
             NivelAtividade.SEDENTARIO, new BigDecimal("1.2"),
             NivelAtividade.LEVEMENTE_ATIVO, new BigDecimal("1.375"),
             NivelAtividade.MODERADAMENTE_ATIVO, new BigDecimal("1.55"),
@@ -21,8 +21,8 @@ public class GastoCaloricoCalculator {
             NivelAtividade.EXTREMAMENTE_ATIVO, new BigDecimal("1.9")
     );
 
-    public BigDecimal calculate(BigDecimal bmr, NivelAtividade activityLevel) {
-        BigDecimal factor = ACTIVITY_FACTORS.get(activityLevel);
-        return bmr.multiply(factor).setScale(2, RoundingMode.HALF_UP);
+    public BigDecimal calculate(BigDecimal taxaMetabolicaBasal, NivelAtividade nivelAtividade) {
+        BigDecimal fator = FATORES_ATIVIDADE.get(nivelAtividade);
+        return taxaMetabolicaBasal.multiply(fator).setScale(2, RoundingMode.HALF_UP);
     }
 }

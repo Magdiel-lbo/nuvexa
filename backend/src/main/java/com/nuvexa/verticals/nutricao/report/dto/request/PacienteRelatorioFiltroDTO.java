@@ -16,8 +16,8 @@ import lombok.Setter;
 @Builder
 public class PacienteRelatorioFiltroDTO {
 
-    private String search;
-    private Sexo gender;
-    private Objetivo goal;
-    private NivelAtividade activityLevel;
+    private String busca;
+    private Sexo sexo;
+    private Objetivo objetivo;
+    private NivelAtividade nivelAtividade;
 }

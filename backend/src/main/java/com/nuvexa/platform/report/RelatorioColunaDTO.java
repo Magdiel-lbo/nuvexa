@@ -13,7 +13,7 @@ import lombok.Setter;
 @Builder
 public class RelatorioColunaDTO {
 
-    private String key;
-    private String label;
-    private Integer order;
+    private String chave;
+    private String rotulo;
+    private Integer ordem;
 }

@@ -1,15 +1,15 @@
 <template>
-  <div class="patient-detalhe">
-    <div class="patient-detalhe__header">
+  <div class="paciente-detalhe">
+    <div class="paciente-detalhe__header">
       <v-btn icon="mdi-arrow-left" variant="text" :aria-label="$t('acao.voltar')" @click="voltar" />
 
       <template v-if="paciente">
         <v-avatar color="primary" variant="tonal" size="56">
-          <span class="patient-detalhe__initials">{{ initials(paciente.name) }}</span>
+          <span class="paciente-detalhe__initials">{{ initials(paciente.nome) }}</span>
         </v-avatar>
-        <div class="patient-detalhe__title-group">
-          <h1 class="patient-detalhe__title">{{ paciente.name }}</h1>
-          <p class="patient-detalhe__subtitle">{{ rotulos[paciente.gender] ?? paciente.gender }} · {{ paciente.age }} {{ $t('paciente.detalhe.anos') }}</p>
+        <div class="paciente-detalhe__title-group">
+          <h1 class="paciente-detalhe__title">{{ paciente.nome }}</h1>
+          <p class="paciente-detalhe__subtitle">{{ rotulos[paciente.sexo] ?? paciente.sexo }} · {{ paciente.idade }} {{ $t('paciente.detalhe.anos') }}</p>
         </div>
       </template>
 
@@ -20,95 +20,95 @@
       </v-btn>
     </div>
 
-    <div v-if="loading" class="patient-detalhe__loading">
+    <div v-if="loading" class="paciente-detalhe__loading">
       <v-progress-circular indeterminate color="primary" />
     </div>
 
     <template v-else-if="paciente">
-      <div class="patient-detalhe__grid">
-        <v-card variant="flat" color="surface-variant" class="patient-detalhe__card">
+      <div class="paciente-detalhe__grid">
+        <v-card variant="flat" color="surface-variant" class="paciente-detalhe__card">
           <v-card-title>{{ $t('paciente.detalhe.dadosFisicos') }}</v-card-title>
           <v-card-text>
-            <dl class="patient-detalhe__list">
-              <div class="patient-detalhe__item">
+            <dl class="paciente-detalhe__list">
+              <div class="paciente-detalhe__item">
                 <dt>{{ $t('paciente.altura') }}</dt>
-                <dd>{{ paciente.height }} m</dd>
+                <dd>{{ paciente.altura }} m</dd>
               </div>
-              <div class="patient-detalhe__item">
+              <div class="paciente-detalhe__item">
                 <dt>{{ $t('paciente.peso') }}</dt>
-                <dd>{{ paciente.weight }} kg</dd>
+                <dd>{{ paciente.peso }} kg</dd>
               </div>
-              <div class="patient-detalhe__item">
+              <div class="paciente-detalhe__item">
                 <dt>{{ $t('paciente.imc') }}</dt>
-                <dd>{{ paciente.bmi.toFixed(1) }} ({{ paciente.bmiClassification }})</dd>
+                <dd>{{ paciente.imc.toFixed(1) }} ({{ paciente.classificacaoImc }})</dd>
               </div>
             </dl>
           </v-card-text>
         </v-card>
 
-        <v-card variant="flat" color="surface-variant" class="patient-detalhe__card">
+        <v-card variant="flat" color="surface-variant" class="paciente-detalhe__card">
           <v-card-title>{{ $t('paciente.detalhe.objetivoAtividade') }}</v-card-title>
           <v-card-text>
-            <dl class="patient-detalhe__list">
-              <div class="patient-detalhe__item">
+            <dl class="paciente-detalhe__list">
+              <div class="paciente-detalhe__item">
                 <dt>{{ $t('paciente.objetivo') }}</dt>
-                <dd>{{ rotulos[paciente.goal] ?? paciente.goal }}</dd>
+                <dd>{{ rotulos[paciente.objetivo] ?? paciente.objetivo }}</dd>
               </div>
-              <div class="patient-detalhe__item">
+              <div class="paciente-detalhe__item">
                 <dt>{{ $t('paciente.nivelAtividade') }}</dt>
-                <dd>{{ rotulos[paciente.activityLevel] ?? paciente.activityLevel }}</dd>
+                <dd>{{ rotulos[paciente.nivelAtividade] ?? paciente.nivelAtividade }}</dd>
               </div>
-              <div class="patient-detalhe__item">
+              <div class="paciente-detalhe__item">
                 <dt>{{ $t('paciente.dataNascimento') }}</dt>
-                <dd>{{ formatDate(paciente.birthDate) }}</dd>
+                <dd>{{ formatDate(paciente.dataNascimento) }}</dd>
               </div>
             </dl>
           </v-card-text>
         </v-card>
 
-        <v-card variant="flat" color="surface-variant" class="patient-detalhe__card">
+        <v-card variant="flat" color="surface-variant" class="paciente-detalhe__card">
           <v-card-title>{{ $t('paciente.detalhe.gastoCalorico') }}</v-card-title>
           <v-card-text>
-            <dl class="patient-detalhe__list">
-              <div class="patient-detalhe__item">
+            <dl class="paciente-detalhe__list">
+              <div class="paciente-detalhe__item">
                 <dt>{{ $t('paciente.detalhe.taxaMetabolicaBasal') }}</dt>
-                <dd>{{ Math.round(paciente.bmr) }} kcal</dd>
+                <dd>{{ Math.round(paciente.taxaMetabolicaBasal) }} kcal</dd>
               </div>
-              <div class="patient-detalhe__item">
+              <div class="paciente-detalhe__item">
                 <dt>{{ $t('paciente.detalhe.gastoCaloricoTotal') }}</dt>
-                <dd>{{ Math.round(paciente.dailyCalorieExpenditure) }} kcal</dd>
+                <dd>{{ Math.round(paciente.gastoCaloricoDiario) }} kcal</dd>
               </div>
-              <div class="patient-detalhe__item" v-if="paciente.manualDailyCalories">
+              <div class="paciente-detalhe__item" v-if="paciente.caloriasDiariasManuais">
                 <dt>{{ $t('paciente.gastoCaloricoManual') }}</dt>
-                <dd>{{ Math.round(paciente.manualDailyCalories) }} kcal</dd>
+                <dd>{{ Math.round(paciente.caloriasDiariasManuais) }} kcal</dd>
               </div>
             </dl>
           </v-card-text>
         </v-card>
 
-        <v-card v-if="paciente.notes" variant="flat" color="surface-variant" class="patient-detalhe__card patient-detalhe__card--full">
+        <v-card v-if="paciente.observacoes" variant="flat" color="surface-variant" class="paciente-detalhe__card paciente-detalhe__card--full">
           <v-card-title>{{ $t('paciente.observacoes') }}</v-card-title>
-          <v-card-text>{{ paciente.notes }}</v-card-text>
+          <v-card-text>{{ paciente.observacoes }}</v-card-text>
         </v-card>
       </div>
 
-      <PatientConsultaHistorico :patient-id="patientId" />
+      <PacienteConsultaHistorico :paciente-id="pacienteId" />
     </template>
   </div>
 </template>
 
 <script lang="ts">
 import { Component, Vue } from 'vue-facing-decorator'
-import patientService from '../../service/patient-service'
-import type { PatientResponse } from '../../types/patient'
+import pacienteService from '../../service/paciente-service'
+import type { PacienteResponse } from '../../types/paciente'
 import { extrairMensagemErro } from '../../util/api-util'
 import { useAppStore } from '../../store/app.store'
 import { carregarRotulosEnum } from '../../util/enum-rotulos'
-import PatientConsultaHistorico from './components/PatientConsultaHistorico.vue'
+import PacienteConsultaHistorico from './components/PacienteConsultaHistorico.vue'
 
-@Component({ name: 'PatientDetalhe', components: { PatientConsultaHistorico } })
-export default class PatientDetalhe extends Vue {
-  paciente: PatientResponse | null = null
+@Component({ name: 'PacienteDetalhe', components: { PacienteConsultaHistorico } })
+export default class PacienteDetalhe extends Vue {
+  paciente: PacienteResponse | null = null
   rotulos: Record<string, string> = {}
   loading = false
 
@@ -116,7 +116,7 @@ export default class PatientDetalhe extends Vue {
     return useAppStore()
   }
 
-  get patientId(): number {
+  get pacienteId(): number {
     return Number(this.$route.params.id)
   }
 
@@ -124,7 +124,7 @@ export default class PatientDetalhe extends Vue {
     this.rotulos = await carregarRotulosEnum()
     this.loading = true
     try {
-      this.paciente = await patientService.buscarPorId(this.patientId)
+      this.paciente = await pacienteService.buscarPorId(this.pacienteId)
     } catch (e) {
       this.appStore.setToast({ mensagem: extrairMensagemErro(e, this.$t('erro.carregarPaciente') as string), erro: true })
       this.voltar()
@@ -146,51 +146,51 @@ export default class PatientDetalhe extends Vue {
   }
 
   editar() {
-    this.$router.push(`/patients/${this.patientId}/edit`)
+    this.$router.push(`/pacientes/${this.pacienteId}/editar`)
   }
 
   voltar() {
-    this.$router.push('/patients')
+    this.$router.push('/pacientes')
   }
 }
 </script>
 
 <style scoped lang="scss">
-.patient-detalhe__header {
+.paciente-detalhe__header {
   display: flex;
   align-items: center;
   gap: 16px;
   margin-bottom: 24px;
 }
 
-.patient-detalhe__initials {
+.paciente-detalhe__initials {
   font-size: 1rem;
   font-weight: 600;
 }
 
-.patient-detalhe__title-group {
+.paciente-detalhe__title-group {
   display: flex;
   flex-direction: column;
 }
 
-.patient-detalhe__title {
+.paciente-detalhe__title {
   font-size: 1.5rem;
   font-weight: 700;
   margin: 0;
 }
 
-.patient-detalhe__subtitle {
+.paciente-detalhe__subtitle {
   color: rgb(var(--v-theme-on-surface-variant));
   margin: 0;
 }
 
-.patient-detalhe__loading {
+.paciente-detalhe__loading {
   display: flex;
   justify-content: center;
   padding: 96px 0;
 }
 
-.patient-detalhe__grid {
+.paciente-detalhe__grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
@@ -200,21 +200,21 @@ export default class PatientDetalhe extends Vue {
   }
 }
 
-.patient-detalhe__card {
+.paciente-detalhe__card {
   border-radius: 12px;
 }
 
-.patient-detalhe__card--full {
+.paciente-detalhe__card--full {
   grid-column: 1 / -1;
 }
 
-.patient-detalhe__list {
+.paciente-detalhe__list {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-.patient-detalhe__item {
+.paciente-detalhe__item {
   display: flex;
   justify-content: space-between;
   gap: 16px;

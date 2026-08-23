@@ -84,13 +84,13 @@ class PacienteServiceTest {
 
     private PacienteCreateRequestDTO validCreateRequest() {
         PacienteCreateRequestDTO request = new PacienteCreateRequestDTO();
-        request.setName("Maria Souza");
-        request.setBirthDate(LocalDate.of(1990, 5, 20));
-        request.setGender(Sexo.FEMININO);
-        request.setHeight(new BigDecimal("1.65"));
-        request.setWeight(new BigDecimal("62.50"));
-        request.setGoal(Objetivo.EMAGRECIMENTO);
-        request.setActivityLevel(NivelAtividade.MODERADAMENTE_ATIVO);
+        request.setNome("Maria Souza");
+        request.setDataNascimento(LocalDate.of(1990, 5, 20));
+        request.setSexo(Sexo.FEMININO);
+        request.setAltura(new BigDecimal("1.65"));
+        request.setPeso(new BigDecimal("62.50"));
+        request.setObjetivo(Objetivo.EMAGRECIMENTO);
+        request.setNivelAtividade(NivelAtividade.MODERADAMENTE_ATIVO);
         return request;
     }
 
@@ -99,20 +99,20 @@ class PacienteServiceTest {
         PacienteResponseDTO response = pacienteService.create(validCreateRequest());
 
         assertThat(response.getId()).isEqualTo(1L);
-        assertThat(response.getName()).isEqualTo("Maria Souza");
+        assertThat(response.getNome()).isEqualTo("Maria Souza");
     }
 
     static Stream<Arguments> invalidCreateRequests() {
         return Stream.of(
-                Arguments.of("blank name", (java.util.function.Consumer<PacienteCreateRequestDTO>) r -> r.setName("  ")),
-                Arguments.of("null name", (java.util.function.Consumer<PacienteCreateRequestDTO>) r -> r.setName(null)),
-                Arguments.of("future birthDate", (java.util.function.Consumer<PacienteCreateRequestDTO>) r -> r.setBirthDate(LocalDate.now().plusDays(1))),
-                Arguments.of("zero height", (java.util.function.Consumer<PacienteCreateRequestDTO>) r -> r.setHeight(BigDecimal.ZERO)),
-                Arguments.of("negative height", (java.util.function.Consumer<PacienteCreateRequestDTO>) r -> r.setHeight(new BigDecimal("-1.70"))),
-                Arguments.of("zero weight", (java.util.function.Consumer<PacienteCreateRequestDTO>) r -> r.setWeight(BigDecimal.ZERO)),
-                Arguments.of("negative weight", (java.util.function.Consumer<PacienteCreateRequestDTO>) r -> r.setWeight(new BigDecimal("-60"))),
-                Arguments.of("zero manualDailyCalories", (java.util.function.Consumer<PacienteCreateRequestDTO>) r -> r.setManualDailyCalories(BigDecimal.ZERO)),
-                Arguments.of("negative manualDailyCalories", (java.util.function.Consumer<PacienteCreateRequestDTO>) r -> r.setManualDailyCalories(new BigDecimal("-500")))
+                Arguments.of("blank name", (java.util.function.Consumer<PacienteCreateRequestDTO>) r -> r.setNome("  ")),
+                Arguments.of("null name", (java.util.function.Consumer<PacienteCreateRequestDTO>) r -> r.setNome(null)),
+                Arguments.of("future birthDate", (java.util.function.Consumer<PacienteCreateRequestDTO>) r -> r.setDataNascimento(LocalDate.now().plusDays(1))),
+                Arguments.of("zero height", (java.util.function.Consumer<PacienteCreateRequestDTO>) r -> r.setAltura(BigDecimal.ZERO)),
+                Arguments.of("negative height", (java.util.function.Consumer<PacienteCreateRequestDTO>) r -> r.setAltura(new BigDecimal("-1.70"))),
+                Arguments.of("zero weight", (java.util.function.Consumer<PacienteCreateRequestDTO>) r -> r.setPeso(BigDecimal.ZERO)),
+                Arguments.of("negative weight", (java.util.function.Consumer<PacienteCreateRequestDTO>) r -> r.setPeso(new BigDecimal("-60"))),
+                Arguments.of("zero manualDailyCalories", (java.util.function.Consumer<PacienteCreateRequestDTO>) r -> r.setCaloriasDiariasManuais(BigDecimal.ZERO)),
+                Arguments.of("negative manualDailyCalories", (java.util.function.Consumer<PacienteCreateRequestDTO>) r -> r.setCaloriasDiariasManuais(new BigDecimal("-500")))
         );
     }
 
@@ -132,69 +132,69 @@ class PacienteServiceTest {
     @Test
     void shouldPopulateCalculatedFieldsOnCreate() {
         PacienteCreateRequestDTO request = validCreateRequest();
-        request.setBirthDate(LocalDate.now().minusYears(30));
-        request.setWeight(new BigDecimal("80"));
-        request.setHeight(new BigDecimal("1.80"));
-        request.setGender(Sexo.MASCULINO);
-        request.setActivityLevel(NivelAtividade.SEDENTARIO);
+        request.setDataNascimento(LocalDate.now().minusYears(30));
+        request.setPeso(new BigDecimal("80"));
+        request.setAltura(new BigDecimal("1.80"));
+        request.setSexo(Sexo.MASCULINO);
+        request.setNivelAtividade(NivelAtividade.SEDENTARIO);
 
         PacienteResponseDTO response = pacienteService.create(request);
 
-        assertThat(response.getAge()).isEqualTo(30);
-        assertThat(response.getBmi()).isEqualByComparingTo("24.69");
-        assertThat(response.getBmiClassification()).isEqualTo("imc.classificacao.normal");
+        assertThat(response.getIdade()).isEqualTo(30);
+        assertThat(response.getImc()).isEqualByComparingTo("24.69");
+        assertThat(response.getClassificacaoImc()).isEqualTo("imc.classificacao.normal");
         // Mifflin-St Jeor: 10*80 + 6.25*180 - 5*30 + 5 = 1780
-        assertThat(response.getBmr()).isEqualByComparingTo("1780.00");
+        assertThat(response.getTaxaMetabolicaBasal()).isEqualByComparingTo("1780.00");
         // TDEE = BMR * fator sedentário (1.2)
-        assertThat(response.getDailyCalorieExpenditure()).isEqualByComparingTo("2136.00");
+        assertThat(response.getGastoCaloricoDiario()).isEqualByComparingTo("2136.00");
     }
 
     @Test
     void shouldUseManualDailyCaloriesInsteadOfCalculatedWhenProvided() {
         PacienteCreateRequestDTO request = validCreateRequest();
-        request.setManualDailyCalories(new BigDecimal("3000"));
+        request.setCaloriasDiariasManuais(new BigDecimal("3000"));
 
         PacienteResponseDTO response = pacienteService.create(request);
 
-        assertThat(response.getDailyCalorieExpenditure()).isEqualByComparingTo("3000");
+        assertThat(response.getGastoCaloricoDiario()).isEqualByComparingTo("3000");
     }
 
-    private PerfilNutricional existingProfile(Long patientId, String name, Sexo gender, Objetivo goal, NivelAtividade activityLevel) {
+    private PerfilNutricional perfilExistente(Long pacienteId, String nome, Sexo sexo, Objetivo objetivo, NivelAtividade nivelAtividade) {
         Paciente paciente = Paciente.builder()
-                .id(patientId)
-                .nome(name)
+                .id(pacienteId)
+                .nome(nome)
                 .dataNascimento(LocalDate.of(1985, 1, 1))
-                .sexo(gender)
+                .sexo(sexo)
                 .build();
         return PerfilNutricional.builder()
                 .id(50L)
                 .paciente(paciente)
                 .altura(new BigDecimal("1.80"))
                 .peso(new BigDecimal("90.00"))
-                .objetivo(goal)
-                .nivelAtividade(activityLevel)
+                .objetivo(objetivo)
+                .nivelAtividade(nivelAtividade)
                 .build();
     }
 
     @Test
     void shouldUpdateExistingPatient() {
-        PerfilNutricional existing = existingProfile(1L, "Old Name", Sexo.MASCULINO, Objetivo.MANUTENCAO_PESO, NivelAtividade.SEDENTARIO);
+        PerfilNutricional existing = perfilExistente(1L, "Old Name", Sexo.MASCULINO, Objetivo.MANUTENCAO_PESO, NivelAtividade.SEDENTARIO);
         when(perfilNutricionalRepository.findByPacienteId(1L)).thenReturn(Optional.of(existing));
 
         PacienteUpdateRequestDTO request = new PacienteUpdateRequestDTO();
-        request.setName("New Name");
-        request.setBirthDate(LocalDate.of(1985, 1, 1));
-        request.setGender(Sexo.MASCULINO);
-        request.setHeight(new BigDecimal("1.80"));
-        request.setWeight(new BigDecimal("88.00"));
-        request.setGoal(Objetivo.EMAGRECIMENTO);
-        request.setActivityLevel(NivelAtividade.LEVEMENTE_ATIVO);
+        request.setNome("New Name");
+        request.setDataNascimento(LocalDate.of(1985, 1, 1));
+        request.setSexo(Sexo.MASCULINO);
+        request.setAltura(new BigDecimal("1.80"));
+        request.setPeso(new BigDecimal("88.00"));
+        request.setObjetivo(Objetivo.EMAGRECIMENTO);
+        request.setNivelAtividade(NivelAtividade.LEVEMENTE_ATIVO);
 
         PacienteResponseDTO response = pacienteService.update(1L, request);
 
-        assertThat(response.getName()).isEqualTo("New Name");
-        assertThat(response.getWeight()).isEqualByComparingTo("88.00");
-        assertThat(response.getGoal()).isEqualTo(Objetivo.EMAGRECIMENTO);
+        assertThat(response.getNome()).isEqualTo("New Name");
+        assertThat(response.getPeso()).isEqualByComparingTo("88.00");
+        assertThat(response.getObjetivo()).isEqualTo(Objetivo.EMAGRECIMENTO);
     }
 
     @Test
@@ -225,7 +225,7 @@ class PacienteServiceTest {
 
     @Test
     void shouldDeleteOnlyNutritionProfileAndPreservePatientCore() {
-        PerfilNutricional existing = existingProfile(1L, "Maria Souza", Sexo.FEMININO, Objetivo.MANUTENCAO_PESO, NivelAtividade.SEDENTARIO);
+        PerfilNutricional existing = perfilExistente(1L, "Maria Souza", Sexo.FEMININO, Objetivo.MANUTENCAO_PESO, NivelAtividade.SEDENTARIO);
         when(perfilNutricionalRepository.findByPacienteId(1L)).thenReturn(Optional.of(existing));
 
         pacienteService.delete(1L);
@@ -237,13 +237,13 @@ class PacienteServiceTest {
 
     private PacienteUpdateRequestDTO validUpdateRequest() {
         PacienteUpdateRequestDTO request = new PacienteUpdateRequestDTO();
-        request.setName("Someone");
-        request.setBirthDate(LocalDate.of(1990, 1, 1));
-        request.setGender(Sexo.MASCULINO);
-        request.setHeight(new BigDecimal("1.75"));
-        request.setWeight(new BigDecimal("75.00"));
-        request.setGoal(Objetivo.MANUTENCAO_PESO);
-        request.setActivityLevel(NivelAtividade.SEDENTARIO);
+        request.setNome("Someone");
+        request.setDataNascimento(LocalDate.of(1990, 1, 1));
+        request.setSexo(Sexo.MASCULINO);
+        request.setAltura(new BigDecimal("1.75"));
+        request.setPeso(new BigDecimal("75.00"));
+        request.setObjetivo(Objetivo.MANUTENCAO_PESO);
+        request.setNivelAtividade(NivelAtividade.SEDENTARIO);
         return request;
     }
 }

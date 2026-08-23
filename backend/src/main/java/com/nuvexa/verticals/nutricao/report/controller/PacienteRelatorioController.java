@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/patients/report")
+@RequestMapping("/api/v1/pacientes/relatorio")
 @RequiredArgsConstructor
 public class PacienteRelatorioController {
 
@@ -25,32 +25,32 @@ public class PacienteRelatorioController {
 
     @GetMapping
     public RelatorioResponseDTO<PacienteRelatorioLinhaDTO> generate(
-            @RequestParam(required = false) String search,
-            @RequestParam(required = false) Sexo gender,
-            @RequestParam(required = false) Objetivo goal,
-            @RequestParam(required = false) NivelAtividade activityLevel) {
-        return pacienteRelatorioService.generate(toFilter(search, gender, goal, activityLevel));
+            @RequestParam(required = false) String busca,
+            @RequestParam(required = false) Sexo sexo,
+            @RequestParam(required = false) Objetivo objetivo,
+            @RequestParam(required = false) NivelAtividade nivelAtividade) {
+        return pacienteRelatorioService.generate(toFiltro(busca, sexo, objetivo, nivelAtividade));
     }
 
     @GetMapping("/excel")
     public ResponseEntity<byte[]> generateExcel(
-            @RequestParam(required = false) String search,
-            @RequestParam(required = false) Sexo gender,
-            @RequestParam(required = false) Objetivo goal,
-            @RequestParam(required = false) NivelAtividade activityLevel) {
-        byte[] excel = pacienteRelatorioService.generateExcel(toFilter(search, gender, goal, activityLevel));
+            @RequestParam(required = false) String busca,
+            @RequestParam(required = false) Sexo sexo,
+            @RequestParam(required = false) Objetivo objetivo,
+            @RequestParam(required = false) NivelAtividade nivelAtividade) {
+        byte[] excel = pacienteRelatorioService.generateExcel(toFiltro(busca, sexo, objetivo, nivelAtividade));
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"relatorio-pacientes.xlsx\"")
                 .body(excel);
     }
 
-    private PacienteRelatorioFiltroDTO toFilter(String search, Sexo gender, Objetivo goal, NivelAtividade activityLevel) {
+    private PacienteRelatorioFiltroDTO toFiltro(String busca, Sexo sexo, Objetivo objetivo, NivelAtividade nivelAtividade) {
         return PacienteRelatorioFiltroDTO.builder()
-                .search(search)
-                .gender(gender)
-                .goal(goal)
-                .activityLevel(activityLevel)
+                .busca(busca)
+                .sexo(sexo)
+                .objetivo(objetivo)
+                .nivelAtividade(nivelAtividade)
                 .build();
     }
 }

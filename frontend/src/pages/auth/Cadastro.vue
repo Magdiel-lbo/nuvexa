@@ -3,19 +3,19 @@
     <h1 class="authf-title">{{ $t('auth.criarConta') }}</h1>
     <p class="authf-subtitle">{{ $t('auth.criarSubtitulo') }}</p>
 
-    <form class="authf-fields" @submit.prevent="registrar">
+    <form class="authf-fields" @submit.prevent="cadastrar">
       <div class="authf-field">
         <label class="authf-label" for="register-nome">{{ $t('auth.nomeCompleto') }}</label>
         <input
           id="register-nome"
-          v-model="name"
+          v-model="nome"
           type="text"
           autocomplete="name"
           placeholder="Dra. Ana Ribeiro"
           class="authf-input"
-          :class="{ 'authf-input--error': tentouEnviar && erros.name }"
+          :class="{ 'authf-input--error': tentouEnviar && erros.nome }"
         />
-        <span v-if="tentouEnviar && erros.name" class="authf-error">{{ erros.name }}</span>
+        <span v-if="tentouEnviar && erros.nome" class="authf-error">{{ erros.nome }}</span>
       </div>
 
       <div class="authf-field">
@@ -47,14 +47,14 @@
         <label class="authf-label" for="register-senha">{{ $t('auth.senha') }}</label>
         <input
           id="register-senha"
-          v-model="password"
+          v-model="senha"
           type="password"
           autocomplete="new-password"
           placeholder="Mínimo 8 caracteres"
           class="authf-input"
-          :class="{ 'authf-input--error': tentouEnviar && erros.password }"
+          :class="{ 'authf-input--error': tentouEnviar && erros.senha }"
         />
-        <span v-if="tentouEnviar && erros.password" class="authf-error">{{ erros.password }}</span>
+        <span v-if="tentouEnviar && erros.senha" class="authf-error">{{ erros.senha }}</span>
       </div>
 
       <label class="authf-checkbox-label authf-checkbox-label--terms">
@@ -95,30 +95,30 @@ import { useAuthStore } from '../../store/auth.store'
 import { useAppStore } from '../../store/app.store'
 import { extrairMensagemErro } from '../../util/api-util'
 
-@Component({ name: 'Register' })
-export default class Register extends Vue {
-  name = ''
+@Component({ name: 'Cadastro' })
+export default class Cadastro extends Vue {
+  nome = ''
   email = ''
   registroProfissional = ''
-  password = ''
+  senha = ''
   aceitouTermos = false
   carregando = false
   tentouEnviar = false
 
   get erros() {
     const erros: Record<string, string> = {}
-    if (!this.name) {
-      erros.name = this.$t('validacao.obrigatorio') as string
+    if (!this.nome) {
+      erros.nome = this.$t('validacao.obrigatorio') as string
     }
     if (!this.email) {
       erros.email = this.$t('validacao.obrigatorio') as string
     } else if (!/.+@.+\..+/.test(this.email)) {
       erros.email = this.$t('validacao.emailInvalido') as string
     }
-    if (!this.password) {
-      erros.password = this.$t('validacao.obrigatorio') as string
-    } else if (this.password.length < 8) {
-      erros.password = this.$t('validacao.senhaMinima') as string
+    if (!this.senha) {
+      erros.senha = this.$t('validacao.obrigatorio') as string
+    } else if (this.senha.length < 8) {
+      erros.senha = this.$t('validacao.senhaMinima') as string
     }
     if (!this.aceitouTermos) {
       erros.termos = this.$t('validacao.obrigatorio') as string
@@ -138,7 +138,7 @@ export default class Register extends Vue {
     this.appStore.setToast({ mensagem: this.$t('auth.googleEmBreve') as string, erro: false })
   }
 
-  async registrar() {
+  async cadastrar() {
     this.tentouEnviar = true
     if (Object.keys(this.erros).length > 0) {
       return
@@ -146,8 +146,8 @@ export default class Register extends Vue {
 
     this.carregando = true
     try {
-      const response = await authService.registrar({ name: this.name, email: this.email, password: this.password })
-      this.authStore.setSession(response.token, response.role)
+      const response = await authService.cadastrar({ nome: this.nome, email: this.email, senha: this.senha })
+      this.authStore.setSession(response.token, response.perfil)
       this.appStore.setToast({ mensagem: this.$t('sucesso.contaCriada') as string, erro: false })
       this.$router.push('/')
     } catch (e) {

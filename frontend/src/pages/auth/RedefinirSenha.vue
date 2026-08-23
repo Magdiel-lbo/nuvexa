@@ -10,28 +10,28 @@
         <label class="authf-label" for="reset-nova-senha">{{ $t('auth.novaSenha') }}</label>
         <input
           id="reset-nova-senha"
-          v-model="newPassword"
+          v-model="novaSenha"
           type="password"
           autocomplete="new-password"
           placeholder="Mínimo 8 caracteres"
           class="authf-input"
-          :class="{ 'authf-input--error': tentouEnviar && erros.newPassword }"
+          :class="{ 'authf-input--error': tentouEnviar && erros.novaSenha }"
         />
-        <span v-if="tentouEnviar && erros.newPassword" class="authf-error">{{ erros.newPassword }}</span>
+        <span v-if="tentouEnviar && erros.novaSenha" class="authf-error">{{ erros.novaSenha }}</span>
       </div>
 
       <div class="authf-field">
         <label class="authf-label" for="reset-confirmar-senha">{{ $t('auth.confirmarSenha') }}</label>
         <input
           id="reset-confirmar-senha"
-          v-model="confirmPassword"
+          v-model="confirmarSenha"
           type="password"
           autocomplete="new-password"
           placeholder="••••••••"
           class="authf-input"
-          :class="{ 'authf-input--error': tentouEnviar && erros.confirmPassword }"
+          :class="{ 'authf-input--error': tentouEnviar && erros.confirmarSenha }"
         />
-        <span v-if="tentouEnviar && erros.confirmPassword" class="authf-error">{{ erros.confirmPassword }}</span>
+        <span v-if="tentouEnviar && erros.confirmarSenha" class="authf-error">{{ erros.confirmarSenha }}</span>
       </div>
 
       <button type="submit" class="authf-btn" :disabled="carregando">
@@ -52,24 +52,24 @@ import authService from '../../service/auth-service'
 import { useAppStore } from '../../store/app.store'
 import { extrairMensagemErro } from '../../util/api-util'
 
-@Component({ name: 'ResetPassword' })
-export default class ResetPassword extends Vue {
-  newPassword = ''
-  confirmPassword = ''
+@Component({ name: 'RedefinirSenha' })
+export default class RedefinirSenha extends Vue {
+  novaSenha = ''
+  confirmarSenha = ''
   carregando = false
   tentouEnviar = false
 
   get erros() {
     const erros: Record<string, string> = {}
-    if (!this.newPassword) {
-      erros.newPassword = this.$t('validacao.obrigatorio') as string
-    } else if (this.newPassword.length < 8) {
-      erros.newPassword = this.$t('validacao.senhaMinima') as string
+    if (!this.novaSenha) {
+      erros.novaSenha = this.$t('validacao.obrigatorio') as string
+    } else if (this.novaSenha.length < 8) {
+      erros.novaSenha = this.$t('validacao.senhaMinima') as string
     }
-    if (!this.confirmPassword) {
-      erros.confirmPassword = this.$t('validacao.obrigatorio') as string
-    } else if (this.confirmPassword !== this.newPassword) {
-      erros.confirmPassword = this.$t('validacao.senhasNaoConferem') as string
+    if (!this.confirmarSenha) {
+      erros.confirmarSenha = this.$t('validacao.obrigatorio') as string
+    } else if (this.confirmarSenha !== this.novaSenha) {
+      erros.confirmarSenha = this.$t('validacao.senhasNaoConferem') as string
     }
     return erros
   }
@@ -90,7 +90,7 @@ export default class ResetPassword extends Vue {
 
     this.carregando = true
     try {
-      await authService.redefinirSenha({ token: this.token, newPassword: this.newPassword })
+      await authService.redefinirSenha({ token: this.token, novaSenha: this.novaSenha })
       this.appStore.setToast({ mensagem: this.$t('sucesso.senhaRedefinida') as string, erro: false })
       this.$router.push('/login')
     } catch (e) {

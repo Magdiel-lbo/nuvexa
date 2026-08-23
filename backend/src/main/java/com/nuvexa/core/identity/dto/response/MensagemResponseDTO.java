@@ -1,4 +1,4 @@
 package com.nuvexa.core.identity.dto.response;
 
-public record MensagemResponseDTO(String message) {
+public record MensagemResponseDTO(String mensagem) {
 }

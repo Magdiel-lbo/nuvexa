@@ -7,19 +7,19 @@ import java.util.function.Function;
 @Getter
 public class RelatorioColuna<T> {
 
-    private final String key;
-    private final String label;
-    private final int order;
-    private final Function<T, Object> valueExtractor;
+    private final String chave;
+    private final String rotulo;
+    private final int ordem;
+    private final Function<T, Object> extratorValor;
 
-    private RelatorioColuna(String key, String label, int order, Function<T, Object> valueExtractor) {
-        this.key = key;
-        this.label = label;
-        this.order = order;
-        this.valueExtractor = valueExtractor;
+    private RelatorioColuna(String chave, String rotulo, int ordem, Function<T, Object> extratorValor) {
+        this.chave = chave;
+        this.rotulo = rotulo;
+        this.ordem = ordem;
+        this.extratorValor = extratorValor;
     }
 
-    public static <T> RelatorioColuna<T> of(String key, String label, int order, Function<T, Object> valueExtractor) {
-        return new RelatorioColuna<>(key, label, order, valueExtractor);
+    public static <T> RelatorioColuna<T> of(String chave, String rotulo, int ordem, Function<T, Object> extratorValor) {
+        return new RelatorioColuna<>(chave, rotulo, ordem, extratorValor);
     }
 }

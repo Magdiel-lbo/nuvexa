@@ -16,26 +16,26 @@ public class ImcCalculator {
 
     private final MessageSource messageSource;
 
-    public BigDecimal calculate(BigDecimal weightKg, BigDecimal heightM) {
-        BigDecimal heightSquared = heightM.multiply(heightM);
-        return weightKg.divide(heightSquared, 2, RoundingMode.HALF_UP);
+    public BigDecimal calculate(BigDecimal pesoKg, BigDecimal alturaM) {
+        BigDecimal alturaAoQuadrado = alturaM.multiply(alturaM);
+        return pesoKg.divide(alturaAoQuadrado, 2, RoundingMode.HALF_UP);
     }
 
-    public String classify(BigDecimal bmi) {
-        String key;
-        if (bmi.compareTo(new BigDecimal("18.5")) < 0) {
-            key = "imc.classificacao.abaixoPeso";
-        } else if (bmi.compareTo(new BigDecimal("25.0")) < 0) {
-            key = "imc.classificacao.normal";
-        } else if (bmi.compareTo(new BigDecimal("30.0")) < 0) {
-            key = "imc.classificacao.sobrepeso";
-        } else if (bmi.compareTo(new BigDecimal("35.0")) < 0) {
-            key = "imc.classificacao.obesidadeGrau1";
-        } else if (bmi.compareTo(new BigDecimal("40.0")) < 0) {
-            key = "imc.classificacao.obesidadeGrau2";
+    public String classify(BigDecimal imc) {
+        String chave;
+        if (imc.compareTo(new BigDecimal("18.5")) < 0) {
+            chave = "imc.classificacao.abaixoPeso";
+        } else if (imc.compareTo(new BigDecimal("25.0")) < 0) {
+            chave = "imc.classificacao.normal";
+        } else if (imc.compareTo(new BigDecimal("30.0")) < 0) {
+            chave = "imc.classificacao.sobrepeso";
+        } else if (imc.compareTo(new BigDecimal("35.0")) < 0) {
+            chave = "imc.classificacao.obesidadeGrau1";
+        } else if (imc.compareTo(new BigDecimal("40.0")) < 0) {
+            chave = "imc.classificacao.obesidadeGrau2";
         } else {
-            key = "imc.classificacao.obesidadeGrau3";
+            chave = "imc.classificacao.obesidadeGrau3";
         }
-        return messageSource.getMessage(key, null, MESSAGE_LOCALE);
+        return messageSource.getMessage(chave, null, MESSAGE_LOCALE);
     }
 }

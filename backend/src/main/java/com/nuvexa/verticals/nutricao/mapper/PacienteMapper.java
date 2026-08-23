@@ -12,54 +12,54 @@ public class PacienteMapper {
 
     public Paciente toPaciente(PacienteCreateRequestDTO request) {
         return Paciente.builder()
-                .nome(request.getName())
-                .dataNascimento(request.getBirthDate())
-                .sexo(request.getGender())
+                .nome(request.getNome())
+                .dataNascimento(request.getDataNascimento())
+                .sexo(request.getSexo())
                 .build();
     }
 
     public PerfilNutricional toPerfilNutricional(PacienteCreateRequestDTO request, Paciente paciente) {
         return PerfilNutricional.builder()
                 .paciente(paciente)
-                .altura(request.getHeight())
-                .peso(request.getWeight())
-                .objetivo(request.getGoal())
-                .nivelAtividade(request.getActivityLevel())
-                .caloriasDiariasManuais(request.getManualDailyCalories())
-                .observacoes(request.getNotes())
+                .altura(request.getAltura())
+                .peso(request.getPeso())
+                .objetivo(request.getObjetivo())
+                .nivelAtividade(request.getNivelAtividade())
+                .caloriasDiariasManuais(request.getCaloriasDiariasManuais())
+                .observacoes(request.getObservacoes())
                 .build();
     }
 
     public void updatePaciente(PacienteUpdateRequestDTO request, Paciente paciente) {
-        paciente.setNome(request.getName());
-        paciente.setDataNascimento(request.getBirthDate());
-        paciente.setSexo(request.getGender());
+        paciente.setNome(request.getNome());
+        paciente.setDataNascimento(request.getDataNascimento());
+        paciente.setSexo(request.getSexo());
     }
 
     public void updatePerfilNutricional(PacienteUpdateRequestDTO request, PerfilNutricional perfilNutricional) {
-        perfilNutricional.setAltura(request.getHeight());
-        perfilNutricional.setPeso(request.getWeight());
-        perfilNutricional.setObjetivo(request.getGoal());
-        perfilNutricional.setNivelAtividade(request.getActivityLevel());
-        perfilNutricional.setCaloriasDiariasManuais(request.getManualDailyCalories());
-        perfilNutricional.setObservacoes(request.getNotes());
+        perfilNutricional.setAltura(request.getAltura());
+        perfilNutricional.setPeso(request.getPeso());
+        perfilNutricional.setObjetivo(request.getObjetivo());
+        perfilNutricional.setNivelAtividade(request.getNivelAtividade());
+        perfilNutricional.setCaloriasDiariasManuais(request.getCaloriasDiariasManuais());
+        perfilNutricional.setObservacoes(request.getObservacoes());
     }
 
     public PacienteResponseDTO toResponse(PerfilNutricional perfilNutricional) {
         Paciente paciente = perfilNutricional.getPaciente();
         return PacienteResponseDTO.builder()
                 .id(paciente.getId())
-                .name(paciente.getNome())
-                .birthDate(paciente.getDataNascimento())
-                .gender(paciente.getSexo())
-                .height(perfilNutricional.getAltura())
-                .weight(perfilNutricional.getPeso())
-                .goal(perfilNutricional.getObjetivo())
-                .activityLevel(perfilNutricional.getNivelAtividade())
-                .manualDailyCalories(perfilNutricional.getCaloriasDiariasManuais())
-                .notes(perfilNutricional.getObservacoes())
-                .createdAt(perfilNutricional.getCriadoEm())
-                .updatedAt(perfilNutricional.getAtualizadoEm())
+                .nome(paciente.getNome())
+                .dataNascimento(paciente.getDataNascimento())
+                .sexo(paciente.getSexo())
+                .altura(perfilNutricional.getAltura())
+                .peso(perfilNutricional.getPeso())
+                .objetivo(perfilNutricional.getObjetivo())
+                .nivelAtividade(perfilNutricional.getNivelAtividade())
+                .caloriasDiariasManuais(perfilNutricional.getCaloriasDiariasManuais())
+                .observacoes(perfilNutricional.getObservacoes())
+                .criadoEm(perfilNutricional.getCriadoEm())
+                .atualizadoEm(perfilNutricional.getAtualizadoEm())
                 .build();
     }
 }

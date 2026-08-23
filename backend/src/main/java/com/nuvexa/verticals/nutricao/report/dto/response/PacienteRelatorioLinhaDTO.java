@@ -19,12 +19,12 @@ import java.math.BigDecimal;
 public class PacienteRelatorioLinhaDTO {
 
     private Long id;
-    private String name;
-    private Integer age;
-    private Sexo gender;
-    private Objetivo goal;
-    private NivelAtividade activityLevel;
-    private BigDecimal bmi;
-    private String bmiClassification;
-    private BigDecimal dailyCalorieExpenditure;
+    private String nome;
+    private Integer idade;
+    private Sexo sexo;
+    private Objetivo objetivo;
+    private NivelAtividade nivelAtividade;
+    private BigDecimal imc;
+    private String classificacaoImc;
+    private BigDecimal gastoCaloricoDiario;
 }

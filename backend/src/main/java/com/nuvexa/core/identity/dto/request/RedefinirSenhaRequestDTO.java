@@ -20,5 +20,5 @@ public class RedefinirSenhaRequestDTO {
 
     @NotBlank(message = "{autenticacao.senha.obrigatoria}")
     @Size(min = 8, message = "{autenticacao.senha.invalida}")
-    private String newPassword;
+    private String novaSenha;
 }

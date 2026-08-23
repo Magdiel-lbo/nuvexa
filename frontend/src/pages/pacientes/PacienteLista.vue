@@ -1,7 +1,7 @@
 <template>
-  <div class="patient-lista">
-    <div class="patient-lista__header">
-      <h1 class="patient-lista__title">{{ $t('paciente.titulo') }}</h1>
+  <div class="paciente-lista">
+    <div class="paciente-lista__header">
+      <h1 class="paciente-lista__title">{{ $t('paciente.titulo') }}</h1>
       <v-btn color="primary" prepend-icon="mdi-plus" size="large" @click="novo">{{ $t('paciente.novo') }}</v-btn>
     </div>
 
@@ -14,16 +14,16 @@
       hide-details
       clearable
       append-inner-icon="mdi-magnify"
-      class="nuvexa-field patient-lista__search"
+      class="nuvexa-field paciente-lista__search"
       @keyup.enter="carregar"
       @click:append-inner="carregar"
       @click:clear="onClearBusca"
     />
 
-    <v-card variant="flat" color="surface-variant" class="patient-lista__table-card">
+    <v-card variant="flat" color="surface-variant" class="paciente-lista__table-card">
       <v-data-table :headers="headers" :items="pacientes" :loading="loading" :no-data-text="$t('paciente.nenhumEncontrado')">
-        <template #item.gender="{ item }">{{ rotulos[item.gender] ?? item.gender }}</template>
-        <template #item.goal="{ item }">{{ rotulos[item.goal] ?? item.goal }}</template>
+        <template #item.sexo="{ item }">{{ rotulos[item.sexo] ?? item.sexo }}</template>
+        <template #item.objetivo="{ item }">{{ rotulos[item.objetivo] ?? item.objetivo }}</template>
         <template #item.acoes="{ item }">
           <div class="d-flex justify-end ga-1">
             <v-tooltip :text="$t('dashboardPacientes.acoes.visualizar')" location="top">
@@ -50,25 +50,25 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-facing-decorator'
-import patientService from '../../service/patient-service'
-import type { PatientResponse } from '../../types/patient'
+import pacienteService from '../../service/paciente-service'
+import type { PacienteResponse } from '../../types/paciente'
 import { extrairMensagemErro } from '../../util/api-util'
 import { useAppStore } from '../../store/app.store'
 import { carregarRotulosEnum } from '../../util/enum-rotulos'
 
-@Component({ name: 'PatientLista' })
-export default class PatientLista extends Vue {
-  pacientes: PatientResponse[] = []
+@Component({ name: 'PacienteLista' })
+export default class PacienteLista extends Vue {
+  pacientes: PacienteResponse[] = []
   rotulos: Record<string, string> = {}
   busca = ''
   loading = false
 
   get headers() {
     return [
-      { title: this.$t('paciente.nome'), key: 'name' },
-      { title: this.$t('paciente.sexo'), key: 'gender' },
-      { title: this.$t('paciente.objetivo'), key: 'goal' },
-      { title: this.$t('paciente.imc'), key: 'bmi' },
+      { title: this.$t('paciente.nome'), key: 'nome' },
+      { title: this.$t('paciente.sexo'), key: 'sexo' },
+      { title: this.$t('paciente.objetivo'), key: 'objetivo' },
+      { title: this.$t('paciente.imc'), key: 'imc' },
       { title: '', key: 'acoes', sortable: false, align: 'end' as const },
     ]
   }
@@ -85,7 +85,7 @@ export default class PatientLista extends Vue {
   async carregar() {
     this.loading = true
     try {
-      this.pacientes = await patientService.listar(this.busca || undefined)
+      this.pacientes = await pacienteService.listar(this.busca || undefined)
     } catch (e) {
       this.appStore.setToast({ mensagem: extrairMensagemErro(e, this.$t('erro.carregarPacientes') as string), erro: true })
     } finally {
@@ -99,15 +99,15 @@ export default class PatientLista extends Vue {
   }
 
   novo() {
-    this.$router.push('/patients/new')
+    this.$router.push('/pacientes/novo')
   }
 
   visualizar(id: number) {
-    this.$router.push(`/patients/${id}`)
+    this.$router.push(`/pacientes/${id}`)
   }
 
   editar(id: number) {
-    this.$router.push(`/patients/${id}/edit`)
+    this.$router.push(`/pacientes/${id}/editar`)
   }
 
   async excluir(id: number) {
@@ -115,7 +115,7 @@ export default class PatientLista extends Vue {
       return
     }
     try {
-      await patientService.remover(id)
+      await pacienteService.remover(id)
       this.appStore.setToast({ mensagem: this.$t('sucesso.excluido') as string, erro: false })
       await this.carregar()
     } catch (e) {
@@ -128,7 +128,7 @@ export default class PatientLista extends Vue {
 <style scoped lang="scss">
 @use '../../components/common/nuvexa-field.scss';
 
-.patient-lista__header {
+.paciente-lista__header {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
@@ -137,19 +137,19 @@ export default class PatientLista extends Vue {
   margin-bottom: 24px;
 }
 
-.patient-lista__title {
+.paciente-lista__title {
   font-size: 1.75rem;
   font-weight: 700;
   margin: 0;
 }
 
-.patient-lista__search {
+.paciente-lista__search {
   flex: 1 1 240px;
   max-width: 320px;
   margin-bottom: 24px;
 }
 
-.patient-lista__table-card {
+.paciente-lista__table-card {
   border-radius: 12px;
 }
 </style>

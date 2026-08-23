@@ -1,7 +1,7 @@
 package com.nuvexa.verticals.nutricao.dto.request;
 
-import com.nuvexa.verticals.nutricao.model.NivelAtividade;
 import com.nuvexa.core.paciente.model.Sexo;
+import com.nuvexa.verticals.nutricao.model.NivelAtividade;
 import com.nuvexa.verticals.nutricao.model.Objetivo;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -22,27 +22,27 @@ import java.time.LocalDate;
 public class PacienteCreateRequestDTO {
 
     @NotBlank(message = "{paciente.nome.obrigatorio}")
-    private String name;
+    private String nome;
 
     @NotNull(message = "{paciente.dataNascimento.obrigatoria}")
-    private LocalDate birthDate;
+    private LocalDate dataNascimento;
 
     @NotNull(message = "{paciente.sexo.obrigatorio}")
-    private Sexo gender;
+    private Sexo sexo;
 
     @NotNull(message = "{paciente.altura.obrigatoria}")
-    private BigDecimal height;
+    private BigDecimal altura;
 
     @NotNull(message = "{paciente.peso.obrigatorio}")
-    private BigDecimal weight;
+    private BigDecimal peso;
 
     @NotNull(message = "{paciente.objetivo.obrigatorio}")
-    private Objetivo goal;
+    private Objetivo objetivo;
 
     @NotNull(message = "{paciente.nivelAtividade.obrigatorio}")
-    private NivelAtividade activityLevel;
+    private NivelAtividade nivelAtividade;
 
-    private BigDecimal manualDailyCalories;
+    private BigDecimal caloriasDiariasManuais;
 
-    private String notes;
+    private String observacoes;
 }

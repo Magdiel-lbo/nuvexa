@@ -1,8 +1,8 @@
 <template>
-  <div class="patient-formulario">
+  <div class="paciente-formulario">
     <h1>{{ isEdicao ? $t('paciente.editar') : $t('paciente.novo') }}</h1>
     <p v-if="loading">...</p>
-    <PatientForm
+    <PacienteForm
       v-else
       v-model="form"
       :submit-label="(isEdicao ? $t('acao.salvar') : $t('acao.criar')) as string"
@@ -15,39 +15,39 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-facing-decorator'
-import PatientForm from './components/PatientForm.vue'
-import patientService from '../../service/patient-service'
+import PacienteForm from './components/PacienteForm.vue'
+import pacienteService from '../../service/paciente-service'
 import { extrairMensagemErro } from '../../util/api-util'
 import { useAppStore } from '../../store/app.store'
-import type { PatientCreateRequest } from '../../types/patient'
+import type { PacienteCreateRequest } from '../../types/paciente'
 
 @Component({
-  name: 'PatientFormulario',
-  components: { PatientForm },
+  name: 'PacienteFormulario',
+  components: { PacienteForm },
 })
-export default class PatientFormulario extends Vue {
-  form: PatientCreateRequest = {
-    name: '',
-    birthDate: '',
-    gender: 'FEMININO',
-    height: 0,
-    weight: 0,
-    goal: 'MANUTENCAO_PESO',
-    activityLevel: 'SEDENTARIO',
-    manualDailyCalories: null,
-    notes: null,
+export default class PacienteFormulario extends Vue {
+  form: PacienteCreateRequest = {
+    nome: '',
+    dataNascimento: '',
+    sexo: 'FEMININO',
+    altura: 0,
+    peso: 0,
+    objetivo: 'MANUTENCAO_PESO',
+    nivelAtividade: 'SEDENTARIO',
+    caloriasDiariasManuais: null,
+    observacoes: null,
   }
 
   loading = false
   salvando = false
 
-  get patientId(): number | null {
+  get pacienteId(): number | null {
     const id = this.$route.params.id as string | undefined
     return id ? Number(id) : null
   }
 
   get isEdicao(): boolean {
-    return this.patientId !== null
+    return this.pacienteId !== null
   }
 
   get appStore() {
@@ -55,22 +55,22 @@ export default class PatientFormulario extends Vue {
   }
 
   async mounted() {
-    if (!this.patientId) {
+    if (!this.pacienteId) {
       return
     }
     this.loading = true
     try {
-      const paciente = await patientService.buscarPorId(this.patientId)
+      const paciente = await pacienteService.buscarPorId(this.pacienteId)
       this.form = {
-        name: paciente.name,
-        birthDate: paciente.birthDate,
-        gender: paciente.gender,
-        height: paciente.height,
-        weight: paciente.weight,
-        goal: paciente.goal,
-        activityLevel: paciente.activityLevel,
-        manualDailyCalories: paciente.manualDailyCalories,
-        notes: paciente.notes,
+        nome: paciente.nome,
+        dataNascimento: paciente.dataNascimento,
+        sexo: paciente.sexo,
+        altura: paciente.altura,
+        peso: paciente.peso,
+        objetivo: paciente.objetivo,
+        nivelAtividade: paciente.nivelAtividade,
+        caloriasDiariasManuais: paciente.caloriasDiariasManuais,
+        observacoes: paciente.observacoes,
       }
     } catch (e) {
       this.appStore.setToast({ mensagem: extrairMensagemErro(e, this.$t('erro.carregarPaciente') as string), erro: true })
@@ -81,15 +81,15 @@ export default class PatientFormulario extends Vue {
 
   async salvar() {
     this.salvando = true
-    const payload: PatientCreateRequest = {
+    const payload: PacienteCreateRequest = {
       ...this.form,
-      manualDailyCalories: this.form.manualDailyCalories || null,
-      notes: this.form.notes || null,
+      caloriasDiariasManuais: this.form.caloriasDiariasManuais || null,
+      observacoes: this.form.observacoes || null,
     }
     try {
-      await patientService.salvar(this.patientId, payload)
+      await pacienteService.salvar(this.pacienteId, payload)
       this.appStore.setToast({ mensagem: this.$t('sucesso.salvo') as string, erro: false })
-      this.$router.push('/patients')
+      this.$router.push('/pacientes')
     } catch (e) {
       this.appStore.setToast({ mensagem: extrairMensagemErro(e, this.$t('erro.salvarPaciente') as string), erro: true })
     } finally {
@@ -98,7 +98,7 @@ export default class PatientFormulario extends Vue {
   }
 
   cancelar() {
-    this.$router.push('/patients')
+    this.$router.push('/pacientes')
   }
 }
 </script>

@@ -25,11 +25,11 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-facing-decorator'
-import patientService from '../../service/patient-service'
-import type { EnumOption, PatientReportResponse } from '../../types/patient'
+import pacienteService from '../../service/paciente-service'
+import type { EnumOpcao, PacienteRelatorioResponse } from '../../types/paciente'
 
-function toLabelMap(options: EnumOption[]): Record<string, string> {
-  return Object.fromEntries(options.map((option) => [option.value, option.label]))
+function toMapaRotulos(opcoes: EnumOpcao[]): Record<string, string> {
+  return Object.fromEntries(opcoes.map((opcao) => [opcao.valor, opcao.rotulo]))
 }
 
 @Component({ name: 'RelatorioPacientes' })
@@ -37,38 +37,38 @@ export default class RelatorioPacientes extends Vue {
   busca = ''
   carregando = false
   exportando = false
-  relatorio: PatientReportResponse = { columns: [], rows: [] }
-  generoLabels: Record<string, string> = {}
-  objetivoLabels: Record<string, string> = {}
-  nivelAtividadeLabels: Record<string, string> = {}
+  relatorio: PacienteRelatorioResponse = { colunas: [], linhas: [] }
+  rotulosSexo: Record<string, string> = {}
+  rotulosObjetivo: Record<string, string> = {}
+  rotulosNivelAtividade: Record<string, string> = {}
 
   get headers() {
-    return [...this.relatorio.columns]
-      .sort((a, b) => a.order - b.order)
-      .map((coluna) => ({ title: coluna.label, key: coluna.key }))
+    return [...this.relatorio.colunas]
+      .sort((a, b) => a.ordem - b.ordem)
+      .map((coluna) => ({ title: coluna.rotulo, key: coluna.chave }))
   }
 
   get linhasFormatadas() {
-    return this.relatorio.rows.map((linha) => ({
+    return this.relatorio.linhas.map((linha) => ({
       ...linha,
-      gender: this.generoLabels[linha.gender] ?? linha.gender,
-      goal: this.objetivoLabels[linha.goal] ?? linha.goal,
-      activityLevel: this.nivelAtividadeLabels[linha.activityLevel] ?? linha.activityLevel,
+      sexo: this.rotulosSexo[linha.sexo] ?? linha.sexo,
+      objetivo: this.rotulosObjetivo[linha.objetivo] ?? linha.objetivo,
+      nivelAtividade: this.rotulosNivelAtividade[linha.nivelAtividade] ?? linha.nivelAtividade,
     }))
   }
 
   async created() {
-    const enums = await patientService.enums()
-    this.generoLabels = toLabelMap(enums.genders)
-    this.objetivoLabels = toLabelMap(enums.goals)
-    this.nivelAtividadeLabels = toLabelMap(enums.activityLevels)
+    const enums = await pacienteService.enums()
+    this.rotulosSexo = toMapaRotulos(enums.sexos)
+    this.rotulosObjetivo = toMapaRotulos(enums.objetivos)
+    this.rotulosNivelAtividade = toMapaRotulos(enums.niveisAtividade)
     await this.carregar()
   }
 
   async carregar() {
     this.carregando = true
     try {
-      this.relatorio = await patientService.relatorio({ search: this.busca || undefined })
+      this.relatorio = await pacienteService.relatorio({ busca: this.busca || undefined })
     } finally {
       this.carregando = false
     }
@@ -77,7 +77,7 @@ export default class RelatorioPacientes extends Vue {
   async exportarExcel() {
     this.exportando = true
     try {
-      const blob = await patientService.relatorioExcel({ search: this.busca || undefined })
+      const blob = await pacienteService.relatorioExcel({ busca: this.busca || undefined })
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url

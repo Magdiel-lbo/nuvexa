@@ -37,7 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import(MessageConfig.class)
 class PacienteControllerTest {
 
-    private static final String BASE_URL = "/api/v1/patients";
+    private static final String BASE_URL = "/api/v1/pacientes";
 
     @Autowired
     private MockMvc mockMvc;
@@ -50,26 +50,26 @@ class PacienteControllerTest {
 
     private PacienteCreateRequestDTO validCreateRequest() {
         PacienteCreateRequestDTO request = new PacienteCreateRequestDTO();
-        request.setName("Maria Souza");
-        request.setBirthDate(LocalDate.of(1990, 5, 20));
-        request.setGender(Sexo.FEMININO);
-        request.setHeight(new BigDecimal("1.65"));
-        request.setWeight(new BigDecimal("62.50"));
-        request.setGoal(Objetivo.EMAGRECIMENTO);
-        request.setActivityLevel(NivelAtividade.MODERADAMENTE_ATIVO);
+        request.setNome("Maria Souza");
+        request.setDataNascimento(LocalDate.of(1990, 5, 20));
+        request.setSexo(Sexo.FEMININO);
+        request.setAltura(new BigDecimal("1.65"));
+        request.setPeso(new BigDecimal("62.50"));
+        request.setObjetivo(Objetivo.EMAGRECIMENTO);
+        request.setNivelAtividade(NivelAtividade.MODERADAMENTE_ATIVO);
         return request;
     }
 
     private PacienteResponseDTO responseFor(Long id, String name) {
         PacienteResponseDTO response = new PacienteResponseDTO();
         response.setId(id);
-        response.setName(name);
-        response.setBirthDate(LocalDate.of(1990, 5, 20));
-        response.setGender(Sexo.FEMININO);
-        response.setHeight(new BigDecimal("1.65"));
-        response.setWeight(new BigDecimal("62.50"));
-        response.setGoal(Objetivo.EMAGRECIMENTO);
-        response.setActivityLevel(NivelAtividade.MODERADAMENTE_ATIVO);
+        response.setNome(name);
+        response.setDataNascimento(LocalDate.of(1990, 5, 20));
+        response.setSexo(Sexo.FEMININO);
+        response.setAltura(new BigDecimal("1.65"));
+        response.setPeso(new BigDecimal("62.50"));
+        response.setObjetivo(Objetivo.EMAGRECIMENTO);
+        response.setNivelAtividade(NivelAtividade.MODERADAMENTE_ATIVO);
         return response;
     }
 
@@ -82,21 +82,21 @@ class PacienteControllerTest {
                         .content(objectMapper.writeValueAsString(validCreateRequest())))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.name").value("Maria Souza"));
+                .andExpect(jsonPath("$.nome").value("Maria Souza"));
     }
 
     @Test
     void shouldReturn400WithPortugueseMessageWhenNameIsMissing() throws Exception {
         PacienteCreateRequestDTO request = validCreateRequest();
-        request.setName(null);
+        request.setNome(null);
 
         mockMvc.perform(post(BASE_URL)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.message").value("Nome é obrigatório"))
-                .andExpect(jsonPath("$.path").value(BASE_URL));
+                .andExpect(jsonPath("$.mensagem").value("Nome é obrigatório"))
+                .andExpect(jsonPath("$.caminho").value(BASE_URL));
     }
 
     @Test
@@ -108,18 +108,18 @@ class PacienteControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(validCreateRequest())))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Peso deve ser maior que zero"));
+                .andExpect(jsonPath("$.mensagem").value("Peso deve ser maior que zero"));
     }
 
     private PacienteUpdateRequestDTO validUpdateRequest() {
         PacienteUpdateRequestDTO request = new PacienteUpdateRequestDTO();
-        request.setName("Maria Souza");
-        request.setBirthDate(LocalDate.of(1990, 5, 20));
-        request.setGender(Sexo.FEMININO);
-        request.setHeight(new BigDecimal("1.65"));
-        request.setWeight(new BigDecimal("62.50"));
-        request.setGoal(Objetivo.EMAGRECIMENTO);
-        request.setActivityLevel(NivelAtividade.MODERADAMENTE_ATIVO);
+        request.setNome("Maria Souza");
+        request.setDataNascimento(LocalDate.of(1990, 5, 20));
+        request.setSexo(Sexo.FEMININO);
+        request.setAltura(new BigDecimal("1.65"));
+        request.setPeso(new BigDecimal("62.50"));
+        request.setObjetivo(Objetivo.EMAGRECIMENTO);
+        request.setNivelAtividade(NivelAtividade.MODERADAMENTE_ATIVO);
         return request;
     }
 
@@ -130,7 +130,7 @@ class PacienteControllerTest {
         mockMvc.perform(get(BASE_URL + "/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.name").value("Maria Souza"));
+                .andExpect(jsonPath("$.nome").value("Maria Souza"));
     }
 
     @Test
@@ -141,7 +141,7 @@ class PacienteControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(validUpdateRequest())))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Maria Atualizada"));
+                .andExpect(jsonPath("$.nome").value("Maria Atualizada"));
     }
 
     @Test
@@ -159,16 +159,16 @@ class PacienteControllerTest {
         mockMvc.perform(get(BASE_URL + "/99"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
-                .andExpect(jsonPath("$.message").value("Paciente não encontrado: 99"));
+                .andExpect(jsonPath("$.mensagem").value("Paciente não encontrado: 99"));
     }
 
     @Test
     void shouldListPatients() throws Exception {
         when(pacienteService.findAll(eq("Maria"))).thenReturn(List.of(responseFor(1L, "Maria Souza")));
 
-        mockMvc.perform(get(BASE_URL).param("search", "Maria"))
+        mockMvc.perform(get(BASE_URL).param("busca", "Maria"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").value("Maria Souza"));
+                .andExpect(jsonPath("$[0].nome").value("Maria Souza"));
     }
 
     @Test

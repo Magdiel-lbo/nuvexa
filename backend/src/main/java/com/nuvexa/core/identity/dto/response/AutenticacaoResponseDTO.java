@@ -15,7 +15,7 @@ public class AutenticacaoResponseDTO {
 
     private String token;
 
-    private String tokenType;
+    private String tipoToken;
 
-    private String role;
+    private String perfil;
 }

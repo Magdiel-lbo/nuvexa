@@ -1,29 +1,29 @@
 export interface LoginRequest {
   email: string
-  password: string
+  senha: string
 }
 
-export interface RegisterRequest {
-  name: string
+export interface CadastroRequest {
+  nome: string
   email: string
-  password: string
+  senha: string
 }
 
-export interface AuthResponse {
+export interface AutenticacaoResponse {
   token: string
-  tokenType: string
-  role: string
+  tipoToken: string
+  perfil: string
 }
 
-export interface ForgotPasswordRequest {
+export interface EsqueciSenhaRequest {
   email: string
 }
 
-export interface ResetPasswordRequest {
+export interface RedefinirSenhaRequest {
   token: string
-  newPassword: string
+  novaSenha: string
 }
 
-export interface MessageResponse {
-  message: string
+export interface MensagemResponse {
+  mensagem: string
 }

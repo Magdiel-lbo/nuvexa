@@ -90,7 +90,7 @@
             <v-avatar size="30" color="primary" variant="tonal" class="mr-2">
               <v-icon icon="mdi-account" size="18" />
             </v-avatar>
-            <span class="user-menu-activator__role">{{ roleLabel }}</span>
+            <span class="user-menu-activator__perfil">{{ perfilRotulo }}</span>
           </v-btn>
         </template>
         <v-list density="compact">
@@ -158,14 +158,14 @@ export default class DefaultLayout extends Vue {
     return this.$route.meta.title
   }
 
-  get roleLabel(): string {
-    const role = this.authStore.role
-    return role ? (this.$t(`role.${role}`) as string) : ''
+  get perfilRotulo(): string {
+    const perfil = this.authStore.perfil
+    return perfil ? (this.$t(`perfil.${perfil}`) as string) : ''
   }
 
   get atendimentoItems(): NavItem[] {
     return [
-      { to: '/patients', label: this.$t('menu.pacientes') as string, icon: 'mdi-account-group-outline' },
+      { to: '/pacientes', label: this.$t('menu.pacientes') as string, icon: 'mdi-account-group-outline' },
       { to: '/agenda', label: this.$t('menu.agenda') as string, icon: 'mdi-calendar-month-outline' },
       { to: '/consultas', label: this.$t('menu.consultas') as string, icon: 'mdi-calendar-check-outline' },
       { to: '/nutricao', label: this.$t('menu.nutricao') as string, icon: 'mdi-food-apple-outline' },
@@ -262,7 +262,7 @@ export default class DefaultLayout extends Vue {
   text-transform: none;
 }
 
-.user-menu-activator__role {
+.user-menu-activator__perfil {
   font-size: 0.85rem;
 }
 

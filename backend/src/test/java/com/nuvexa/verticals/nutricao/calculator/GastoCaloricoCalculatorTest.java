@@ -21,8 +21,8 @@ class GastoCaloricoCalculatorTest {
             "MUITO_ATIVO, 2587.50",
             "EXTREMAMENTE_ATIVO, 2850.00"
     })
-    void shouldApplyActivityFactorToBmr(NivelAtividade activityLevel, String expected) {
-        BigDecimal result = calculator.calculate(new BigDecimal("1500"), activityLevel);
+    void shouldApplyActivityFactorToBmr(NivelAtividade nivelAtividade, String expected) {
+        BigDecimal result = calculator.calculate(new BigDecimal("1500"), nivelAtividade);
 
         assertThat(result).isEqualByComparingTo(expected);
     }

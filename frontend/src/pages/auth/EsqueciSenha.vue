@@ -40,8 +40,8 @@ import authService from '../../service/auth-service'
 import { useAppStore } from '../../store/app.store'
 import { extrairMensagemErro } from '../../util/api-util'
 
-@Component({ name: 'ForgotPassword' })
-export default class ForgotPassword extends Vue {
+@Component({ name: 'EsqueciSenha' })
+export default class EsqueciSenha extends Vue {
   email = ''
   carregando = false
   tentouEnviar = false
@@ -71,7 +71,7 @@ export default class ForgotPassword extends Vue {
     this.carregando = true
     try {
       const response = await authService.esqueciSenha({ email: this.email })
-      this.mensagem = response.message
+      this.mensagem = response.mensagem
       this.enviado = true
     } catch (e) {
       this.appStore.setToast({ mensagem: extrairMensagemErro(e, this.$t('erro.esqueciSenha') as string), erro: true })

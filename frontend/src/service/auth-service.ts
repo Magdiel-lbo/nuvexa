@@ -1,12 +1,12 @@
 import type { AxiosInstance } from 'axios'
-import http from '../http/api-patients'
+import http from '../http/api-pacientes'
 import type {
-  AuthResponse,
-  ForgotPasswordRequest,
+  AutenticacaoResponse,
+  CadastroRequest,
+  EsqueciSenhaRequest,
   LoginRequest,
-  MessageResponse,
-  RegisterRequest,
-  ResetPasswordRequest,
+  MensagemResponse,
+  RedefinirSenhaRequest,
 } from '../types/auth'
 
 class AuthService {
@@ -16,23 +16,23 @@ class AuthService {
     this.http = http
   }
 
-  async login(dto: LoginRequest): Promise<AuthResponse> {
+  async login(dto: LoginRequest): Promise<AutenticacaoResponse> {
     const { data } = await this.http.post('/auth/login', dto)
     return data
   }
 
-  async registrar(dto: RegisterRequest): Promise<AuthResponse> {
-    const { data } = await this.http.post('/auth/register', dto)
+  async cadastrar(dto: CadastroRequest): Promise<AutenticacaoResponse> {
+    const { data } = await this.http.post('/auth/cadastrar', dto)
     return data
   }
 
-  async esqueciSenha(dto: ForgotPasswordRequest): Promise<MessageResponse> {
-    const { data } = await this.http.post('/auth/forgot-password', dto)
+  async esqueciSenha(dto: EsqueciSenhaRequest): Promise<MensagemResponse> {
+    const { data } = await this.http.post('/auth/esqueci-senha', dto)
     return data
   }
 
-  async redefinirSenha(dto: ResetPasswordRequest): Promise<MessageResponse> {
-    const { data } = await this.http.post('/auth/reset-password', dto)
+  async redefinirSenha(dto: RedefinirSenhaRequest): Promise<MensagemResponse> {
+    const { data } = await this.http.post('/auth/redefinir-senha', dto)
     return data
   }
 }

@@ -60,9 +60,9 @@ public class AutenticacaoService {
         }
 
         Usuario usuario = Usuario.builder()
-                .nome(request.getName())
+                .nome(request.getNome())
                 .email(request.getEmail())
-                .senha(passwordEncoder.encode(request.getPassword()))
+                .senha(passwordEncoder.encode(request.getSenha()))
                 .perfil(Perfil.PROFISSIONAL)
                 .ativo(true)
                 .build();
@@ -85,7 +85,7 @@ public class AutenticacaoService {
     public AutenticacaoResponseDTO login(LoginRequestDTO request) {
         try {
             authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
+                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getSenha()));
         } catch (AuthenticationException ex) {
             throw new NegocioException(HttpStatus.UNAUTHORIZED, resolveMessage("autenticacao.credenciaisInvalidas"));
         }
@@ -108,7 +108,7 @@ public class AutenticacaoService {
             usuario.setTokenRedefinicaoExpiraEm(LocalDateTime.now().plusMinutes(RESET_TOKEN_VALIDITY_MINUTES));
             usuarioRepository.save(usuario);
 
-            String resetLink = frontendUrl + "/reset-password?token=" + rawToken;
+            String resetLink = frontendUrl + "/redefinir-senha?token=" + rawToken;
             log.info("Link de recuperação de senha para {} (válido por {} min): {}",
                     usuario.getEmail(), RESET_TOKEN_VALIDITY_MINUTES, resetLink);
         } else {
@@ -123,7 +123,7 @@ public class AutenticacaoService {
                 .filter(u -> u.getTokenRedefinicaoExpiraEm() != null && u.getTokenRedefinicaoExpiraEm().isAfter(LocalDateTime.now()))
                 .orElseThrow(() -> new NegocioException(HttpStatus.BAD_REQUEST, resolveMessage("autenticacao.token.invalido")));
 
-        usuario.setSenha(passwordEncoder.encode(request.getNewPassword()));
+        usuario.setSenha(passwordEncoder.encode(request.getNovaSenha()));
         usuario.setHashTokenRedefinicao(null);
         usuario.setTokenRedefinicaoExpiraEm(null);
         usuarioRepository.save(usuario);
@@ -151,8 +151,8 @@ public class AutenticacaoService {
     private AutenticacaoResponseDTO buildAuthResponse(Usuario usuario) {
         return AutenticacaoResponseDTO.builder()
                 .token(jwtService.generateToken(usuario))
-                .tokenType("Bearer")
-                .role(usuario.getPerfil().name())
+                .tipoToken("Bearer")
+                .perfil(usuario.getPerfil().name())
                 .build();
     }
 

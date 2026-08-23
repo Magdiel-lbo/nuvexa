@@ -34,12 +34,12 @@ public class AutenticacaoController {
         return autenticacaoService.login(request);
     }
 
-    @PostMapping("/forgot-password")
+    @PostMapping("/esqueci-senha")
     public MensagemResponseDTO esqueciSenha(@Valid @RequestBody EsqueciSenhaRequestDTO request) {
         return autenticacaoService.esqueciSenha(request);
     }
 
-    @PostMapping("/reset-password")
+    @PostMapping("/redefinir-senha")
     public MensagemResponseDTO redefinirSenha(@Valid @RequestBody RedefinirSenhaRequestDTO request) {
         return autenticacaoService.redefinirSenha(request);
     }

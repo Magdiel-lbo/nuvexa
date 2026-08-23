@@ -51,85 +51,85 @@ public class PacienteService {
     private final GastoCaloricoCalculator gastoCaloricoCalculator;
 
     public PacienteResponseDTO create(PacienteCreateRequestDTO request) {
-        validate(request.getName(), request.getBirthDate(), request.getHeight(), request.getWeight(), request.getManualDailyCalories());
+        validar(request.getNome(), request.getDataNascimento(), request.getAltura(), request.getPeso(), request.getCaloriasDiariasManuais());
 
         Paciente paciente = pacienteRepository.save(pacienteMapper.toPaciente(request));
         PerfilNutricional perfilNutricional = perfilNutricionalRepository.save(pacienteMapper.toPerfilNutricional(request, paciente));
         log.info("Paciente criado com id={}", paciente.getId());
-        return toResponseWithCalculations(perfilNutricional);
+        return toResponseComCalculos(perfilNutricional);
     }
 
     public PacienteResponseDTO update(Long id, PacienteUpdateRequestDTO request) {
-        PerfilNutricional perfilNutricional = findProfileOrThrow(id);
-        validate(request.getName(), request.getBirthDate(), request.getHeight(), request.getWeight(), request.getManualDailyCalories());
+        PerfilNutricional perfilNutricional = buscarPerfilOuFalhar(id);
+        validar(request.getNome(), request.getDataNascimento(), request.getAltura(), request.getPeso(), request.getCaloriasDiariasManuais());
 
         pacienteMapper.updatePaciente(request, perfilNutricional.getPaciente());
         pacienteMapper.updatePerfilNutricional(request, perfilNutricional);
         pacienteRepository.save(perfilNutricional.getPaciente());
         PerfilNutricional saved = perfilNutricionalRepository.save(perfilNutricional);
         log.info("Paciente atualizado com id={}", id);
-        return toResponseWithCalculations(saved);
+        return toResponseComCalculos(saved);
     }
 
     public PacienteResponseDTO findById(Long id) {
-        return toResponseWithCalculations(findProfileOrThrow(id));
+        return toResponseComCalculos(buscarPerfilOuFalhar(id));
     }
 
-    public List<PacienteResponseDTO> findAll(String search) {
-        return searchProfiles(normalizeSearch(search)).stream()
-                .map(this::toResponseWithCalculations)
+    public List<PacienteResponseDTO> findAll(String busca) {
+        return buscarPerfis(normalizarBusca(busca)).stream()
+                .map(this::toResponseComCalculos)
                 .toList();
     }
 
     public PacienteEnumsResponseDTO getEnums() {
         return PacienteEnumsResponseDTO.builder()
-                .genders(EnumOpcaoResolver.resolve(Sexo.class, "enum.sexo", messageSource, MESSAGE_LOCALE))
-                .goals(EnumOpcaoResolver.resolve(Objetivo.class, "enum.objetivo", messageSource, MESSAGE_LOCALE))
-                .activityLevels(EnumOpcaoResolver.resolve(NivelAtividade.class, "enum.nivelAtividade", messageSource, MESSAGE_LOCALE))
+                .sexos(EnumOpcaoResolver.resolve(Sexo.class, "enum.sexo", messageSource, MESSAGE_LOCALE))
+                .objetivos(EnumOpcaoResolver.resolve(Objetivo.class, "enum.objetivo", messageSource, MESSAGE_LOCALE))
+                .niveisAtividade(EnumOpcaoResolver.resolve(NivelAtividade.class, "enum.nivelAtividade", messageSource, MESSAGE_LOCALE))
                 .build();
     }
 
     public void delete(Long id) {
-        PerfilNutricional perfilNutricional = findProfileOrThrow(id);
+        PerfilNutricional perfilNutricional = buscarPerfilOuFalhar(id);
         perfilNutricionalRepository.delete(perfilNutricional);
         log.info("Perfil nutricional removido para paciente com id={} (Paciente preservado)", id);
     }
 
-    private List<PerfilNutricional> searchProfiles(String name) {
+    private List<PerfilNutricional> buscarPerfis(String nome) {
         QPerfilNutricional perfilNutricional = QPerfilNutricional.perfilNutricional;
 
-        BooleanExpression nameFilter = name == null ? null : perfilNutricional.paciente.nome.containsIgnoreCase(name);
+        BooleanExpression filtroNome = nome == null ? null : perfilNutricional.paciente.nome.containsIgnoreCase(nome);
 
         return queryFactory
                 .selectFrom(perfilNutricional)
-                .where(nameFilter)
+                .where(filtroNome)
                 .orderBy(perfilNutricional.paciente.nome.asc())
                 .fetch();
     }
 
-    private String normalizeSearch(String search) {
-        return (search == null || search.isBlank()) ? null : search.trim();
+    private String normalizarBusca(String busca) {
+        return (busca == null || busca.isBlank()) ? null : busca.trim();
     }
 
-    private PerfilNutricional findProfileOrThrow(Long id) {
+    private PerfilNutricional buscarPerfilOuFalhar(Long id) {
         return perfilNutricionalRepository.findByPacienteId(id)
                 .orElseThrow(() -> new NegocioException(HttpStatus.NOT_FOUND, resolveMessage("paciente.naoEncontrado", id)));
     }
 
-    private void validate(String name, LocalDate birthDate, BigDecimal height, BigDecimal weight, BigDecimal manualDailyCalories) {
-        if (name == null || name.isBlank()) {
+    private void validar(String nome, LocalDate dataNascimento, BigDecimal altura, BigDecimal peso, BigDecimal caloriasDiariasManuais) {
+        if (nome == null || nome.isBlank()) {
             throw new NegocioException(HttpStatus.BAD_REQUEST, resolveMessage("paciente.nome.obrigatorio"));
         }
-        if (birthDate == null || birthDate.isAfter(LocalDate.now())) {
+        if (dataNascimento == null || dataNascimento.isAfter(LocalDate.now())) {
             throw new NegocioException(HttpStatus.BAD_REQUEST, resolveMessage("paciente.dataNascimento.futura"));
         }
-        if (height == null || height.signum() <= 0) {
+        if (altura == null || altura.signum() <= 0) {
             throw new NegocioException(HttpStatus.BAD_REQUEST, resolveMessage("paciente.altura.invalida"));
         }
-        if (weight == null || weight.signum() <= 0) {
+        if (peso == null || peso.signum() <= 0) {
             throw new NegocioException(HttpStatus.BAD_REQUEST, resolveMessage("paciente.peso.invalido"));
         }
-        if (manualDailyCalories != null && manualDailyCalories.signum() <= 0) {
+        if (caloriasDiariasManuais != null && caloriasDiariasManuais.signum() <= 0) {
             throw new NegocioException(HttpStatus.BAD_REQUEST, resolveMessage("paciente.caloriasDiariasManuais.invalida"));
         }
     }
@@ -138,22 +138,22 @@ public class PacienteService {
         return messageSource.getMessage(key, args, MESSAGE_LOCALE);
     }
 
-    private PacienteResponseDTO toResponseWithCalculations(PerfilNutricional perfilNutricional) {
+    private PacienteResponseDTO toResponseComCalculos(PerfilNutricional perfilNutricional) {
         PacienteResponseDTO response = pacienteMapper.toResponse(perfilNutricional);
         Paciente paciente = perfilNutricional.getPaciente();
 
-        int age = Period.between(paciente.getDataNascimento(), LocalDate.now()).getYears();
-        BigDecimal bmi = imcCalculator.calculate(perfilNutricional.getPeso(), perfilNutricional.getAltura());
-        BigDecimal bmr = taxaMetabolicaCalculator.calculate(perfilNutricional.getPeso(), perfilNutricional.getAltura(), age, paciente.getSexo());
-        BigDecimal dailyCalorieExpenditure = perfilNutricional.getCaloriasDiariasManuais() != null
+        int idade = Period.between(paciente.getDataNascimento(), LocalDate.now()).getYears();
+        BigDecimal imc = imcCalculator.calculate(perfilNutricional.getPeso(), perfilNutricional.getAltura());
+        BigDecimal taxaMetabolicaBasal = taxaMetabolicaCalculator.calculate(perfilNutricional.getPeso(), perfilNutricional.getAltura(), idade, paciente.getSexo());
+        BigDecimal gastoCaloricoDiario = perfilNutricional.getCaloriasDiariasManuais() != null
                 ? perfilNutricional.getCaloriasDiariasManuais()
-                : gastoCaloricoCalculator.calculate(bmr, perfilNutricional.getNivelAtividade());
+                : gastoCaloricoCalculator.calculate(taxaMetabolicaBasal, perfilNutricional.getNivelAtividade());
 
-        response.setAge(age);
-        response.setBmi(bmi);
-        response.setBmiClassification(imcCalculator.classify(bmi));
-        response.setBmr(bmr);
-        response.setDailyCalorieExpenditure(dailyCalorieExpenditure);
+        response.setIdade(idade);
+        response.setImc(imc);
+        response.setClassificacaoImc(imcCalculator.classify(imc));
+        response.setTaxaMetabolicaBasal(taxaMetabolicaBasal);
+        response.setGastoCaloricoDiario(gastoCaloricoDiario);
 
         return response;
     }

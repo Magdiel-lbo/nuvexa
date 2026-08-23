@@ -3,26 +3,26 @@ import { authStorage } from '../util/auth-storage'
 
 interface AuthState {
   token: string | null
-  role: string | null
+  perfil: string | null
 }
 
 export const useAuthStore = defineStore('auth', {
   state: (): AuthState => ({
     token: authStorage.getToken(),
-    role: authStorage.getRole(),
+    perfil: authStorage.getPerfil(),
   }),
   getters: {
     isAuthenticated: (state) => !!state.token,
   },
   actions: {
-    setSession(token: string, role: string) {
+    setSession(token: string, perfil: string) {
       this.token = token
-      this.role = role
-      authStorage.setSession(token, role)
+      this.perfil = perfil
+      authStorage.setSession(token, perfil)
     },
     logout() {
       this.token = null
-      this.role = null
+      this.perfil = null
       authStorage.clear()
     },
   },

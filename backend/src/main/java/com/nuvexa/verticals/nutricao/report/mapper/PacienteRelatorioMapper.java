@@ -22,51 +22,51 @@ import java.util.stream.Collectors;
 @Component
 public class PacienteRelatorioMapper {
 
-    public List<RelatorioColuna<PacienteRelatorioLinhaDTO>> buildColumns(MessageSource messageSource, Locale locale) {
-        Map<String, String> genderLabels = labelMap(EnumOpcaoResolver.resolve(Sexo.class, "enum.sexo", messageSource, locale));
-        Map<String, String> goalLabels = labelMap(EnumOpcaoResolver.resolve(Objetivo.class, "enum.objetivo", messageSource, locale));
-        Map<String, String> activityLevelLabels = labelMap(
+    public List<RelatorioColuna<PacienteRelatorioLinhaDTO>> buildColunas(MessageSource messageSource, Locale locale) {
+        Map<String, String> rotulosSexo = mapaRotulos(EnumOpcaoResolver.resolve(Sexo.class, "enum.sexo", messageSource, locale));
+        Map<String, String> rotulosObjetivo = mapaRotulos(EnumOpcaoResolver.resolve(Objetivo.class, "enum.objetivo", messageSource, locale));
+        Map<String, String> rotulosNivelAtividade = mapaRotulos(
                 EnumOpcaoResolver.resolve(NivelAtividade.class, "enum.nivelAtividade", messageSource, locale));
 
         return List.of(
-                column("name", "relatorio.paciente.coluna.nome", 1, messageSource, locale, PacienteRelatorioLinhaDTO::getName),
-                column("age", "relatorio.paciente.coluna.idade", 2, messageSource, locale, PacienteRelatorioLinhaDTO::getAge),
-                column("gender", "relatorio.paciente.coluna.sexo", 3, messageSource, locale,
-                        row -> genderLabels.get(row.getGender().name())),
-                column("goal", "relatorio.paciente.coluna.objetivo", 4, messageSource, locale,
-                        row -> goalLabels.get(row.getGoal().name())),
-                column("activityLevel", "relatorio.paciente.coluna.nivelAtividade", 5, messageSource, locale,
-                        row -> activityLevelLabels.get(row.getActivityLevel().name())),
-                column("bmi", "relatorio.paciente.coluna.imc", 6, messageSource, locale, PacienteRelatorioLinhaDTO::getBmi),
-                column("bmiClassification", "relatorio.paciente.coluna.classificacaoImc", 7, messageSource, locale,
-                        PacienteRelatorioLinhaDTO::getBmiClassification),
-                column("dailyCalorieExpenditure", "relatorio.paciente.coluna.gastoCaloricoDiario", 8, messageSource, locale,
-                        PacienteRelatorioLinhaDTO::getDailyCalorieExpenditure));
+                coluna("nome", "relatorio.paciente.coluna.nome", 1, messageSource, locale, PacienteRelatorioLinhaDTO::getNome),
+                coluna("idade", "relatorio.paciente.coluna.idade", 2, messageSource, locale, PacienteRelatorioLinhaDTO::getIdade),
+                coluna("sexo", "relatorio.paciente.coluna.sexo", 3, messageSource, locale,
+                        row -> rotulosSexo.get(row.getSexo().name())),
+                coluna("objetivo", "relatorio.paciente.coluna.objetivo", 4, messageSource, locale,
+                        row -> rotulosObjetivo.get(row.getObjetivo().name())),
+                coluna("nivelAtividade", "relatorio.paciente.coluna.nivelAtividade", 5, messageSource, locale,
+                        row -> rotulosNivelAtividade.get(row.getNivelAtividade().name())),
+                coluna("imc", "relatorio.paciente.coluna.imc", 6, messageSource, locale, PacienteRelatorioLinhaDTO::getImc),
+                coluna("classificacaoImc", "relatorio.paciente.coluna.classificacaoImc", 7, messageSource, locale,
+                        PacienteRelatorioLinhaDTO::getClassificacaoImc),
+                coluna("gastoCaloricoDiario", "relatorio.paciente.coluna.gastoCaloricoDiario", 8, messageSource, locale,
+                        PacienteRelatorioLinhaDTO::getGastoCaloricoDiario));
     }
 
     public PacienteRelatorioLinhaDTO toRow(
-            PerfilNutricional perfilNutricional, int age, BigDecimal bmi, String bmiClassification, BigDecimal dailyCalorieExpenditure) {
+            PerfilNutricional perfilNutricional, int idade, BigDecimal imc, String classificacaoImc, BigDecimal gastoCaloricoDiario) {
         Paciente paciente = perfilNutricional.getPaciente();
         return PacienteRelatorioLinhaDTO.builder()
                 .id(paciente.getId())
-                .name(paciente.getNome())
-                .age(age)
-                .gender(paciente.getSexo())
-                .goal(perfilNutricional.getObjetivo())
-                .activityLevel(perfilNutricional.getNivelAtividade())
-                .bmi(bmi)
-                .bmiClassification(bmiClassification)
-                .dailyCalorieExpenditure(dailyCalorieExpenditure)
+                .nome(paciente.getNome())
+                .idade(idade)
+                .sexo(paciente.getSexo())
+                .objetivo(perfilNutricional.getObjetivo())
+                .nivelAtividade(perfilNutricional.getNivelAtividade())
+                .imc(imc)
+                .classificacaoImc(classificacaoImc)
+                .gastoCaloricoDiario(gastoCaloricoDiario)
                 .build();
     }
 
-    private Map<String, String> labelMap(List<EnumOpcaoDTO> options) {
-        return options.stream().collect(Collectors.toMap(EnumOpcaoDTO::getValue, EnumOpcaoDTO::getLabel));
+    private Map<String, String> mapaRotulos(List<EnumOpcaoDTO> opcoes) {
+        return opcoes.stream().collect(Collectors.toMap(EnumOpcaoDTO::getValor, EnumOpcaoDTO::getRotulo));
     }
 
-    private RelatorioColuna<PacienteRelatorioLinhaDTO> column(
-            String key, String messageKey, int order, MessageSource messageSource, Locale locale,
-            Function<PacienteRelatorioLinhaDTO, Object> valueExtractor) {
-        return RelatorioColuna.of(key, messageSource.getMessage(messageKey, null, locale), order, valueExtractor);
+    private RelatorioColuna<PacienteRelatorioLinhaDTO> coluna(
+            String chave, String chaveMensagem, int ordem, MessageSource messageSource, Locale locale,
+            Function<PacienteRelatorioLinhaDTO, Object> extratorValor) {
+        return RelatorioColuna.of(chave, messageSource.getMessage(chaveMensagem, null, locale), ordem, extratorValor);
     }
 }

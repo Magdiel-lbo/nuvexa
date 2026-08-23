@@ -16,7 +16,7 @@ import java.util.List;
 @Builder
 public class PacienteEnumsResponseDTO {
 
-    private List<EnumOpcaoDTO> genders;
-    private List<EnumOpcaoDTO> goals;
-    private List<EnumOpcaoDTO> activityLevels;
+    private List<EnumOpcaoDTO> sexos;
+    private List<EnumOpcaoDTO> objetivos;
+    private List<EnumOpcaoDTO> niveisAtividade;
 }

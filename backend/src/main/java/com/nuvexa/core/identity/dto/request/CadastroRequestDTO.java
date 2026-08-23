@@ -17,7 +17,7 @@ import lombok.Setter;
 public class CadastroRequestDTO {
 
     @NotBlank(message = "{autenticacao.nome.obrigatorio}")
-    private String name;
+    private String nome;
 
     @NotBlank(message = "{autenticacao.email.obrigatorio}")
     @Email(message = "{autenticacao.email.invalido}")
@@ -25,5 +25,5 @@ public class CadastroRequestDTO {
 
     @NotBlank(message = "{autenticacao.senha.obrigatoria}")
     @Size(min = 8, message = "{autenticacao.senha.invalida}")
-    private String password;
+    private String senha;
 }

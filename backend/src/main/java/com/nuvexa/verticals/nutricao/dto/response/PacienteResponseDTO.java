@@ -1,7 +1,7 @@
 package com.nuvexa.verticals.nutricao.dto.response;
 
-import com.nuvexa.verticals.nutricao.model.NivelAtividade;
 import com.nuvexa.core.paciente.model.Sexo;
+import com.nuvexa.verticals.nutricao.model.NivelAtividade;
 import com.nuvexa.verticals.nutricao.model.Objetivo;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,21 +21,21 @@ import java.time.LocalDateTime;
 public class PacienteResponseDTO {
 
     private Long id;
-    private String name;
-    private LocalDate birthDate;
-    private Sexo gender;
-    private BigDecimal height;
-    private BigDecimal weight;
-    private Objetivo goal;
-    private NivelAtividade activityLevel;
-    private BigDecimal manualDailyCalories;
-    private String notes;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private String nome;
+    private LocalDate dataNascimento;
+    private Sexo sexo;
+    private BigDecimal altura;
+    private BigDecimal peso;
+    private Objetivo objetivo;
+    private NivelAtividade nivelAtividade;
+    private BigDecimal caloriasDiariasManuais;
+    private String observacoes;
+    private LocalDateTime criadoEm;
+    private LocalDateTime atualizadoEm;
 
-    private Integer age;
-    private BigDecimal bmi;
-    private String bmiClassification;
-    private BigDecimal bmr;
-    private BigDecimal dailyCalorieExpenditure;
+    private Integer idade;
+    private BigDecimal imc;
+    private String classificacaoImc;
+    private BigDecimal taxaMetabolicaBasal;
+    private BigDecimal gastoCaloricoDiario;
 }

@@ -20,5 +20,5 @@ public class LoginRequestDTO {
     private String email;
 
     @NotBlank(message = "{autenticacao.senha.obrigatoria}")
-    private String password;
+    private String senha;
 }

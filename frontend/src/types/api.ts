@@ -1,6 +1,6 @@
-export interface ApiError {
-  timestamp: string
+export interface ApiErro {
+  dataHora: string
   status: number
-  message: string
-  path: string
+  mensagem: string
+  caminho: string
 }

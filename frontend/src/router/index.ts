@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
-import patientRoutes from './patient.routes'
+import pacienteRoutes from './paciente.routes'
 import authRoutes from './auth.routes'
 import workspaceRoutes from './workspace.routes'
 import consultaRoutes from './consulta.routes'
@@ -20,7 +20,7 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../pages/dashboard/Dashboard.vue'),
     meta: { title: 'Dashboard' },
   },
-  ...patientRoutes,
+  ...pacienteRoutes,
   ...consultaRoutes,
   ...workspaceRoutes,
   ...authRoutes,
@@ -39,7 +39,7 @@ router.beforeEach((to) => {
     return { name: 'login', query: { redirect: to.fullPath } }
   }
 
-  if (authStore.isAuthenticated && (to.name === 'login' || to.name === 'register')) {
+  if (authStore.isAuthenticated && (to.name === 'login' || to.name === 'cadastrar')) {
     return { name: 'dashboard' }
   }
 

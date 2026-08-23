@@ -66,7 +66,7 @@ class PacienteServiceSearchIntegrationTest {
         List<PacienteResponseDTO> results = pacienteService.findAll("pereira");
 
         assertThat(results).hasSize(2)
-                .extracting(PacienteResponseDTO::getName)
+                .extracting(PacienteResponseDTO::getNome)
                 .containsExactlyInAnyOrder("Joao Pereira", "Ana Pereira");
     }
 
@@ -78,7 +78,7 @@ class PacienteServiceSearchIntegrationTest {
         List<PacienteResponseDTO> results = pacienteService.findAll("   ");
 
         assertThat(results)
-                .extracting(PacienteResponseDTO::getName)
+                .extracting(PacienteResponseDTO::getNome)
                 .contains("Joao Pereira", "Carlos Lima");
     }
 }

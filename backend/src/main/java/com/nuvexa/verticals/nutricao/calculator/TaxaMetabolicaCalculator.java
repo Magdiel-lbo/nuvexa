@@ -12,22 +12,22 @@ import java.math.RoundingMode;
 @Component
 public class TaxaMetabolicaCalculator {
 
-    private static final BigDecimal CM_PER_METER = new BigDecimal("100");
-    private static final BigDecimal WEIGHT_FACTOR = new BigDecimal("10");
-    private static final BigDecimal HEIGHT_FACTOR = new BigDecimal("6.25");
-    private static final BigDecimal AGE_FACTOR = new BigDecimal("5");
-    private static final BigDecimal MALE_CONSTANT = new BigDecimal("5");
-    private static final BigDecimal FEMALE_CONSTANT = new BigDecimal("-161");
+    private static final BigDecimal CM_POR_METRO = new BigDecimal("100");
+    private static final BigDecimal FATOR_PESO = new BigDecimal("10");
+    private static final BigDecimal FATOR_ALTURA = new BigDecimal("6.25");
+    private static final BigDecimal FATOR_IDADE = new BigDecimal("5");
+    private static final BigDecimal CONSTANTE_MASCULINO = new BigDecimal("5");
+    private static final BigDecimal CONSTANTE_FEMININO = new BigDecimal("-161");
 
-    public BigDecimal calculate(BigDecimal weightKg, BigDecimal heightM, int age, Sexo gender) {
-        BigDecimal heightCm = heightM.multiply(CM_PER_METER);
-        BigDecimal genderConstant = gender == Sexo.MASCULINO ? MALE_CONSTANT : FEMALE_CONSTANT;
+    public BigDecimal calculate(BigDecimal pesoKg, BigDecimal alturaM, int idade, Sexo sexo) {
+        BigDecimal alturaCm = alturaM.multiply(CM_POR_METRO);
+        BigDecimal constanteSexo = sexo == Sexo.MASCULINO ? CONSTANTE_MASCULINO : CONSTANTE_FEMININO;
 
-        BigDecimal result = weightKg.multiply(WEIGHT_FACTOR)
-                .add(heightCm.multiply(HEIGHT_FACTOR))
-                .subtract(BigDecimal.valueOf(age).multiply(AGE_FACTOR))
-                .add(genderConstant);
+        BigDecimal resultado = pesoKg.multiply(FATOR_PESO)
+                .add(alturaCm.multiply(FATOR_ALTURA))
+                .subtract(BigDecimal.valueOf(idade).multiply(FATOR_IDADE))
+                .add(constanteSexo);
 
-        return result.setScale(2, RoundingMode.HALF_UP);
+        return resultado.setScale(2, RoundingMode.HALF_UP);
     }
 }

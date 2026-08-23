@@ -22,7 +22,7 @@ public final class RelatorioExcelWriter {
 
     public static <T> byte[] write(String sheetName, List<RelatorioColuna<T>> columns, List<T> rows) {
         List<RelatorioColuna<T>> sortedColumns = columns.stream()
-                .sorted(Comparator.comparingInt(RelatorioColuna::getOrder))
+                .sorted(Comparator.comparingInt(RelatorioColuna::getOrdem))
                 .toList();
 
         try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
@@ -50,7 +50,7 @@ public final class RelatorioExcelWriter {
         Row headerRow = sheet.createRow(0);
         for (int i = 0; i < columns.size(); i++) {
             Cell cell = headerRow.createCell(i);
-            cell.setCellValue(columns.get(i).getLabel());
+            cell.setCellValue(columns.get(i).getRotulo());
             cell.setCellStyle(headerStyle);
         }
     }
@@ -60,7 +60,7 @@ public final class RelatorioExcelWriter {
         for (T row : rows) {
             Row dataRow = sheet.createRow(rowIndex++);
             for (int i = 0; i < columns.size(); i++) {
-                setCellValue(dataRow.createCell(i), columns.get(i).getValueExtractor().apply(row));
+                setCellValue(dataRow.createCell(i), columns.get(i).getExtratorValor().apply(row));
             }
         }
     }

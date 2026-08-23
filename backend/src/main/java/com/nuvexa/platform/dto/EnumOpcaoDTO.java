@@ -13,6 +13,6 @@ import lombok.Setter;
 @Builder
 public class EnumOpcaoDTO {
 
-    private String value;
-    private String label;
+    private String valor;
+    private String rotulo;
 }

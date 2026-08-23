@@ -14,18 +14,18 @@ import java.util.List;
 @AllArgsConstructor
 public class RelatorioResponseDTO<T> {
 
-    private List<RelatorioColunaDTO> columns;
-    private List<T> rows;
+    private List<RelatorioColunaDTO> colunas;
+    private List<T> linhas;
 
-    public static <T> RelatorioResponseDTO<T> of(List<RelatorioColuna<T>> columns, List<T> rows) {
-        List<RelatorioColunaDTO> columnDTOs = columns.stream()
-                .sorted(Comparator.comparingInt(RelatorioColuna::getOrder))
-                .map(column -> RelatorioColunaDTO.builder()
-                        .key(column.getKey())
-                        .label(column.getLabel())
-                        .order(column.getOrder())
+    public static <T> RelatorioResponseDTO<T> of(List<RelatorioColuna<T>> colunas, List<T> linhas) {
+        List<RelatorioColunaDTO> colunasDTO = colunas.stream()
+                .sorted(Comparator.comparingInt(RelatorioColuna::getOrdem))
+                .map(coluna -> RelatorioColunaDTO.builder()
+                        .chave(coluna.getChave())
+                        .rotulo(coluna.getRotulo())
+                        .ordem(coluna.getOrdem())
                         .build())
                 .toList();
-        return new RelatorioResponseDTO<>(columnDTOs, rows);
+        return new RelatorioResponseDTO<>(colunasDTO, linhas);
     }
 }

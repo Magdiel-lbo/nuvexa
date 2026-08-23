@@ -1,19 +1,19 @@
 <template>
-  <div class="patient-consulta-historico">
+  <div class="paciente-consulta-historico">
     <button
       type="button"
-      class="patient-consulta-historico__header"
+      class="paciente-consulta-historico__header"
       :aria-expanded="expanded"
       @click="expanded = !expanded"
     >
-      <span class="patient-consulta-historico__title">
+      <span class="paciente-consulta-historico__title">
         {{ $t('paciente.detalhe.historicoConsultas') }}
-        <span class="patient-consulta-historico__count">({{ historico.length }})</span>
+        <span class="paciente-consulta-historico__count">({{ historico.length }})</span>
       </span>
       <v-icon :icon="expanded ? 'mdi-chevron-up' : 'mdi-chevron-down'" />
     </button>
 
-    <div v-if="expanded" class="patient-consulta-historico__body">
+    <div v-if="expanded" class="paciente-consulta-historico__body">
       <v-data-table
         v-if="historico.length > 0"
         :headers="headers"
@@ -49,10 +49,10 @@ import type { Consulta, ConsultaStatus } from '../../../types/consulta'
 import { mockConsultas } from '../../../mocks/consultas.mock'
 import { consultaStatusColor } from '../../../util/consulta-status'
 
-@Component({ name: 'PatientConsultaHistorico', components: { NuvexaEmptyState } })
-export default class PatientConsultaHistorico extends Vue {
+@Component({ name: 'PacienteConsultaHistorico', components: { NuvexaEmptyState } })
+export default class PacienteConsultaHistorico extends Vue {
   @Prop({ required: true })
-  patientId!: number
+  pacienteId!: number
 
   expanded = false
 
@@ -66,7 +66,7 @@ export default class PatientConsultaHistorico extends Vue {
 
   get historico(): Consulta[] {
     return mockConsultas
-      .filter((consulta) => consulta.patientId === this.patientId)
+      .filter((consulta) => consulta.patientId === this.pacienteId)
       .sort((a, b) => b.date.localeCompare(a.date))
   }
 
@@ -84,11 +84,11 @@ export default class PatientConsultaHistorico extends Vue {
 </script>
 
 <style scoped lang="scss">
-.patient-consulta-historico {
+.paciente-consulta-historico {
   margin-top: 24px;
 }
 
-.patient-consulta-historico__header {
+.paciente-consulta-historico__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -103,17 +103,17 @@ export default class PatientConsultaHistorico extends Vue {
   text-align: left;
 }
 
-.patient-consulta-historico__title {
+.paciente-consulta-historico__title {
   font-size: 1.15rem;
   font-weight: 600;
 }
 
-.patient-consulta-historico__count {
+.paciente-consulta-historico__count {
   color: rgb(var(--v-theme-on-surface-variant));
   font-weight: 400;
 }
 
-.patient-consulta-historico__body {
+.paciente-consulta-historico__body {
   margin-top: 16px;
 }
 </style>

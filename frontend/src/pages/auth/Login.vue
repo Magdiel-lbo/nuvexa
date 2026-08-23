@@ -22,14 +22,14 @@
         <label class="authf-label" for="login-password">{{ $t('auth.senha') }}</label>
         <input
           id="login-password"
-          v-model="password"
+          v-model="senha"
           type="password"
           autocomplete="current-password"
           placeholder="••••••••"
           class="authf-input"
-          :class="{ 'authf-input--error': tentouEnviar && erros.password }"
+          :class="{ 'authf-input--error': tentouEnviar && erros.senha }"
         />
-        <span v-if="tentouEnviar && erros.password" class="authf-error">{{ erros.password }}</span>
+        <span v-if="tentouEnviar && erros.senha" class="authf-error">{{ erros.senha }}</span>
       </div>
 
       <div class="authf-row">
@@ -37,7 +37,7 @@
           <input v-model="manterConectado" type="checkbox" class="authf-checkbox" />
           <span class="authf-checkbox-text">{{ $t('auth.manterConectado') }}</span>
         </label>
-        <router-link class="authf-link" to="/forgot-password">{{ $t('auth.esqueciSenha') }}</router-link>
+        <router-link class="authf-link" to="/esqueci-senha">{{ $t('auth.esqueciSenha') }}</router-link>
       </div>
 
       <button type="submit" class="authf-btn" :disabled="carregando">
@@ -57,7 +57,7 @@
 
     <div class="authf-footer">
       {{ $t('auth.aindaNaoTemConta') }}
-      <router-link class="authf-link" to="/register">{{ $t('auth.criarConta') }}</router-link>
+      <router-link class="authf-link" to="/cadastrar">{{ $t('auth.criarConta') }}</router-link>
     </div>
   </div>
 </template>
@@ -72,7 +72,7 @@ import { extrairMensagemErro } from '../../util/api-util'
 @Component({ name: 'Login' })
 export default class Login extends Vue {
   email = ''
-  password = ''
+  senha = ''
   manterConectado = false
   carregando = false
   tentouEnviar = false
@@ -84,8 +84,8 @@ export default class Login extends Vue {
     } else if (!/.+@.+\..+/.test(this.email)) {
       erros.email = this.$t('validacao.emailInvalido') as string
     }
-    if (!this.password) {
-      erros.password = this.$t('validacao.obrigatorio') as string
+    if (!this.senha) {
+      erros.senha = this.$t('validacao.obrigatorio') as string
     }
     return erros
   }
@@ -110,8 +110,8 @@ export default class Login extends Vue {
 
     this.carregando = true
     try {
-      const response = await authService.login({ email: this.email, password: this.password })
-      this.authStore.setSession(response.token, response.role)
+      const response = await authService.login({ email: this.email, senha: this.senha })
+      this.authStore.setSession(response.token, response.perfil)
       const redirect = (this.$route.query.redirect as string) || '/'
       this.$router.push(redirect)
     } catch (e) {

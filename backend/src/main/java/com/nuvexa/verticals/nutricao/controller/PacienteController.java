@@ -22,15 +22,15 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/patients")
+@RequestMapping("/api/v1/pacientes")
 @RequiredArgsConstructor
 public class PacienteController {
 
     private final PacienteService pacienteService;
 
     @GetMapping
-    public List<PacienteResponseDTO> findAll(@RequestParam(required = false) String search) {
-        return pacienteService.findAll(search);
+    public List<PacienteResponseDTO> findAll(@RequestParam(required = false) String busca) {
+        return pacienteService.findAll(busca);
     }
 
     @GetMapping("/{id}")
