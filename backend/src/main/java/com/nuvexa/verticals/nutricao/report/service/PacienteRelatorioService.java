@@ -1,9 +1,9 @@
 package com.nuvexa.verticals.nutricao.report.service;
 
 import com.nuvexa.core.paciente.model.QPaciente;
-import com.nuvexa.platform.report.RelatorioColuna;
-import com.nuvexa.platform.report.RelatorioResponseDTO;
-import com.nuvexa.platform.report.excel.RelatorioExcelWriter;
+import com.nuvexa.relatorios.RelatorioColuna;
+import com.nuvexa.relatorios.RelatorioResponseDTO;
+import com.nuvexa.relatorios.excel.RelatorioExcelWriter;
 import com.nuvexa.verticals.nutricao.calculator.ImcCalculator;
 import com.nuvexa.verticals.nutricao.calculator.GastoCaloricoCalculator;
 import com.nuvexa.verticals.nutricao.calculator.TaxaMetabolicaCalculator;

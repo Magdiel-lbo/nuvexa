@@ -106,9 +106,9 @@
 			<version>3.2.1</version>
 		</dependency>
 		<dependency>
-			<groupId>org.apache.poi</groupId>
-			<artifactId>poi-ooxml</artifactId>
-			<version>5.4.1</version>
+			<groupId>com.nuvexa</groupId>
+			<artifactId>nuvexa-relatorios</artifactId>
+			<version>0.1.0</version>
 		</dependency>
 		<dependency>
 			<groupId>io.github.openfeign.querydsl</groupId>

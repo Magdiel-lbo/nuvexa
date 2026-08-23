@@ -3,7 +3,7 @@ package com.nuvexa.verticals.nutricao.report.mapper;
 import com.nuvexa.core.paciente.model.Sexo;
 import com.nuvexa.core.paciente.model.Paciente;
 import com.nuvexa.platform.dto.EnumOpcaoDTO;
-import com.nuvexa.platform.report.RelatorioColuna;
+import com.nuvexa.relatorios.RelatorioColuna;
 import com.nuvexa.platform.util.EnumOpcaoResolver;
 import com.nuvexa.verticals.nutricao.model.NivelAtividade;
 import com.nuvexa.verticals.nutricao.model.Objetivo;

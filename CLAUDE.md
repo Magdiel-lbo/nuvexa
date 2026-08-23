@@ -97,6 +97,20 @@ com.nuvexa
     └── nutrition/   NutritionProfile (1:1 with PatientCore: height/weight/goal/activityLevel/calories/notes), calculators, controller/service/mapper/DTOs
 ```
 
+(Package/class names above are the pre-translation English originals — the actual code on disk uses the Portuguese domain names described under "Translation" below, e.g. `core.paciente`, `verticals.nutricao`, `PerfilNutricional`.)
+
+### Verticals (Strategy + Registry)
+
+`core.vertical` holds the cross-vertical contract: `Especialidade` (enum, one value per vertical — currently only `NUTRICAO`), `EstrategiaDeVertical` (interface a vertical implements to describe itself), `DescritorDeVertical` (record: `especialidade`/`nome`/`rotaBase`), and `RegistroDeVerticais` (`@Component` that collects every `EstrategiaDeVertical` bean via constructor injection of `List<EstrategiaDeVertical>`, keyed by `Especialidade`; throws `IllegalStateException` at startup if two beans declare the same `Especialidade`). `verticals.nutricao.EstrategiaDeNutricao` is the first (and currently only) implementation.
+
+Rules to preserve when adding a second vertical or touching this layer:
+1. `RegistroDeVerticais` never executes business logic — it only discovers/looks up/lists strategies.
+2. `EstrategiaDeVertical` only describes a vertical (`especialidade()` + `descrever()`); it never calls a `Repository`, replaces a `Service`/`Controller`, or centralizes business rules — those stay in the vertical's own `controller/service/mapper/repository`.
+3. Shared modules (e.g. `platform.report`) must never depend on a specific vertical — dependency direction is always `verticals.* → módulo compartilhado`, never the reverse.
+4. `DescritorDeVertical` metadata stays small (identity/labels), never a full screen/layout/workflow description.
+5. Don't create a new shared module (`modulos.*`) until a second real consumer needs it.
+6. Don't add architectural patterns (Dispatcher, Factory, Chain of Responsibility, plugin system, schema-driven UI, etc.) to this layer without a concrete, current need — Spring MVC already does the HTTP dispatch, `RegistroDeVerticais` already does the lookup.
+
 Each feature package follows `controller → service → mapper → repository`, with request/response DTOs kept separate from JPA entities. Entities extend `platform.persistence.AbstractModel` (auto `id`/`createdAt`/`updatedAt`). Mapping between entities and DTOs is hand-written in `*Mapper` classes (there's a `ModelMapper` bean configured but it isn't actually used for the hand-rolled mappers). QueryDSL is used for dynamic search queries (Q-classes are generated at compile time via annotation processing — if they look missing/stale, `./mvnw compile`).
 
 Errors: throw `CustomException(HttpStatus, message)` from services; `GlobalExceptionHandlerController` (`@RestControllerAdvice`) converts it (and validation/type-mismatch/etc. exceptions) into a uniform `ApiError` JSON body. User-facing messages are resolved through `MessageSource` against `mensagens/messages.properties`, hardcoded to `pt-BR` locale — there's no i18n on the backend side, all API error messages are Portuguese.

@@ -1,7 +1,7 @@
 package com.nuvexa.verticals.nutricao.report.controller;
 
 import com.nuvexa.core.paciente.model.Sexo;
-import com.nuvexa.platform.report.RelatorioResponseDTO;
+import com.nuvexa.relatorios.RelatorioResponseDTO;
 import com.nuvexa.verticals.nutricao.model.NivelAtividade;
 import com.nuvexa.verticals.nutricao.model.Objetivo;
 import com.nuvexa.verticals.nutricao.report.dto.request.PacienteRelatorioFiltroDTO;
