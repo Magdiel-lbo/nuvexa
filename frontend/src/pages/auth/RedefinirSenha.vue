@@ -48,7 +48,7 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-facing-decorator'
-import authService from '../../service/auth-service'
+import authService from '../../core/auth/auth-service'
 import { useAppStore } from '../../store/app.store'
 import { extrairMensagemErro } from '../../util/api-util'
 
