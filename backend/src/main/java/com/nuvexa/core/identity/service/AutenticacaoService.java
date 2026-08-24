@@ -6,6 +6,7 @@ import com.nuvexa.core.identity.dto.request.CadastroRequestDTO;
 import com.nuvexa.core.identity.dto.request.RedefinirSenhaRequestDTO;
 import com.nuvexa.core.identity.dto.response.AutenticacaoResponseDTO;
 import com.nuvexa.core.identity.dto.response.MensagemResponseDTO;
+import com.nuvexa.platform.email.EmailService;
 import com.nuvexa.platform.exception.NegocioException;
 import com.nuvexa.core.identity.model.Perfil;
 import com.nuvexa.core.identity.model.Usuario;
@@ -58,6 +59,7 @@ public class AutenticacaoService {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final MessageSource messageSource;
+    private final EmailService emailService;
     private final SecureRandom secureRandom = new SecureRandom();
 
     @Value("${app.cors.allowed-origin}")
@@ -114,8 +116,15 @@ public class AutenticacaoService {
             usuarioRepository.save(usuario);
 
             String resetLink = frontendUrl + "/redefinir-senha?token=" + rawToken;
-            log.info("Link de recuperação de senha para {} (válido por {} min): {}",
-                    usuario.getEmail(), RESET_TOKEN_VALIDITY_MINUTES, resetLink);
+            emailService.enviar(
+                    usuario.getEmail(),
+                    "Redefinição de senha — Nuvexa",
+                    "<p>Recebemos uma solicitação para redefinir sua senha.</p>"
+                            + "<p><a href=\"" + resetLink + "\">Clique aqui para redefinir sua senha</a></p>"
+                            + "<p>Esse link expira em " + RESET_TOKEN_VALIDITY_MINUTES + " minutos. "
+                            + "Se você não solicitou isso, ignore este e-mail.</p>"
+            );
+            log.info("E-mail de recuperação de senha disparado para usuário id={}", usuario.getId());
         } else {
             log.info("Recuperação de senha solicitada para e-mail não cadastrado: {}", request.getEmail());
         }
