@@ -1,19 +1,19 @@
 <template>
-  <div class="consultas-dashboard">
-    <div class="consultas-dashboard__header">
+  <div class="consulta-lista">
+    <div class="consulta-lista__header">
       <div>
-        <h1 class="consultas-dashboard__title">{{ $t('dashboardConsultas.titulo') }}</h1>
-        <p class="consultas-dashboard__subtitle">{{ $t('dashboardConsultas.subtitulo') }}</p>
+        <h1 class="consulta-lista__title">{{ $t('dashboardConsultas.titulo') }}</h1>
+        <p class="consulta-lista__subtitle">{{ $t('dashboardConsultas.subtitulo') }}</p>
       </div>
       <v-btn color="primary" prepend-icon="mdi-plus" size="large" @click="onCreate">
         {{ $t('dashboardConsultas.nova') }}
       </v-btn>
     </div>
 
-    <NuvexaSummaryCards class="consultas-dashboard__section" :cards="summaryCards" />
+    <NuvexaSummaryCards class="consulta-lista__section" :cards="summaryCards" />
 
     <ConsultaFilters
-      class="consultas-dashboard__section"
+      class="consulta-lista__section"
       :search="search"
       :status="statusFilter"
       :type="typeFilter"
@@ -23,7 +23,7 @@
       @clear="clearFilters"
     />
 
-    <v-card variant="flat" color="surface-variant" class="consultas-dashboard__section consultas-dashboard__table-card">
+    <v-card variant="flat" color="surface-variant" class="consulta-lista__section consulta-lista__table-card">
       <ConsultaTable
         v-if="filteredConsultas.length > 0"
         :consultas="filteredConsultas"
@@ -53,7 +53,7 @@ import type { SummaryCardItem } from '../../components/common/NuvexaSummaryCards
 import NuvexaEmptyState from '../../components/common/NuvexaEmptyState.vue'
 import ConsultaFilters from './components/ConsultaFilters.vue'
 import ConsultaTable from './components/ConsultaTable.vue'
-import { mockConsultas } from '../../mocks/consultas.mock'
+import consultaService from '../../service/consulta-service'
 import type { Consulta, ConsultaStatus, ConsultaTipo } from '../../types/consulta'
 import { useAppStore } from '../../store/app.store'
 
@@ -67,11 +67,11 @@ function isSameDay(isoDate: string, reference: Date): boolean {
 }
 
 @Component({
-  name: 'ConsultasDashboard',
+  name: 'ConsultaLista',
   components: { NuvexaSummaryCards, NuvexaEmptyState, ConsultaFilters, ConsultaTable },
 })
-export default class ConsultasDashboard extends Vue {
-  consultas: Consulta[] = mockConsultas
+export default class ConsultaLista extends Vue {
+  consultas: Consulta[] = []
 
   search = ''
   statusFilter: ConsultaStatus | null = null
@@ -81,6 +81,14 @@ export default class ConsultasDashboard extends Vue {
     return useAppStore()
   }
 
+  async mounted() {
+    await this.carregar()
+  }
+
+  async carregar() {
+    this.consultas = await consultaService.listar()
+  }
+
   get hasActiveFilters(): boolean {
     return !!this.search || !!this.statusFilter || !!this.typeFilter
   }
@@ -88,25 +96,25 @@ export default class ConsultasDashboard extends Vue {
   get filteredConsultas(): Consulta[] {
     return this.consultas
       .filter((consulta) => {
-        if (this.search && !consulta.patientName.toLowerCase().includes(this.search.toLowerCase())) {
+        if (this.search && !consulta.pacienteNome.toLowerCase().includes(this.search.toLowerCase())) {
           return false
         }
         if (this.statusFilter && consulta.status !== this.statusFilter) {
           return false
         }
-        if (this.typeFilter && consulta.type !== this.typeFilter) {
+        if (this.typeFilter && consulta.tipo !== this.typeFilter) {
           return false
         }
         return true
       })
-      .sort((a, b) => a.date.localeCompare(b.date))
+      .sort((a, b) => a.dataHora.localeCompare(b.dataHora))
   }
 
   get summary() {
     const now = new Date()
     return {
       total: this.consultas.length,
-      hoje: this.consultas.filter((c) => isSameDay(c.date, now)).length,
+      hoje: this.consultas.filter((c) => isSameDay(c.dataHora, now)).length,
       confirmadas: this.consultas.filter((c) => c.status === 'CONFIRMADA').length,
       canceladas: this.consultas.filter((c) => c.status === 'CANCELADA' || c.status === 'FALTOU').length,
     }
@@ -128,7 +136,7 @@ export default class ConsultasDashboard extends Vue {
   }
 
   onCreate() {
-    this.appStore.setToast({ mensagem: 'Layout de demonstração — agendamento ainda não integrado.', erro: false })
+    this.$router.push('/consultas/novo')
   }
 
   onView(consulta: Consulta) {
@@ -139,20 +147,22 @@ export default class ConsultasDashboard extends Vue {
     this.$router.push(`/consultas/${consulta.id}/editar`)
   }
 
-  onCancel(consulta: Consulta) {
-    consulta.status = 'CANCELADA'
-    this.appStore.setToast({ mensagem: `Consulta de ${consulta.patientName} cancelada.`, erro: false })
+  async onCancel(consulta: Consulta) {
+    await consultaService.cancelar(consulta)
+    await this.carregar()
+    this.appStore.setToast({ mensagem: `Consulta de ${consulta.pacienteNome} cancelada.`, erro: false })
   }
 
-  onDelete(consulta: Consulta) {
-    this.consultas = this.consultas.filter((c) => c.id !== consulta.id)
-    this.appStore.setToast({ mensagem: `Consulta de ${consulta.patientName} removida.`, erro: false })
+  async onDelete(consulta: Consulta) {
+    await consultaService.excluir(consulta.id)
+    await this.carregar()
+    this.appStore.setToast({ mensagem: `Consulta de ${consulta.pacienteNome} removida.`, erro: false })
   }
 }
 </script>
 
 <style scoped lang="scss">
-.consultas-dashboard__header {
+.consulta-lista__header {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
@@ -161,23 +171,23 @@ export default class ConsultasDashboard extends Vue {
   margin-bottom: 24px;
 }
 
-.consultas-dashboard__title {
+.consulta-lista__title {
   font-size: 1.75rem;
   font-weight: 700;
   margin: 0 0 4px;
 }
 
-.consultas-dashboard__subtitle {
+.consulta-lista__subtitle {
   color: rgb(var(--v-theme-on-surface-variant));
   margin: 0;
   max-width: 60ch;
 }
 
-.consultas-dashboard__section {
+.consulta-lista__section {
   margin-bottom: 20px;
 }
 
-.consultas-dashboard__table-card {
+.consulta-lista__table-card {
   border-radius: 12px;
 }
 </style>

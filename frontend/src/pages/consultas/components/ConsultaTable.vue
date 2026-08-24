@@ -6,21 +6,21 @@
     mobile-breakpoint="sm"
     class="consulta-table"
   >
-    <template #item.patientName="{ item }">
+    <template #item.pacienteNome="{ item }">
       <div class="consulta-cell">
         <v-avatar :color="avatarColor(item.id)" variant="tonal" size="36">
-          <span class="consulta-cell__initials">{{ initials(item.patientName) }}</span>
+          <span class="consulta-cell__initials">{{ initials(item.pacienteNome) }}</span>
         </v-avatar>
-        <span class="consulta-cell__name">{{ item.patientName }}</span>
+        <span class="consulta-cell__name">{{ item.pacienteNome }}</span>
       </div>
     </template>
 
-    <template #item.date="{ item }">
-      <span>{{ formatDateTime(item.date) }}</span>
+    <template #item.dataHora="{ item }">
+      <span>{{ formatDateTime(item.dataHora) }}</span>
     </template>
 
-    <template #item.type="{ item }">
-      <v-chip size="small" variant="tonal" color="secondary">{{ $t(`consulta.tipo.${item.type}`) }}</v-chip>
+    <template #item.tipo="{ item }">
+      <v-chip size="small" variant="tonal" color="secondary">{{ $t(`consulta.tipo.${item.tipo}`) }}</v-chip>
     </template>
 
     <template #item.status="{ item }">
@@ -69,9 +69,9 @@ export default class ConsultaTable extends Vue {
 
   get headers() {
     return [
-      { title: this.$t('dashboardConsultas.tabela.paciente'), key: 'patientName' },
-      { title: this.$t('dashboardConsultas.tabela.dataHora'), key: 'date' },
-      { title: this.$t('dashboardConsultas.filtros.tipo'), key: 'type' },
+      { title: this.$t('dashboardConsultas.tabela.paciente'), key: 'pacienteNome' },
+      { title: this.$t('dashboardConsultas.tabela.dataHora'), key: 'dataHora' },
+      { title: this.$t('dashboardConsultas.filtros.tipo'), key: 'tipo' },
       { title: this.$t('dashboardConsultas.filtros.status'), key: 'status' },
       { title: '', key: 'actions', sortable: false, align: 'end' as const },
     ]

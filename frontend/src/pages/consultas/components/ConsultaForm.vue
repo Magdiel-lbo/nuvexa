@@ -1,9 +1,20 @@
 <template>
   <v-form ref="form" v-model="formValido" :disabled="readonly" @submit.prevent="salvar">
     <v-row>
+      <v-col v-if="mostrarSelecaoPaciente" cols="12">
+        <v-select
+          v-model="model.pacienteId"
+          :items="pacienteOptions"
+          item-title="label"
+          item-value="value"
+          :label="$t('dashboardConsultas.tabela.paciente')"
+          :rules="[rules.obrigatorio]"
+        />
+      </v-col>
+
       <v-col cols="12" md="6">
         <v-text-field
-          v-model="model.date"
+          v-model="model.dataHora"
           type="datetime-local"
           :label="$t('consulta.dataHora')"
           :rules="[rules.obrigatorio]"
@@ -12,7 +23,7 @@
 
       <v-col cols="12" md="6">
         <v-text-field
-          v-model.number="model.durationMinutes"
+          v-model.number="model.duracaoMinutos"
           type="number"
           :label="$t('consulta.duracao')"
           :rules="[rules.obrigatorio]"
@@ -21,7 +32,7 @@
 
       <v-col cols="12" md="6">
         <v-select
-          v-model="model.type"
+          v-model="model.tipo"
           :items="tipoOptions"
           item-title="label"
           item-value="value"
@@ -42,7 +53,7 @@
       </v-col>
 
       <v-col cols="12">
-        <v-textarea v-model="model.notes" :label="$t('consulta.observacoes')" rows="3" />
+        <v-textarea v-model="model.observacoes" :label="$t('consulta.observacoes')" rows="3" />
       </v-col>
     </v-row>
 
@@ -58,11 +69,12 @@ import { Component, Prop, VModel, Emit, Vue } from 'vue-facing-decorator'
 import type { ConsultaStatus, ConsultaTipo } from '../../../types/consulta'
 
 export interface ConsultaFormModel {
-  date: string
-  durationMinutes: number
-  type: ConsultaTipo
+  pacienteId: number | null
+  dataHora: string
+  duracaoMinutos: number
+  tipo: ConsultaTipo
   status: ConsultaStatus
-  notes: string | null
+  observacoes: string | null
 }
 
 @Component({ name: 'ConsultaForm' })
@@ -78,6 +90,12 @@ export default class ConsultaForm extends Vue {
 
   @Prop({ default: false })
   readonly!: boolean
+
+  @Prop({ default: false })
+  mostrarSelecaoPaciente!: boolean
+
+  @Prop({ default: () => [] })
+  pacienteOptions!: { value: number; label: string }[]
 
   formValido = true
 

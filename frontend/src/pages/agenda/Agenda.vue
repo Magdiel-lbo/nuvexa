@@ -39,15 +39,15 @@
         <template #event="{ event }">
           <v-tooltip activator="parent" location="top" max-width="280">
             <div class="agenda-event-tooltip">
-              <div class="agenda-event-tooltip__patient">{{ event.consulta.patientName }}</div>
-              <div>{{ $t(`consulta.status.${event.consulta.status}`) }} · {{ formatHora(event.consulta.date) }}</div>
-              <div v-if="event.consulta.status === 'CANCELADA' && event.consulta.notes" class="agenda-event-tooltip__motivo">
-                {{ $t('consulta.motivoCancelamento') }}: {{ event.consulta.notes }}
+              <div class="agenda-event-tooltip__patient">{{ event.consulta.pacienteNome }}</div>
+              <div>{{ $t(`consulta.status.${event.consulta.status}`) }} · {{ formatHora(event.consulta.dataHora) }}</div>
+              <div v-if="event.consulta.status === 'CANCELADA' && event.consulta.observacoes" class="agenda-event-tooltip__motivo">
+                {{ $t('consulta.motivoCancelamento') }}: {{ event.consulta.observacoes }}
               </div>
             </div>
           </v-tooltip>
           <div class="pl-1 agenda-event-content">
-            <strong>{{ formatHora(event.consulta.date) }}</strong> {{ event.consulta.patientName }}
+            <strong>{{ formatHora(event.consulta.dataHora) }}</strong> {{ event.consulta.pacienteNome }}
           </div>
         </template>
       </v-calendar>
@@ -57,7 +57,7 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-facing-decorator'
-import { mockConsultas } from '../../mocks/consultas.mock'
+import consultaService from '../../service/consulta-service'
 import type { Consulta } from '../../types/consulta'
 import { consultaStatusColor } from '../../util/consulta-status'
 import { useAppStore } from '../../store/app.store'
@@ -84,12 +84,16 @@ function capitalize(text: string): string {
 
 @Component({ name: 'Agenda' })
 export default class Agenda extends Vue {
-  consultas: Consulta[] = mockConsultas
+  consultas: Consulta[] = []
   focus: string = toIso(new Date())
   viewType: ViewType = 'month'
 
   get appStore() {
     return useAppStore()
+  }
+
+  async mounted() {
+    this.consultas = await consultaService.listar()
   }
 
   get focusDate(): Date {
@@ -98,10 +102,10 @@ export default class Agenda extends Vue {
 
   get events(): AgendaEvent[] {
     return this.consultas.map((consulta) => {
-      const start = new Date(consulta.date)
-      const end = new Date(start.getTime() + consulta.durationMinutes * 60000)
+      const start = new Date(consulta.dataHora)
+      const end = new Date(start.getTime() + consulta.duracaoMinutos * 60000)
       return {
-        name: `${consulta.patientName} · ${this.$t(`consulta.tipo.${consulta.type}`)}`,
+        name: `${consulta.pacienteNome} · ${this.$t(`consulta.tipo.${consulta.tipo}`)}`,
         start,
         end,
         color: consultaStatusColor(consulta.status),
@@ -161,12 +165,12 @@ export default class Agenda extends Vue {
   }
 
   onCreate() {
-    this.appStore.setToast({ mensagem: 'Layout de demonstração — agendamento ainda não integrado.', erro: false })
+    this.$router.push('/consultas/novo')
   }
 
   onEventClick(_nativeEvent: Event, info: { event: AgendaEvent }) {
     const consulta = info.event.consulta
-    this.appStore.setToast({ mensagem: `${consulta.patientName} — ${this.$t(`consulta.status.${consulta.status}`)}`, erro: false })
+    this.appStore.setToast({ mensagem: `${consulta.pacienteNome} — ${this.$t(`consulta.status.${consulta.status}`)}`, erro: false })
   }
 }
 </script>

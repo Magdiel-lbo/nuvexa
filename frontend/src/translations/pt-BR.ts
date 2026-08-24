@@ -81,6 +81,7 @@ export default {
     redefinirSenha: 'Erro ao redefinir senha',
     generico: 'Erro inesperado',
     acessoNegado: 'Você não tem permissão para executar esta ação',
+    salvarConsulta: 'Erro ao salvar consulta',
   },
   contexto: {
     organizacaoAtual: 'Organização atual',
@@ -91,6 +92,7 @@ export default {
     pacienteAtivado: 'Paciente ativado com sucesso',
     pacienteDesativado: 'Paciente desativado com sucesso',
     contaCriada: 'Conta criada com sucesso',
+    consultaSalva: 'Consulta salva com sucesso',
     senhaRedefinida: 'Senha redefinida com sucesso. Faça login com sua nova senha.',
   },
   auth: {
@@ -272,6 +274,7 @@ export default {
     },
   },
   consulta: {
+    novo: 'Nova consulta',
     editar: 'Editar consulta',
     detalhes: 'Detalhes da consulta',
     dataHora: 'Data e hora',
