@@ -2,11 +2,11 @@ package com.nuvexa.verticals.nutricao;
 
 import com.nuvexa.core.vertical.DescritorDeVertical;
 import com.nuvexa.core.vertical.Especialidade;
-import com.nuvexa.core.vertical.EstrategiaDeVertical;
+import com.nuvexa.core.vertical.VerticalStrategy;
 import org.springframework.stereotype.Component;
 
 @Component
-public class EstrategiaDeNutricao implements EstrategiaDeVertical {
+public class NutricaoStrategy implements VerticalStrategy {
 
     @Override
     public Especialidade especialidade() {

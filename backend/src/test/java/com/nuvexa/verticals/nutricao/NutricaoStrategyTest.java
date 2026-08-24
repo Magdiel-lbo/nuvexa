@@ -6,9 +6,9 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class EstrategiaDeNutricaoTest {
+class NutricaoStrategyTest {
 
-    private final EstrategiaDeNutricao estrategia = new EstrategiaDeNutricao();
+    private final NutricaoStrategy estrategia = new NutricaoStrategy();
 
     @Test
     void shouldDeclareNutricaoEspecialidade() {

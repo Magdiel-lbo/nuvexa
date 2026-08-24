@@ -7,28 +7,28 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-class RegistroDeVerticaisTest {
+class VerticalRegistryTest {
 
     private static final DescritorDeVertical DESCRITOR_NUTRICAO =
             new DescritorDeVertical(Especialidade.NUTRICAO, "Nutrição", "/pacientes");
 
     @Test
     void shouldFindStrategyByEspecialidade() {
-        RegistroDeVerticais registro = new RegistroDeVerticais(List.of(estrategia(Especialidade.NUTRICAO, DESCRITOR_NUTRICAO)));
+        VerticalRegistry registro = new VerticalRegistry(List.of(estrategia(Especialidade.NUTRICAO, DESCRITOR_NUTRICAO)));
 
         assertThat(registro.buscarPorEspecialidade(Especialidade.NUTRICAO)).isPresent();
     }
 
     @Test
     void shouldListAllRegisteredDescriptors() {
-        RegistroDeVerticais registro = new RegistroDeVerticais(List.of(estrategia(Especialidade.NUTRICAO, DESCRITOR_NUTRICAO)));
+        VerticalRegistry registro = new VerticalRegistry(List.of(estrategia(Especialidade.NUTRICAO, DESCRITOR_NUTRICAO)));
 
         assertThat(registro.listarDisponiveis()).containsExactly(DESCRITOR_NUTRICAO);
     }
 
     @Test
     void shouldReturnEmptyWhenEspecialidadeIsNotRegistered() {
-        RegistroDeVerticais registro = new RegistroDeVerticais(List.of());
+        VerticalRegistry registro = new VerticalRegistry(List.of());
 
         assertThat(registro.buscarPorEspecialidade(Especialidade.NUTRICAO)).isEmpty();
         assertThat(registro.listarDisponiveis()).isEmpty();
@@ -36,17 +36,17 @@ class RegistroDeVerticaisTest {
 
     @Test
     void shouldRejectTwoStrategiesForTheSameEspecialidade() {
-        List<EstrategiaDeVertical> estrategias = List.of(
+        List<VerticalStrategy> estrategias = List.of(
                 estrategia(Especialidade.NUTRICAO, DESCRITOR_NUTRICAO),
                 estrategia(Especialidade.NUTRICAO, DESCRITOR_NUTRICAO));
 
-        assertThatThrownBy(() -> new RegistroDeVerticais(estrategias))
+        assertThatThrownBy(() -> new VerticalRegistry(estrategias))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("NUTRICAO");
     }
 
-    private EstrategiaDeVertical estrategia(Especialidade especialidade, DescritorDeVertical descritor) {
-        return new EstrategiaDeVertical() {
+    private VerticalStrategy estrategia(Especialidade especialidade, DescritorDeVertical descritor) {
+        return new VerticalStrategy() {
             @Override
             public Especialidade especialidade() {
                 return especialidade;
