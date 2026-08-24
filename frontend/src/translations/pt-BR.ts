@@ -80,6 +80,10 @@ export default {
     esqueciSenha: 'Erro ao solicitar recuperação de senha',
     redefinirSenha: 'Erro ao redefinir senha',
     generico: 'Erro inesperado',
+    acessoNegado: 'Você não tem permissão para executar esta ação',
+  },
+  contexto: {
+    organizacaoAtual: 'Organização atual',
   },
   sucesso: {
     salvo: 'Paciente salvo com sucesso',

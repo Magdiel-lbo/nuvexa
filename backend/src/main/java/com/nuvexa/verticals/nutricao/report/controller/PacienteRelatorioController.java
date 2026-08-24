@@ -29,7 +29,7 @@ public class PacienteRelatorioController {
             @RequestParam(required = false) Sexo sexo,
             @RequestParam(required = false) Objetivo objetivo,
             @RequestParam(required = false) NivelAtividade nivelAtividade) {
-        return pacienteRelatorioService.generate(toFiltro(busca, sexo, objetivo, nivelAtividade));
+        return pacienteRelatorioService.generate(PacienteRelatorioFiltroDTO.of(busca, sexo, objetivo, nivelAtividade));
     }
 
     @GetMapping("/excel")
@@ -38,19 +38,10 @@ public class PacienteRelatorioController {
             @RequestParam(required = false) Sexo sexo,
             @RequestParam(required = false) Objetivo objetivo,
             @RequestParam(required = false) NivelAtividade nivelAtividade) {
-        byte[] excel = pacienteRelatorioService.generateExcel(toFiltro(busca, sexo, objetivo, nivelAtividade));
+        byte[] excel = pacienteRelatorioService.generateExcel(PacienteRelatorioFiltroDTO.of(busca, sexo, objetivo, nivelAtividade));
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"relatorio-pacientes.xlsx\"")
                 .body(excel);
-    }
-
-    private PacienteRelatorioFiltroDTO toFiltro(String busca, Sexo sexo, Objetivo objetivo, NivelAtividade nivelAtividade) {
-        return PacienteRelatorioFiltroDTO.builder()
-                .busca(busca)
-                .sexo(sexo)
-                .objetivo(objetivo)
-                .nivelAtividade(nivelAtividade)
-                .build();
     }
 }

@@ -1,10 +1,10 @@
 package com.nuvexa.verticals.nutricao.service;
 
-import com.nuvexa.core.paciente.model.Sexo;
+import com.nuvexa.core.contexto.ContextoDeAutenticacao;
 import com.nuvexa.core.paciente.model.Paciente;
+import com.nuvexa.core.paciente.model.QPaciente;
 import com.nuvexa.core.paciente.repository.PacienteRepository;
 import com.nuvexa.platform.exception.NegocioException;
-import com.nuvexa.platform.util.EnumOpcaoResolver;
 import com.nuvexa.verticals.nutricao.calculator.ImcCalculator;
 import com.nuvexa.verticals.nutricao.calculator.GastoCaloricoCalculator;
 import com.nuvexa.verticals.nutricao.calculator.TaxaMetabolicaCalculator;
@@ -12,9 +12,6 @@ import com.nuvexa.verticals.nutricao.dto.request.PacienteCreateRequestDTO;
 import com.nuvexa.verticals.nutricao.dto.request.PacienteUpdateRequestDTO;
 import com.nuvexa.verticals.nutricao.dto.response.PacienteEnumsResponseDTO;
 import com.nuvexa.verticals.nutricao.dto.response.PacienteResponseDTO;
-import com.nuvexa.verticals.nutricao.mapper.PacienteMapper;
-import com.nuvexa.verticals.nutricao.model.NivelAtividade;
-import com.nuvexa.verticals.nutricao.model.Objetivo;
 import com.nuvexa.verticals.nutricao.model.PerfilNutricional;
 import com.nuvexa.verticals.nutricao.model.QPerfilNutricional;
 import com.nuvexa.verticals.nutricao.repository.PerfilNutricionalRepository;
@@ -22,6 +19,7 @@ import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.modelmapper.ModelMapper;
 import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -43,9 +41,10 @@ public class PacienteService {
 
     private final PacienteRepository pacienteRepository;
     private final PerfilNutricionalRepository perfilNutricionalRepository;
-    private final PacienteMapper pacienteMapper;
+    private final ContextoDeAutenticacao contextoDeAutenticacao;
     private final JPAQueryFactory queryFactory;
     private final MessageSource messageSource;
+    private final ModelMapper modelMapper;
     private final ImcCalculator imcCalculator;
     private final TaxaMetabolicaCalculator taxaMetabolicaCalculator;
     private final GastoCaloricoCalculator gastoCaloricoCalculator;
@@ -53,8 +52,8 @@ public class PacienteService {
     public PacienteResponseDTO create(PacienteCreateRequestDTO request) {
         validar(request.getNome(), request.getDataNascimento(), request.getAltura(), request.getPeso(), request.getCaloriasDiariasManuais());
 
-        Paciente paciente = pacienteRepository.save(pacienteMapper.toPaciente(request));
-        PerfilNutricional perfilNutricional = perfilNutricionalRepository.save(pacienteMapper.toPerfilNutricional(request, paciente));
+        Paciente paciente = pacienteRepository.save(request.toPaciente(contextoDeAutenticacao.organizacaoAtual()));
+        PerfilNutricional perfilNutricional = perfilNutricionalRepository.save(request.toPerfilNutricional(paciente));
         log.info("Paciente criado com id={}", paciente.getId());
         return toResponseComCalculos(perfilNutricional);
     }
@@ -63,8 +62,8 @@ public class PacienteService {
         PerfilNutricional perfilNutricional = buscarPerfilOuFalhar(id);
         validar(request.getNome(), request.getDataNascimento(), request.getAltura(), request.getPeso(), request.getCaloriasDiariasManuais());
 
-        pacienteMapper.updatePaciente(request, perfilNutricional.getPaciente());
-        pacienteMapper.updatePerfilNutricional(request, perfilNutricional);
+        request.atualizar(perfilNutricional.getPaciente(), modelMapper);
+        request.atualizar(perfilNutricional, modelMapper);
         pacienteRepository.save(perfilNutricional.getPaciente());
         PerfilNutricional saved = perfilNutricionalRepository.save(perfilNutricional);
         log.info("Paciente atualizado com id={}", id);
@@ -82,11 +81,7 @@ public class PacienteService {
     }
 
     public PacienteEnumsResponseDTO getEnums() {
-        return PacienteEnumsResponseDTO.builder()
-                .sexos(EnumOpcaoResolver.resolve(Sexo.class, "enum.sexo", messageSource, MESSAGE_LOCALE))
-                .objetivos(EnumOpcaoResolver.resolve(Objetivo.class, "enum.objetivo", messageSource, MESSAGE_LOCALE))
-                .niveisAtividade(EnumOpcaoResolver.resolve(NivelAtividade.class, "enum.nivelAtividade", messageSource, MESSAGE_LOCALE))
-                .build();
+        return PacienteEnumsResponseDTO.of(messageSource, MESSAGE_LOCALE);
     }
 
     public void delete(Long id) {
@@ -97,13 +92,17 @@ public class PacienteService {
 
     private List<PerfilNutricional> buscarPerfis(String nome) {
         QPerfilNutricional perfilNutricional = QPerfilNutricional.perfilNutricional;
+        QPaciente paciente = QPaciente.paciente;
 
-        BooleanExpression filtroNome = nome == null ? null : perfilNutricional.paciente.nome.containsIgnoreCase(nome);
+        BooleanExpression filtroNome = nome == null ? null : paciente.nome.containsIgnoreCase(nome);
+        // Escopo aplicado na própria query: nenhum paciente de outra organização chega ao Java.
+        BooleanExpression filtroOrganizacao = paciente.organizacao.id.eq(contextoDeAutenticacao.organizacaoAtualId());
 
         return queryFactory
                 .selectFrom(perfilNutricional)
-                .where(filtroNome)
-                .orderBy(perfilNutricional.paciente.nome.asc())
+                .join(perfilNutricional.paciente, paciente).fetchJoin()
+                .where(filtroOrganizacao, filtroNome)
+                .orderBy(paciente.nome.asc())
                 .fetch();
     }
 
@@ -111,8 +110,13 @@ public class PacienteService {
         return (busca == null || busca.isBlank()) ? null : busca.trim();
     }
 
+    /**
+     * Busca sempre restrita à organização atual. Paciente de outra organização resulta em 404
+     * (e não 403) de propósito: um 403 confirmaria ao chamador que aquele id existe.
+     */
     private PerfilNutricional buscarPerfilOuFalhar(Long id) {
-        return perfilNutricionalRepository.findByPacienteId(id)
+        return perfilNutricionalRepository
+                .findByPacienteIdAndPacienteOrganizacaoId(id, contextoDeAutenticacao.organizacaoAtualId())
                 .orElseThrow(() -> new NegocioException(HttpStatus.NOT_FOUND, resolveMessage("paciente.naoEncontrado", id)));
     }
 
@@ -139,7 +143,7 @@ public class PacienteService {
     }
 
     private PacienteResponseDTO toResponseComCalculos(PerfilNutricional perfilNutricional) {
-        PacienteResponseDTO response = pacienteMapper.toResponse(perfilNutricional);
+        PacienteResponseDTO response = PacienteResponseDTO.from(perfilNutricional);
         Paciente paciente = perfilNutricional.getPaciente();
 
         int idade = Period.between(paciente.getDataNascimento(), LocalDate.now()).getYears();

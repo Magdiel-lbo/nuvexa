@@ -1,5 +1,7 @@
 package com.nuvexa.core.identity.dto.request;
 
+import com.nuvexa.core.identity.model.Perfil;
+import com.nuvexa.core.identity.model.Usuario;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -26,4 +28,14 @@ public class CadastroRequestDTO {
     @NotBlank(message = "{autenticacao.senha.obrigatoria}")
     @Size(min = 8, message = "{autenticacao.senha.invalida}")
     private String senha;
+
+    public Usuario toUsuario(String senhaCriptografada, Perfil perfil, boolean ativo) {
+        return Usuario.builder()
+                .nome(nome)
+                .email(email)
+                .senha(senhaCriptografada)
+                .perfil(perfil)
+                .ativo(ativo)
+                .build();
+    }
 }

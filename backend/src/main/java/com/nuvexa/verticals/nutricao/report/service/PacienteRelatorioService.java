@@ -1,5 +1,6 @@
 package com.nuvexa.verticals.nutricao.report.service;
 
+import com.nuvexa.core.contexto.ContextoDeAutenticacao;
 import com.nuvexa.core.paciente.model.QPaciente;
 import com.nuvexa.relatorios.RelatorioColuna;
 import com.nuvexa.relatorios.RelatorioResponseDTO;
@@ -11,7 +12,6 @@ import com.nuvexa.verticals.nutricao.model.PerfilNutricional;
 import com.nuvexa.verticals.nutricao.model.QPerfilNutricional;
 import com.nuvexa.verticals.nutricao.report.dto.request.PacienteRelatorioFiltroDTO;
 import com.nuvexa.verticals.nutricao.report.dto.response.PacienteRelatorioLinhaDTO;
-import com.nuvexa.verticals.nutricao.report.mapper.PacienteRelatorioMapper;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -32,8 +32,8 @@ public class PacienteRelatorioService {
     private static final Locale MESSAGE_LOCALE = Locale.of("pt", "BR");
 
     private final JPAQueryFactory queryFactory;
+    private final ContextoDeAutenticacao contextoDeAutenticacao;
     private final MessageSource messageSource;
-    private final PacienteRelatorioMapper pacienteRelatorioMapper;
     private final ImcCalculator imcCalculator;
     private final TaxaMetabolicaCalculator taxaMetabolicaCalculator;
     private final GastoCaloricoCalculator gastoCaloricoCalculator;
@@ -49,7 +49,7 @@ public class PacienteRelatorioService {
     }
 
     private List<RelatorioColuna<PacienteRelatorioLinhaDTO>> colunas() {
-        return pacienteRelatorioMapper.buildColunas(messageSource, MESSAGE_LOCALE);
+        return PacienteRelatorioLinhaDTO.colunas(messageSource, MESSAGE_LOCALE);
     }
 
     private List<PacienteRelatorioLinhaDTO> linhas(PacienteRelatorioFiltroDTO filtro) {
@@ -68,11 +68,13 @@ public class PacienteRelatorioService {
         BooleanExpression filtroNivelAtividade = filtro.getNivelAtividade() == null
                 ? null
                 : perfilNutricional.nivelAtividade.eq(filtro.getNivelAtividade());
+        // Escopo organizacional: o relatório nunca enxerga além da organização atual.
+        BooleanExpression filtroOrganizacao = paciente.organizacao.id.eq(contextoDeAutenticacao.organizacaoAtualId());
 
         return queryFactory
                 .selectFrom(perfilNutricional)
-                .join(perfilNutricional.paciente, paciente)
-                .where(filtroBusca, filtroSexo, filtroObjetivo, filtroNivelAtividade)
+                .join(perfilNutricional.paciente, paciente).fetchJoin()
+                .where(filtroOrganizacao, filtroBusca, filtroSexo, filtroObjetivo, filtroNivelAtividade)
                 .orderBy(paciente.nome.asc())
                 .fetch();
     }
@@ -86,6 +88,6 @@ public class PacienteRelatorioService {
                 ? perfilNutricional.getCaloriasDiariasManuais()
                 : gastoCaloricoCalculator.calculate(taxaMetabolicaBasal, perfilNutricional.getNivelAtividade());
 
-        return pacienteRelatorioMapper.toRow(perfilNutricional, idade, imc, imcCalculator.classify(imc), gastoCaloricoDiario);
+        return PacienteRelatorioLinhaDTO.from(perfilNutricional, idade, imc, imcCalculator.classify(imc), gastoCaloricoDiario);
     }
 }

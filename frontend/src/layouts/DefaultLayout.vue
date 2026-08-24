@@ -94,6 +94,13 @@
           </v-btn>
         </template>
         <v-list density="compact">
+          <v-list-item
+            v-if="organizacaoNome"
+            prepend-icon="mdi-domain"
+            :title="organizacaoNome"
+            :subtitle="$t('contexto.organizacaoAtual')"
+          />
+          <v-divider v-if="organizacaoNome" class="my-1" />
           <v-list-item prepend-icon="mdi-logout" :title="$t('auth.sair')" @click="sair" />
         </v-list>
       </v-menu>
@@ -116,8 +123,10 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-facing-decorator'
 import { useAppStore } from '../store/app.store'
-import { useAuthStore } from '../store/auth.store'
+import { useAuthStore } from '../core/auth/auth.store'
 import { useThemeStore } from '../store/theme.store'
+import { useContextoStore } from '../core/contexto/contexto.store'
+import { verticalRegistry } from '../core/verticais/vertical-registry'
 import BrandMark from '../components/common/BrandMark.vue'
 
 interface NavItem {
@@ -146,6 +155,14 @@ export default class DefaultLayout extends Vue {
     return useThemeStore()
   }
 
+  get contextoStore() {
+    return useContextoStore()
+  }
+
+  get organizacaoNome(): string {
+    return this.contextoStore.organizacaoNome
+  }
+
   get isRail(): boolean {
     return !this.isMobile && this.rail
   }
@@ -164,13 +181,23 @@ export default class DefaultLayout extends Vue {
   }
 
   get atendimentoItems(): NavItem[] {
-    return [
-      { to: '/pacientes', label: this.$t('menu.pacientes') as string, icon: 'mdi-account-group-outline' },
+    const items: NavItem[] = []
+
+    // "Pacientes" só aparece se a vertical de Nutrição estiver registrada — o caminho
+    // vem do próprio descritor, não de uma string solta repetida aqui e nas rotas.
+    const nutricao = verticalRegistry.buscarPorEspecialidade('NUTRICAO')
+    if (nutricao) {
+      items.push({ to: nutricao.rotaBase, label: this.$t('menu.pacientes') as string, icon: 'mdi-account-group-outline' })
+    }
+
+    items.push(
       { to: '/agenda', label: this.$t('menu.agenda') as string, icon: 'mdi-calendar-month-outline' },
       { to: '/consultas', label: this.$t('menu.consultas') as string, icon: 'mdi-calendar-check-outline' },
       { to: '/nutricao', label: this.$t('menu.nutricao') as string, icon: 'mdi-food-apple-outline' },
       { to: '/avaliacoes', label: this.$t('menu.avaliacoes') as string, icon: 'mdi-clipboard-pulse-outline' },
-    ]
+    )
+
+    return items
   }
 
   get sistemaItems(): NavItem[] {
@@ -209,6 +236,7 @@ export default class DefaultLayout extends Vue {
 
   sair() {
     this.authStore.logout()
+    this.contextoStore.limpar()
     this.$router.push('/login')
   }
 }

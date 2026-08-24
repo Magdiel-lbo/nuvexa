@@ -2,6 +2,7 @@ package com.nuvexa.verticals.nutricao.controller;
 
 import tools.jackson.databind.ObjectMapper;
 import com.nuvexa.platform.config.MessageConfig;
+import com.nuvexa.platform.security.JwtAuthenticationFilter;
 import com.nuvexa.verticals.nutricao.dto.request.PacienteCreateRequestDTO;
 import com.nuvexa.verticals.nutricao.dto.request.PacienteUpdateRequestDTO;
 import com.nuvexa.verticals.nutricao.dto.response.PacienteResponseDTO;
@@ -12,7 +13,10 @@ import com.nuvexa.platform.exception.NegocioException;
 import com.nuvexa.verticals.nutricao.service.PacienteService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -33,7 +37,14 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(PacienteController.class)
+// Slice puro de web: o JwtAuthenticationFilter é um bean Filter e seria arrastado para dentro
+// da fatia (sem o JwtService, que não faz parte dela), então fica explicitamente de fora.
+// Autorização de verdade é exercida em PacienteAutorizacaoIntegrationTest, com o contexto completo.
+@WebMvcTest(value = PacienteController.class,
+        excludeFilters = @ComponentScan.Filter(
+                type = FilterType.ASSIGNABLE_TYPE,
+                classes = JwtAuthenticationFilter.class))
+@AutoConfigureMockMvc(addFilters = false)
 @Import(MessageConfig.class)
 class PacienteControllerTest {
 

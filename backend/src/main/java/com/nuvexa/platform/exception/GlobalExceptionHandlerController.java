@@ -7,6 +7,7 @@ import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -54,6 +55,17 @@ public class GlobalExceptionHandlerController {
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ApiErro> handleNoResourceFound(HttpServletRequest request) {
         return buildResponse(HttpStatus.NOT_FOUND, messageSource.getMessage("erro.naoEncontrado", null, MESSAGE_LOCALE), request);
+    }
+
+    /**
+     * Negativa vinda de @PreAuthorize. Diferente da negativa do filtro de segurança (tratada pelo
+     * JwtAccessDeniedHandler), esta é lançada dentro do controller e chegaria ao handler genérico
+     * como 500 se não fosse interceptada aqui.
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiErro> handleAccessDenied(AccessDeniedException ex, HttpServletRequest request) {
+        log.warn("Acesso negado em {}: {}", request.getRequestURI(), ex.getMessage());
+        return buildResponse(HttpStatus.FORBIDDEN, messageSource.getMessage("erro.acessoNegado", null, MESSAGE_LOCALE), request);
     }
 
     @ExceptionHandler(Exception.class)

@@ -1,34 +1,42 @@
 package com.nuvexa.verticals.nutricao.service;
 
+import com.nuvexa.core.contexto.ContextoDeAutenticacao;
+import com.nuvexa.core.organizacao.model.Organizacao;
+import com.nuvexa.core.organizacao.model.StatusOrganizacao;
+import com.nuvexa.core.organizacao.model.TipoOrganizacao;
+import com.nuvexa.core.organizacao.repository.OrganizacaoRepository;
 import com.nuvexa.core.paciente.model.Sexo;
 import com.nuvexa.core.paciente.model.Paciente;
 import com.nuvexa.core.paciente.repository.PacienteRepository;
 import com.nuvexa.platform.config.MessageConfig;
+import com.nuvexa.platform.config.ModelMapperConfig;
 import com.nuvexa.platform.config.querydsl.QuerydslConfig;
 import com.nuvexa.verticals.nutricao.calculator.ImcCalculator;
 import com.nuvexa.verticals.nutricao.calculator.GastoCaloricoCalculator;
 import com.nuvexa.verticals.nutricao.calculator.TaxaMetabolicaCalculator;
 import com.nuvexa.verticals.nutricao.dto.response.PacienteResponseDTO;
-import com.nuvexa.verticals.nutricao.mapper.PacienteMapper;
 import com.nuvexa.verticals.nutricao.model.NivelAtividade;
 import com.nuvexa.verticals.nutricao.model.Objetivo;
 import com.nuvexa.verticals.nutricao.model.PerfilNutricional;
 import com.nuvexa.verticals.nutricao.repository.PerfilNutricionalRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import({QuerydslConfig.class, MessageConfig.class, PacienteMapper.class,
+@Import({QuerydslConfig.class, MessageConfig.class, ModelMapperConfig.class,
         ImcCalculator.class, TaxaMetabolicaCalculator.class, GastoCaloricoCalculator.class, PacienteService.class})
 class PacienteServiceSearchIntegrationTest {
 
@@ -41,8 +49,28 @@ class PacienteServiceSearchIntegrationTest {
     @Autowired
     private PerfilNutricionalRepository perfilNutricionalRepository;
 
+    @Autowired
+    private OrganizacaoRepository organizacaoRepository;
+
+    @MockitoBean
+    private ContextoDeAutenticacao contextoDeAutenticacao;
+
+    private Organizacao organizacao;
+
+    @BeforeEach
+    void setUp() {
+        organizacao = organizacaoRepository.saveAndFlush(Organizacao.builder()
+                .nome("Clínica de Teste")
+                .tipo(TipoOrganizacao.CLINICA)
+                .status(StatusOrganizacao.ATIVA)
+                .build());
+        when(contextoDeAutenticacao.organizacaoAtual()).thenReturn(organizacao);
+        when(contextoDeAutenticacao.organizacaoAtualId()).thenReturn(organizacao.getId());
+    }
+
     private void novoPacienteRequest(String name) {
         Paciente paciente = pacienteRepository.saveAndFlush(Paciente.builder()
+                .organizacao(organizacao)
                 .nome(name)
                 .dataNascimento(LocalDate.of(1990, 5, 20))
                 .sexo(Sexo.FEMININO)

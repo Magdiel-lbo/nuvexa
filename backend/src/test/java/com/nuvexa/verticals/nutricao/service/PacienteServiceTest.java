@@ -1,5 +1,9 @@
 package com.nuvexa.verticals.nutricao.service;
 
+import com.nuvexa.core.contexto.ContextoDeAutenticacao;
+import com.nuvexa.core.organizacao.model.Organizacao;
+import com.nuvexa.core.organizacao.model.StatusOrganizacao;
+import com.nuvexa.core.organizacao.model.TipoOrganizacao;
 import com.nuvexa.core.paciente.model.Sexo;
 import com.nuvexa.core.paciente.model.Paciente;
 import com.nuvexa.core.paciente.repository.PacienteRepository;
@@ -10,7 +14,6 @@ import com.nuvexa.verticals.nutricao.calculator.TaxaMetabolicaCalculator;
 import com.nuvexa.verticals.nutricao.dto.request.PacienteCreateRequestDTO;
 import com.nuvexa.verticals.nutricao.dto.request.PacienteUpdateRequestDTO;
 import com.nuvexa.verticals.nutricao.dto.response.PacienteResponseDTO;
-import com.nuvexa.verticals.nutricao.mapper.PacienteMapper;
 import com.nuvexa.verticals.nutricao.model.NivelAtividade;
 import com.nuvexa.verticals.nutricao.model.Objetivo;
 import com.nuvexa.verticals.nutricao.model.PerfilNutricional;
@@ -23,6 +26,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.modelmapper.ModelMapper;
 import org.springframework.context.MessageSource;
 
 import java.math.BigDecimal;
@@ -39,6 +43,8 @@ import static org.mockito.Mockito.when;
 
 class PacienteServiceTest {
 
+    private static final Long ORGANIZACAO_ATUAL_ID = 7L;
+
     @Mock
     private PacienteRepository pacienteRepository;
 
@@ -51,11 +57,24 @@ class PacienteServiceTest {
     @Mock
     private MessageSource messageSource;
 
+    @Mock
+    private ContextoDeAutenticacao contextoDeAutenticacao;
+
+    private Organizacao organizacaoAtual;
+
     private PacienteService pacienteService;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        organizacaoAtual = Organizacao.builder()
+                .nome("Clínica Atual")
+                .tipo(TipoOrganizacao.CLINICA)
+                .status(StatusOrganizacao.ATIVA)
+                .build();
+        organizacaoAtual.setId(ORGANIZACAO_ATUAL_ID);
+        when(contextoDeAutenticacao.organizacaoAtual()).thenReturn(organizacaoAtual);
+        when(contextoDeAutenticacao.organizacaoAtualId()).thenReturn(ORGANIZACAO_ATUAL_ID);
         when(messageSource.getMessage(any(String.class), any(), any())).thenAnswer(invocation -> invocation.getArgument(0));
         when(pacienteRepository.save(any(Paciente.class))).thenAnswer(invocation -> {
             Paciente paciente = invocation.getArgument(0);
@@ -74,9 +93,10 @@ class PacienteServiceTest {
         pacienteService = new PacienteService(
                 pacienteRepository,
                 perfilNutricionalRepository,
-                new PacienteMapper(),
+                contextoDeAutenticacao,
                 queryFactory,
                 messageSource,
+                new ModelMapper(),
                 new ImcCalculator(messageSource),
                 new TaxaMetabolicaCalculator(),
                 new GastoCaloricoCalculator());
@@ -179,7 +199,7 @@ class PacienteServiceTest {
     @Test
     void shouldUpdateExistingPatient() {
         PerfilNutricional existing = perfilExistente(1L, "Old Name", Sexo.MASCULINO, Objetivo.MANUTENCAO_PESO, NivelAtividade.SEDENTARIO);
-        when(perfilNutricionalRepository.findByPacienteId(1L)).thenReturn(Optional.of(existing));
+        when(perfilNutricionalRepository.findByPacienteIdAndPacienteOrganizacaoId(1L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(existing));
 
         PacienteUpdateRequestDTO request = new PacienteUpdateRequestDTO();
         request.setNome("New Name");
@@ -199,7 +219,7 @@ class PacienteServiceTest {
 
     @Test
     void shouldThrowWhenUpdatingNonExistentPatient() {
-        when(perfilNutricionalRepository.findByPacienteId(99L)).thenReturn(Optional.empty());
+        when(perfilNutricionalRepository.findByPacienteIdAndPacienteOrganizacaoId(99L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> pacienteService.update(99L, validUpdateRequest()))
                 .isInstanceOf(NegocioException.class);
@@ -207,7 +227,7 @@ class PacienteServiceTest {
 
     @Test
     void shouldThrowWhenFindingNonExistentPatient() {
-        when(perfilNutricionalRepository.findByPacienteId(99L)).thenReturn(Optional.empty());
+        when(perfilNutricionalRepository.findByPacienteIdAndPacienteOrganizacaoId(99L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> pacienteService.findById(99L))
                 .isInstanceOf(NegocioException.class);
@@ -215,7 +235,7 @@ class PacienteServiceTest {
 
     @Test
     void shouldThrowWhenDeletingNonExistentPatient() {
-        when(perfilNutricionalRepository.findByPacienteId(99L)).thenReturn(Optional.empty());
+        when(perfilNutricionalRepository.findByPacienteIdAndPacienteOrganizacaoId(99L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> pacienteService.delete(99L))
                 .isInstanceOf(NegocioException.class);
@@ -226,7 +246,7 @@ class PacienteServiceTest {
     @Test
     void shouldDeleteOnlyNutritionProfileAndPreservePatientCore() {
         PerfilNutricional existing = perfilExistente(1L, "Maria Souza", Sexo.FEMININO, Objetivo.MANUTENCAO_PESO, NivelAtividade.SEDENTARIO);
-        when(perfilNutricionalRepository.findByPacienteId(1L)).thenReturn(Optional.of(existing));
+        when(perfilNutricionalRepository.findByPacienteIdAndPacienteOrganizacaoId(1L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(existing));
 
         pacienteService.delete(1L);
 

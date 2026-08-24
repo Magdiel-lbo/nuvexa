@@ -1,8 +1,10 @@
 package com.nuvexa.verticals.nutricao.dto.response;
 
+import com.nuvexa.core.paciente.model.Paciente;
 import com.nuvexa.core.paciente.model.Sexo;
 import com.nuvexa.verticals.nutricao.model.NivelAtividade;
 import com.nuvexa.verticals.nutricao.model.Objetivo;
+import com.nuvexa.verticals.nutricao.model.PerfilNutricional;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -38,4 +40,22 @@ public class PacienteResponseDTO {
     private String classificacaoImc;
     private BigDecimal taxaMetabolicaBasal;
     private BigDecimal gastoCaloricoDiario;
+
+    public static PacienteResponseDTO from(PerfilNutricional perfilNutricional) {
+        Paciente paciente = perfilNutricional.getPaciente();
+        return PacienteResponseDTO.builder()
+                .id(paciente.getId())
+                .nome(paciente.getNome())
+                .dataNascimento(paciente.getDataNascimento())
+                .sexo(paciente.getSexo())
+                .altura(perfilNutricional.getAltura())
+                .peso(perfilNutricional.getPeso())
+                .objetivo(perfilNutricional.getObjetivo())
+                .nivelAtividade(perfilNutricional.getNivelAtividade())
+                .caloriasDiariasManuais(perfilNutricional.getCaloriasDiariasManuais())
+                .observacoes(perfilNutricional.getObservacoes())
+                .criadoEm(perfilNutricional.getCriadoEm())
+                .atualizadoEm(perfilNutricional.getAtualizadoEm())
+                .build();
+    }
 }

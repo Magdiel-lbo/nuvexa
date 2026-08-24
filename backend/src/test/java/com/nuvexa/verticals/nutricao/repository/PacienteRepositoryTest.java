@@ -1,11 +1,16 @@
 package com.nuvexa.verticals.nutricao.repository;
 
+import com.nuvexa.core.organizacao.model.Organizacao;
+import com.nuvexa.core.organizacao.model.StatusOrganizacao;
+import com.nuvexa.core.organizacao.model.TipoOrganizacao;
+import com.nuvexa.core.organizacao.repository.OrganizacaoRepository;
 import com.nuvexa.core.paciente.model.Sexo;
 import com.nuvexa.core.paciente.model.Paciente;
 import com.nuvexa.core.paciente.repository.PacienteRepository;
 import com.nuvexa.verticals.nutricao.model.NivelAtividade;
 import com.nuvexa.verticals.nutricao.model.Objetivo;
 import com.nuvexa.verticals.nutricao.model.PerfilNutricional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -26,8 +31,23 @@ class PacienteRepositoryTest {
     @Autowired
     private PerfilNutricionalRepository perfilNutricionalRepository;
 
+    @Autowired
+    private OrganizacaoRepository organizacaoRepository;
+
+    private Organizacao organizacao;
+
+    @BeforeEach
+    void setUp() {
+        organizacao = organizacaoRepository.saveAndFlush(Organizacao.builder()
+                .nome("Clínica de Teste")
+                .tipo(TipoOrganizacao.CLINICA)
+                .status(StatusOrganizacao.ATIVA)
+                .build());
+    }
+
     private Paciente novoPaciente(String name) {
         return Paciente.builder()
+                .organizacao(organizacao)
                 .nome(name)
                 .dataNascimento(LocalDate.of(1990, 5, 20))
                 .sexo(Sexo.FEMININO)

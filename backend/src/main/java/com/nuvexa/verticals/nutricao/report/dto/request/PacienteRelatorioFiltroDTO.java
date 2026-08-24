@@ -20,4 +20,13 @@ public class PacienteRelatorioFiltroDTO {
     private Sexo sexo;
     private Objetivo objetivo;
     private NivelAtividade nivelAtividade;
+
+    public static PacienteRelatorioFiltroDTO of(String busca, Sexo sexo, Objetivo objetivo, NivelAtividade nivelAtividade) {
+        return PacienteRelatorioFiltroDTO.builder()
+                .busca(busca)
+                .sexo(sexo)
+                .objetivo(objetivo)
+                .nivelAtividade(nivelAtividade)
+                .build();
+    }
 }

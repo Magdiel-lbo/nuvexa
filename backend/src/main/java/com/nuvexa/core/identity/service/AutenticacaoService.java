@@ -10,6 +10,13 @@ import com.nuvexa.platform.exception.NegocioException;
 import com.nuvexa.core.identity.model.Perfil;
 import com.nuvexa.core.identity.model.Usuario;
 import com.nuvexa.core.identity.repository.UsuarioRepository;
+import com.nuvexa.core.organizacao.model.Organizacao;
+import com.nuvexa.core.organizacao.model.StatusOrganizacao;
+import com.nuvexa.core.organizacao.model.TipoOrganizacao;
+import com.nuvexa.core.organizacao.repository.OrganizacaoRepository;
+import com.nuvexa.core.vinculo.model.PapelOrganizacional;
+import com.nuvexa.core.vinculo.model.Vinculo;
+import com.nuvexa.core.vinculo.repository.VinculoRepository;
 import com.nuvexa.platform.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -45,6 +52,8 @@ public class AutenticacaoService {
     private static final long RESET_TOKEN_VALIDITY_MINUTES = 30;
 
     private final UsuarioRepository usuarioRepository;
+    private final OrganizacaoRepository organizacaoRepository;
+    private final VinculoRepository vinculoRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
@@ -59,13 +68,7 @@ public class AutenticacaoService {
             throw new NegocioException(HttpStatus.CONFLICT, resolveMessage("autenticacao.emailEmUso", request.getEmail()));
         }
 
-        Usuario usuario = Usuario.builder()
-                .nome(request.getNome())
-                .email(request.getEmail())
-                .senha(passwordEncoder.encode(request.getSenha()))
-                .perfil(Perfil.PROFISSIONAL)
-                .ativo(true)
-                .build();
+        Usuario usuario = request.toUsuario(passwordEncoder.encode(request.getSenha()), Perfil.PROFISSIONAL, true);
 
         Usuario saved;
         try {
@@ -78,6 +81,8 @@ public class AutenticacaoService {
             throw new NegocioException(HttpStatus.CONFLICT, resolveMessage("autenticacao.emailEmUso", request.getEmail()));
         }
         log.info("Usuário registrado com id={}", saved.getId());
+
+        provisionarOrganizacaoInicial(saved);
 
         return buildAuthResponse(saved);
     }
@@ -132,6 +137,28 @@ public class AutenticacaoService {
         return new MensagemResponseDTO(resolveMessage("autenticacao.redefinirSenha.sucesso"));
     }
 
+    /**
+     * Todo usuário novo nasce como PROPRIETARIO de uma organização individual própria — sem isso
+     * ele autenticaria mas não teria escopo nenhum, e nenhum endpoint de paciente funcionaria.
+     * A entrada em organizações existentes (convite) é assunto de uma fase posterior.
+     */
+    private void provisionarOrganizacaoInicial(Usuario usuario) {
+        Organizacao organizacao = organizacaoRepository.save(Organizacao.builder()
+                .nome(usuario.getNome())
+                .tipo(TipoOrganizacao.INDIVIDUAL)
+                .status(StatusOrganizacao.ATIVA)
+                .build());
+
+        vinculoRepository.save(Vinculo.builder()
+                .usuario(usuario)
+                .organizacao(organizacao)
+                .papel(PapelOrganizacional.PROPRIETARIO)
+                .ativo(true)
+                .build());
+
+        log.info("Organização inicial criada com id={} para usuário id={}", organizacao.getId(), usuario.getId());
+    }
+
     private String generateRawToken() {
         byte[] bytes = new byte[RESET_TOKEN_BYTES];
         secureRandom.nextBytes(bytes);
@@ -149,11 +176,7 @@ public class AutenticacaoService {
     }
 
     private AutenticacaoResponseDTO buildAuthResponse(Usuario usuario) {
-        return AutenticacaoResponseDTO.builder()
-                .token(jwtService.generateToken(usuario))
-                .tipoToken("Bearer")
-                .perfil(usuario.getPerfil().name())
-                .build();
+        return AutenticacaoResponseDTO.of(jwtService.generateToken(usuario), usuario);
     }
 
     private String resolveMessage(String key, Object... args) {

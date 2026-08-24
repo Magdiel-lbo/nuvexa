@@ -20,12 +20,6 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'Avaliações' },
   },
   {
-    path: '/relatorios',
-    name: 'relatorios',
-    component: () => import('../pages/relatorios/RelatorioPacientes.vue'),
-    meta: { title: 'Relatórios' },
-  },
-  {
     path: '/configuracoes',
     name: 'configuracoes',
     component: () => import('../pages/EmConstrucao.vue'),

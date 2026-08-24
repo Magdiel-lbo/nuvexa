@@ -1,6 +1,10 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import './style.css'
+
+// Bootstrap: cada vertical se registra antes do router (importado abaixo) montar suas rotas.
+import './verticals/nutricao/nutricao.vertical'
+
 import App from './App.vue'
 import router from './router'
 import vuetify from './plugins/vuetify'

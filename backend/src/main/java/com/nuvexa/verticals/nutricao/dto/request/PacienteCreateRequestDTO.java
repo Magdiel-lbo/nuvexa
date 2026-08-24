@@ -1,8 +1,11 @@
 package com.nuvexa.verticals.nutricao.dto.request;
 
+import com.nuvexa.core.organizacao.model.Organizacao;
+import com.nuvexa.core.paciente.model.Paciente;
 import com.nuvexa.core.paciente.model.Sexo;
 import com.nuvexa.verticals.nutricao.model.NivelAtividade;
 import com.nuvexa.verticals.nutricao.model.Objetivo;
+import com.nuvexa.verticals.nutricao.model.PerfilNutricional;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -45,4 +48,25 @@ public class PacienteCreateRequestDTO {
     private BigDecimal caloriasDiariasManuais;
 
     private String observacoes;
+
+    public Paciente toPaciente(Organizacao organizacao) {
+        return Paciente.builder()
+                .organizacao(organizacao)
+                .nome(nome)
+                .dataNascimento(dataNascimento)
+                .sexo(sexo)
+                .build();
+    }
+
+    public PerfilNutricional toPerfilNutricional(Paciente paciente) {
+        return PerfilNutricional.builder()
+                .paciente(paciente)
+                .altura(altura)
+                .peso(peso)
+                .objetivo(objetivo)
+                .nivelAtividade(nivelAtividade)
+                .caloriasDiariasManuais(caloriasDiariasManuais)
+                .observacoes(observacoes)
+                .build();
+    }
 }
