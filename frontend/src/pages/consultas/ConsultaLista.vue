@@ -74,8 +74,8 @@ export default class ConsultaLista extends Vue {
   consultas: Consulta[] = []
 
   search = ''
-  statusFilter: ConsultaStatus | null = null
-  typeFilter: ConsultaTipo | null = null
+  statusFilter: ConsultaStatus[] = []
+  typeFilter: ConsultaTipo[] = []
 
   get appStore() {
     return useAppStore()
@@ -90,7 +90,7 @@ export default class ConsultaLista extends Vue {
   }
 
   get hasActiveFilters(): boolean {
-    return !!this.search || !!this.statusFilter || !!this.typeFilter
+    return !!this.search || this.statusFilter.length > 0 || this.typeFilter.length > 0
   }
 
   get filteredConsultas(): Consulta[] {
@@ -99,10 +99,10 @@ export default class ConsultaLista extends Vue {
         if (this.search && !consulta.pacienteNome.toLowerCase().includes(this.search.toLowerCase())) {
           return false
         }
-        if (this.statusFilter && consulta.status !== this.statusFilter) {
+        if (this.statusFilter.length > 0 && !this.statusFilter.includes(consulta.status)) {
           return false
         }
-        if (this.typeFilter && consulta.tipo !== this.typeFilter) {
+        if (this.typeFilter.length > 0 && !this.typeFilter.includes(consulta.tipo)) {
           return false
         }
         return true
@@ -131,8 +131,8 @@ export default class ConsultaLista extends Vue {
 
   clearFilters() {
     this.search = ''
-    this.statusFilter = null
-    this.typeFilter = null
+    this.statusFilter = []
+    this.typeFilter = []
   }
 
   onCreate() {

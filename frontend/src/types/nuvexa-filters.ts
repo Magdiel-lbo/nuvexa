@@ -1,4 +1,4 @@
-export type NuvexaPeriodPreset = 'today' | 'yesterday' | 'last_3' | 'last_7' | 'last_30' | 'last_90' | 'custom'
+export type NuvexaPeriodPreset = 'last_3' | 'last_7' | 'last_30' | 'last_90' | 'last_180'
 
 export interface NuvexaPeriodValue {
   preset: NuvexaPeriodPreset
@@ -8,4 +8,4 @@ export interface NuvexaPeriodValue {
 
 export type NuvexaStatusValue = 'ACTIVE' | 'INACTIVE' | null
 
-export type NuvexaYesNoValue = boolean | null
+export type NuvexaStatusMultiValue = ('ACTIVE' | 'INACTIVE')[]

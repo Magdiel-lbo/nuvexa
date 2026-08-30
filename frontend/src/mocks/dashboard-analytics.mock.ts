@@ -38,11 +38,13 @@ function buildTimeSeries(
   return points
 }
 
-function activePatientsFactor(onlyActivePatients: DashboardFilters['onlyActivePatients']): number {
-  if (onlyActivePatients === true) {
+function activePatientsFactor(patientStatuses: DashboardFilters['patientStatuses']): number {
+  const hasActive = patientStatuses.includes('ACTIVE')
+  const hasInactive = patientStatuses.includes('INACTIVE')
+  if (hasActive && !hasInactive) {
     return 0.82
   }
-  if (onlyActivePatients === false) {
+  if (hasInactive && !hasActive) {
     return 0.18
   }
   return 1
@@ -51,7 +53,7 @@ function activePatientsFactor(onlyActivePatients: DashboardFilters['onlyActivePa
 export function generateDashboardOverview(filters: DashboardFilters): DashboardOverview {
   const days = daysBetween(filters.startDate, filters.endDate)
   const random = seededRandom(days * 7)
-  const patientsFactor = activePatientsFactor(filters.onlyActivePatients)
+  const patientsFactor = activePatientsFactor(filters.patientStatuses)
 
   const patients = Math.round((days * 4.2 + random() * 10) * patientsFactor)
   const appointments = Math.round(days * 1.4 + random() * 6)
@@ -77,7 +79,7 @@ export function generateDashboardOverview(filters: DashboardFilters): DashboardO
 
 export function generateDashboardCharts(filters: DashboardFilters): DashboardCharts {
   const days = daysBetween(filters.startDate, filters.endDate)
-  const patientsFactor = activePatientsFactor(filters.onlyActivePatients)
+  const patientsFactor = activePatientsFactor(filters.patientStatuses)
 
   return {
     patientsGrowth: buildTimeSeries(days, days * 3, 4, 5).map((point) => ({

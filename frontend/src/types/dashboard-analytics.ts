@@ -1,10 +1,10 @@
-import type { NuvexaPeriodValue, NuvexaYesNoValue } from './nuvexa-filters'
+import type { NuvexaPeriodValue, NuvexaStatusMultiValue } from './nuvexa-filters'
 
 export type DashboardComparison = 'none' | 'previous_period' | 'previous_year'
 
 export interface DashboardFilters extends NuvexaPeriodValue {
   comparison: DashboardComparison
-  onlyActivePatients: NuvexaYesNoValue
+  patientStatuses: NuvexaStatusMultiValue
 }
 
 export interface DashboardIndicator {

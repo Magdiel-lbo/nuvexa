@@ -78,8 +78,8 @@ export default class Dashboard extends Vue {
     return this.filtersStore.comparison
   }
 
-  get onlyActivePatients() {
-    return this.filtersStore.onlyActivePatients
+  get patientStatuses() {
+    return this.filtersStore.patientStatuses
   }
 
   get patientsGrowthLabels(): string[] {
@@ -114,7 +114,7 @@ export default class Dashboard extends Vue {
   @Watch('startDate')
   @Watch('endDate')
   @Watch('comparison')
-  @Watch('onlyActivePatients')
+  @Watch('patientStatuses')
   onFiltersChanged() {
     this.loadData()
   }
@@ -125,7 +125,7 @@ export default class Dashboard extends Vue {
       startDate: this.filtersStore.startDate,
       endDate: this.filtersStore.endDate,
       comparison: this.filtersStore.comparison,
-      onlyActivePatients: this.filtersStore.onlyActivePatients,
+      patientStatuses: this.filtersStore.patientStatuses,
     }
     const [overview, charts] = await Promise.all([
       dashboardService.getOverview(filters),

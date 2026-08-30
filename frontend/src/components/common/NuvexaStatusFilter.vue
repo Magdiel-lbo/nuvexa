@@ -5,6 +5,10 @@
     :items="items"
     :label="label ?? ($t('dashboardPacientes.filtros.status') as string)"
     :placeholder="placeholder"
+    :multiple="multiple"
+    :chips="multiple"
+    :closable-chips="multiple"
+    :clearable="multiple"
     :disabled="disabled"
   />
 </template>
@@ -12,7 +16,7 @@
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-facing-decorator'
 import NuvexaSelect from './NuvexaSelect.vue'
-import type { NuvexaStatusValue } from '../../types/nuvexa-filters'
+import type { NuvexaStatusMultiValue, NuvexaStatusValue } from '../../types/nuvexa-filters'
 
 interface StatusOption {
   value: NuvexaStatusValue
@@ -22,7 +26,7 @@ interface StatusOption {
 @Component({ name: 'NuvexaStatusFilter', components: { NuvexaSelect }, emits: ['update:modelValue'] })
 export default class NuvexaStatusFilter extends Vue {
   @Prop({ required: true })
-  modelValue!: NuvexaStatusValue
+  modelValue!: NuvexaStatusValue | NuvexaStatusMultiValue
 
   @Prop({ default: null })
   label!: string | null
@@ -33,6 +37,9 @@ export default class NuvexaStatusFilter extends Vue {
   @Prop({ default: true })
   includeAll!: boolean
 
+  @Prop({ type: Boolean, default: false })
+  multiple!: boolean
+
   @Prop({ default: false })
   disabled!: boolean
 
@@ -41,7 +48,7 @@ export default class NuvexaStatusFilter extends Vue {
       { value: 'ACTIVE', label: this.$t('paciente.status.ACTIVE') as string },
       { value: 'INACTIVE', label: this.$t('paciente.status.INACTIVE') as string },
     ]
-    if (this.includeAll) {
+    if (this.includeAll && !this.multiple) {
       options.unshift({ value: null, label: this.$t('filtroComum.todos') as string })
     }
     return options

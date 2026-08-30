@@ -1,30 +1,46 @@
 <template>
   <NuvexaFiltersCard :show-clear="hasActiveFilters" :clear-label="$t('dashboardPacientes.filtros.limpar') as string" @clear="$emit('clear')">
-    <v-text-field
-      :model-value="search"
-      @update:model-value="$emit('update:search', $event)"
-      :placeholder="$t('dashboardConsultas.filtros.buscarPlaceholder')"
-      prepend-inner-icon="mdi-magnify"
-      density="compact"
-      hide-details
-      clearable
-      single-line
-      class="nuvexa-field filters-card__search"
-    />
+    <v-row class="filters-card__row">
+      <v-col cols="12" md="6">
+        <v-text-field
+          :model-value="search"
+          @update:model-value="$emit('update:search', $event)"
+          :placeholder="$t('dashboardConsultas.filtros.buscarPlaceholder')"
+          prepend-inner-icon="mdi-magnify"
+          density="compact"
+          hide-details
+          clearable
+          single-line
+          class="nuvexa-field"
+        />
+      </v-col>
 
-    <NuvexaSelect
-      :model-value="status"
-      @update:model-value="$emit('update:status', $event)"
-      :items="statusOptions"
-      :label="$t('dashboardConsultas.filtros.status') as string"
-    />
+      <v-col cols="12" md="6">
+        <NuvexaSelect
+          :model-value="status"
+          @update:model-value="$emit('update:status', $event)"
+          :items="statusOptions"
+          :label="$t('dashboardConsultas.filtros.status') as string"
+          multiple
+          chips
+          closable-chips
+          clearable
+        />
+      </v-col>
 
-    <NuvexaSelect
-      :model-value="type"
-      @update:model-value="$emit('update:type', $event)"
-      :items="typeOptions"
-      :label="$t('dashboardConsultas.filtros.tipo') as string"
-    />
+      <v-col cols="12" md="6">
+        <NuvexaSelect
+          :model-value="type"
+          @update:model-value="$emit('update:type', $event)"
+          :items="typeOptions"
+          :label="$t('dashboardConsultas.filtros.tipo') as string"
+          multiple
+          chips
+          closable-chips
+          clearable
+        />
+      </v-col>
+    </v-row>
   </NuvexaFiltersCard>
 </template>
 
@@ -43,30 +59,24 @@ export default class ConsultaFilters extends Vue {
   @Prop({ default: '' })
   search!: string
 
-  @Prop({ default: null })
-  status!: ConsultaStatus | null
+  @Prop({ default: () => [] })
+  status!: ConsultaStatus[]
 
-  @Prop({ default: null })
-  type!: ConsultaTipo | null
+  @Prop({ default: () => [] })
+  type!: ConsultaTipo[]
 
   get statusOptions() {
     const statuses: ConsultaStatus[] = ['AGENDADA', 'CONFIRMADA', 'REALIZADA', 'CANCELADA', 'FALTOU']
-    return [
-      { value: null, label: this.$t('dashboardPacientes.filtros.todos') },
-      ...statuses.map((value) => ({ value, label: this.$t(`consulta.status.${value}`) })),
-    ]
+    return statuses.map((value) => ({ value, label: this.$t(`consulta.status.${value}`) }))
   }
 
   get typeOptions() {
     const types: ConsultaTipo[] = ['PRIMEIRA_CONSULTA', 'RETORNO', 'AVALIACAO']
-    return [
-      { value: null, label: this.$t('dashboardPacientes.filtros.todos') },
-      ...types.map((value) => ({ value, label: this.$t(`consulta.tipo.${value}`) })),
-    ]
+    return types.map((value) => ({ value, label: this.$t(`consulta.tipo.${value}`) }))
   }
 
   get hasActiveFilters(): boolean {
-    return !!this.search || !!this.status || !!this.type
+    return !!this.search || this.status.length > 0 || this.type.length > 0
   }
 }
 </script>
@@ -74,8 +84,11 @@ export default class ConsultaFilters extends Vue {
 <style scoped lang="scss">
 @use '../../../components/common/nuvexa-field.scss';
 
-.filters-card__search {
-  flex: 1 1 240px;
-  max-width: 320px;
+.filters-card__row {
+  width: 100%;
+}
+
+:deep(.nuvexa-field) {
+  max-width: none;
 }
 </style>

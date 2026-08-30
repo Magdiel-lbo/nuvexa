@@ -6,7 +6,11 @@
     :item-title="itemTitle"
     :item-value="itemValue"
     :label="label"
-    :placeholder="effectivePlaceholder"
+    :placeholder="placeholder ?? undefined"
+    :multiple="multiple"
+    :chips="chips"
+    :closable-chips="closableChips"
+    :clearable="clearable"
     :disabled="disabled"
     :aria-label="ariaLabel ?? label"
     variant="underlined"
@@ -40,15 +44,23 @@ export default class NuvexaSelect extends Vue {
   @Prop({ default: null })
   placeholder!: string | null
 
+  @Prop({ type: Boolean, default: false })
+  multiple!: boolean
+
+  @Prop({ type: Boolean, default: false })
+  chips!: boolean
+
+  @Prop({ type: Boolean, default: false })
+  closableChips!: boolean
+
+  @Prop({ type: Boolean, default: false })
+  clearable!: boolean
+
   @Prop({ default: false })
   disabled!: boolean
 
   @Prop({ default: null })
   ariaLabel!: string | null
-
-  get effectivePlaceholder(): string {
-    return this.placeholder ?? (this.$t('filtroComum.selecionar') as string)
-  }
 }
 </script>
 

@@ -7,7 +7,7 @@ export const useDashboardFiltersStore = defineStore('dashboardFilters', {
   state: (): DashboardFilters => ({
     preset: 'last_30',
     comparison: 'previous_period',
-    onlyActivePatients: null,
+    patientStatuses: ['ACTIVE'],
     ...presetRange('last_30'),
   }),
   actions: {
@@ -19,8 +19,8 @@ export const useDashboardFiltersStore = defineStore('dashboardFilters', {
     setComparison(comparison: DashboardComparison) {
       this.comparison = comparison
     },
-    setOnlyActivePatients(onlyActivePatients: DashboardFilters['onlyActivePatients']) {
-      this.onlyActivePatients = onlyActivePatients
+    setPatientStatuses(patientStatuses: DashboardFilters['patientStatuses']) {
+      this.patientStatuses = patientStatuses
     },
   },
 })

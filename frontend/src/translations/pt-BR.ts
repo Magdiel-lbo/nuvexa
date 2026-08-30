@@ -38,21 +38,12 @@ export default {
     todos: 'Todos',
     sim: 'Sim',
     nao: 'Não',
-    selecionar: 'Selecione',
     periodo: {
-      placeholderData: 'dd/mm/aaaa',
-      today: 'Hoje',
-      yesterday: 'Ontem',
       last_3: 'Últimos 3 dias',
       last_7: 'Últimos 7 dias',
-      last_30: 'Últimos 30 dias',
-      last_90: 'Últimos 90 dias',
-      custom: 'Personalizado',
-      dataInicio: 'Data início',
-      dataFim: 'Data fim',
-      erroDataFimFutura: 'A data fim não pode ser maior que hoje.',
-      erroDataInicioMaiorFim: 'A data início não pode ser maior que a data fim.',
-      erroIntervaloMaximo: 'O intervalo máximo permitido é de 180 dias.',
+      last_30: 'Último mês',
+      last_90: '3 últimos meses',
+      last_180: '6 últimos meses',
     },
   },
   acao: {
@@ -163,7 +154,6 @@ export default {
     filtros: {
       periodo: 'Período',
       comparacao: 'Comparação',
-      somentePacientesAtivos: 'Somente pacientes ativos',
       comparacaoOpcoes: {
         none: 'Sem comparação',
         previous_period: 'Período anterior',
