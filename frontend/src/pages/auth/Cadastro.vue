@@ -38,7 +38,7 @@
           id="register-registro"
           v-model="registroProfissional"
           type="text"
-          placeholder="CRM"
+          placeholder="CRN"
           class="authf-input"
         />
       </div>
