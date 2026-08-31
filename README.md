@@ -27,7 +27,7 @@ Monorepo com dois apps independentes (sem build/tooling compartilhado — rode/f
 docker compose up -d
 ```
 
-Sobe o Postgres em `localhost:5432` (`nuvexa`/`nuvexa`).
+Sobe o Postgres em `localhost:5435` (`nuvexa`/`nuvexa`).
 
 ### Backend
 
