@@ -9,8 +9,8 @@ class ConsultaService {
     this.http = http
   }
 
-  async listar(): Promise<Consulta[]> {
-    const { data } = await this.http.get('/consultas')
+  async listar(busca?: string): Promise<Consulta[]> {
+    const { data } = await this.http.get('/consultas', { params: busca ? { busca } : {} })
     return data
   }
 

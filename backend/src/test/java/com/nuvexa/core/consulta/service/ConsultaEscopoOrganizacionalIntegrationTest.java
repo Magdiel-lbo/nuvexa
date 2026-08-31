@@ -131,7 +131,7 @@ class ConsultaEscopoOrganizacionalIntegrationTest {
         novaConsulta(minhaOrganizacao, meuPaciente);
         novaConsulta(outraOrganizacao, pacienteAlheio);
 
-        List<ConsultaResponseDTO> resultado = consultaService.findAll(null);
+        List<ConsultaResponseDTO> resultado = consultaService.findAll(null, null);
 
         assertThat(resultado).hasSize(1);
         assertThat(resultado.getFirst().getPacienteNome()).isEqualTo("Ana da Minha Clinica");
@@ -200,9 +200,30 @@ class ConsultaEscopoOrganizacionalIntegrationTest {
         Paciente outroPacienteMesmaOrg = novoPaciente(minhaOrganizacao, "Carla da Minha Clinica");
         novaConsulta(minhaOrganizacao, outroPacienteMesmaOrg);
 
-        List<ConsultaResponseDTO> resultado = consultaService.findAll(meuPaciente.getId());
+        List<ConsultaResponseDTO> resultado = consultaService.findAll(meuPaciente.getId(), null);
 
         assertThat(resultado).hasSize(1);
         assertThat(resultado.getFirst().getPacienteId()).isEqualTo(meuPaciente.getId());
+    }
+
+    @Test
+    void deveFiltrarPorNomeDoPacienteCaseInsensitive() {
+        novaConsulta(minhaOrganizacao, meuPaciente);
+        Paciente carla = novoPaciente(minhaOrganizacao, "Carla da Minha Clinica");
+        novaConsulta(minhaOrganizacao, carla);
+
+        List<ConsultaResponseDTO> resultado = consultaService.findAll(null, "ana");
+
+        assertThat(resultado).hasSize(1);
+        assertThat(resultado.getFirst().getPacienteNome()).isEqualTo("Ana da Minha Clinica");
+    }
+
+    @Test
+    void deveIgnorarBuscaEmBranco() {
+        novaConsulta(minhaOrganizacao, meuPaciente);
+
+        List<ConsultaResponseDTO> resultado = consultaService.findAll(null, "   ");
+
+        assertThat(resultado).hasSize(1);
     }
 }

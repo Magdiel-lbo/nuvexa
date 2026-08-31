@@ -28,8 +28,10 @@ public class ConsultaController {
     private final ConsultaService consultaService;
 
     @GetMapping
-    public List<ConsultaResponseDTO> findAll(@RequestParam(required = false) Long pacienteId) {
-        return consultaService.findAll(pacienteId);
+    public List<ConsultaResponseDTO> findAll(
+            @RequestParam(required = false) Long pacienteId,
+            @RequestParam(required = false) String busca) {
+        return consultaService.findAll(pacienteId, busca);
     }
 
     @GetMapping("/{id}")

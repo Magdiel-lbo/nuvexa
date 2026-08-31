@@ -1,10 +1,12 @@
 <template>
   <NuvexaFiltersCard :show-clear="hasActiveFilters" :clear-label="$t('dashboardPacientes.filtros.limpar') as string" @clear="$emit('clear')">
     <v-row class="filters-card__row">
-      <v-col cols="12" md="6">
+      <v-col cols="12" md="6" class="d-flex ga-2 align-start">
         <v-text-field
           :model-value="search"
           @update:model-value="$emit('update:search', $event)"
+          @keyup.enter="$emit('search')"
+          @click:clear="$emit('search')"
           :placeholder="$t('dashboardConsultas.filtros.buscarPlaceholder')"
           prepend-inner-icon="mdi-magnify"
           density="compact"
@@ -13,6 +15,7 @@
           single-line
           class="nuvexa-field"
         />
+        <v-btn variant="outlined" color="primary" @click="$emit('search')">{{ $t('acao.buscar') }}</v-btn>
       </v-col>
 
       <v-col cols="12" md="6">
@@ -53,7 +56,7 @@ import type { ConsultaStatus, ConsultaTipo } from '../../../types/consulta'
 @Component({
   name: 'ConsultaFilters',
   components: { NuvexaSelect, NuvexaFiltersCard },
-  emits: ['update:search', 'update:status', 'update:type', 'clear'],
+  emits: ['update:search', 'update:status', 'update:type', 'clear', 'search'],
 })
 export default class ConsultaFilters extends Vue {
   @Prop({ default: '' })

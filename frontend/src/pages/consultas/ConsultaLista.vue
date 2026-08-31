@@ -20,7 +20,8 @@
       @update:search="search = $event"
       @update:status="statusFilter = $event"
       @update:type="typeFilter = $event"
-      @clear="clearFilters"
+      @search="carregar"
+      @clear="clearFiltersEBuscar"
     />
 
     <v-card variant="flat" color="surface-variant" class="consulta-lista__section consulta-lista__table-card">
@@ -86,19 +87,17 @@ export default class ConsultaLista extends Vue {
   }
 
   async carregar() {
-    this.consultas = await consultaService.listar()
+    this.consultas = await consultaService.listar(this.search || undefined)
   }
 
   get hasActiveFilters(): boolean {
     return !!this.search || this.statusFilter.length > 0 || this.typeFilter.length > 0
   }
 
+  /** A busca por nome já vem filtrada do backend (carregar()); aqui só status/tipo, client-side. */
   get filteredConsultas(): Consulta[] {
     return this.consultas
       .filter((consulta) => {
-        if (this.search && !consulta.pacienteNome.toLowerCase().includes(this.search.toLowerCase())) {
-          return false
-        }
         if (this.statusFilter.length > 0 && !this.statusFilter.includes(consulta.status)) {
           return false
         }
@@ -133,6 +132,11 @@ export default class ConsultaLista extends Vue {
     this.search = ''
     this.statusFilter = []
     this.typeFilter = []
+  }
+
+  async clearFiltersEBuscar() {
+    this.clearFilters()
+    await this.carregar()
   }
 
   onCreate() {

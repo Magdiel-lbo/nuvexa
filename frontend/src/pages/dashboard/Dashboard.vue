@@ -1,170 +1,242 @@
 <template>
-  <div class="analytics-dashboard">
-    <div class="analytics-dashboard__header">
-      <h1 class="analytics-dashboard__title">{{ $t('dashboardAnalytics.titulo') }}</h1>
-      <p class="analytics-dashboard__subtitle">{{ $t('dashboardAnalytics.subtitulo') }}</p>
+  <div class="home">
+    <div class="home__header">
+      <h1 class="home__title">{{ saudacao }}</h1>
+
+      <div class="home__actions">
+        <v-btn color="primary" prepend-icon="mdi-plus" size="large" @click="novaConsulta">
+          {{ $t('consulta.novo') }}
+        </v-btn>
+        <v-btn variant="outlined" color="primary" prepend-icon="mdi-plus" size="large" @click="novoPaciente">
+          {{ $t('paciente.novo') }}
+        </v-btn>
+      </div>
     </div>
 
-    <DashboardFiltersBar />
+    <NuvexaSummaryCards class="home__section" :cards="cards" />
 
-    <DashboardIndicatorCards :overview="overview" :comparison="filtersStore.comparison" />
+    <DashboardTodayAgenda class="home__section" :consultas="agendaHoje" :loading="consultasCarregando" />
 
-    <div class="analytics-dashboard__charts">
-      <DashboardLineChart
-        class="analytics-dashboard__chart-primary"
-        :title="$t('dashboardAnalytics.graficos.crescimentoPacientes') as string"
-        :labels="patientsGrowthLabels"
-        :values="patientsGrowthValues"
-      />
+    <h2 class="home__section-title">{{ $t('home.analytics.tituloSecao') }}</h2>
 
-      <DashboardBarChart
-        class="analytics-dashboard__chart-secondary"
-        :title="$t('dashboardAnalytics.graficos.consultasPorStatus') as string"
-        :labels="appointmentsStatusLabels"
-        :values="appointmentsStatusValues"
-      />
+    <DashboardConsultaAnalytics class="home__section" :consultas="consultas" :loading="consultasCarregando" />
 
-      <DashboardLineChart
-        class="analytics-dashboard__chart-full"
-        :title="$t('dashboardAnalytics.graficos.tendenciaSatisfacao') as string"
-        :labels="satisfactionTrendLabels"
-        :values="satisfactionTrendValues"
-        value-suffix="/5"
-      />
+    <div class="home__analytics-grid home__section">
+      <DashboardPatientGrowth :pacientes="pacientes" :loading="pacientesCarregando" />
+      <DashboardInsights :consultas="consultas" :pacientes="pacientes" :loading="consultasCarregando || pacientesCarregando" />
     </div>
+
+    <h2 class="home__section-title">{{ $t('home.carteira.tituloSecao') }}</h2>
+
+    <DashboardPatientIndicators class="home__section" :linhas="relatorioLinhas" :loading="indicadoresCarregando" />
   </div>
 </template>
 
 <script lang="ts">
-import { Component, Vue, Watch } from 'vue-facing-decorator'
-import DashboardFiltersBar from './components/DashboardFiltersBar.vue'
-import DashboardIndicatorCards from './components/DashboardIndicatorCards.vue'
-import DashboardLineChart from './components/DashboardLineChart.vue'
-import DashboardBarChart from './components/DashboardBarChart.vue'
-import dashboardService from '../../service/dashboard-service'
-import { useDashboardFiltersStore } from '../../store/dashboard-filters.store'
-import type { DashboardCharts, DashboardOverview } from '../../types/dashboard-analytics'
+import { Component, Vue } from 'vue-facing-decorator'
+import NuvexaSummaryCards from '../../components/common/NuvexaSummaryCards.vue'
+import type { SummaryCardItem } from '../../components/common/NuvexaSummaryCards.vue'
+import DashboardTodayAgenda from './components/DashboardTodayAgenda.vue'
+import DashboardPatientIndicators from './components/DashboardPatientIndicators.vue'
+import DashboardConsultaAnalytics from './components/DashboardConsultaAnalytics.vue'
+import DashboardPatientGrowth from './components/DashboardPatientGrowth.vue'
+import DashboardInsights from './components/DashboardInsights.vue'
+import consultaService from '../../service/consulta-service'
+import pacienteService from '../../nutricao/services/paciente-service'
+import { useContextoStore } from '../../core/contexto/contexto.store'
+import { useAppStore } from '../../store/app.store'
+import { extrairMensagemErro } from '../../util/api-util'
+import type { Consulta } from '../../types/consulta'
+import type { PacienteResponse, PacienteRelatorioLinha } from '../../nutricao/types/paciente'
 
-function formatDayLabel(isoDate: string): string {
+const DIAS_NOVOS_PACIENTES = 30
+
+function isSameDay(isoDate: string, reference: Date): boolean {
   const date = new Date(isoDate)
-  return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+  return (
+    date.getFullYear() === reference.getFullYear() &&
+    date.getMonth() === reference.getMonth() &&
+    date.getDate() === reference.getDate()
+  )
+}
+
+function saudacaoPorHorario(): string {
+  const hora = new Date().getHours()
+  if (hora < 12) return 'Bom dia'
+  if (hora < 18) return 'Boa tarde'
+  return 'Boa noite'
 }
 
 @Component({
   name: 'Dashboard',
-  components: { DashboardFiltersBar, DashboardIndicatorCards, DashboardLineChart, DashboardBarChart },
+  components: {
+    NuvexaSummaryCards,
+    DashboardTodayAgenda,
+    DashboardPatientIndicators,
+    DashboardConsultaAnalytics,
+    DashboardPatientGrowth,
+    DashboardInsights,
+  },
 })
 export default class Dashboard extends Vue {
-  overview: DashboardOverview | null = null
-  charts: DashboardCharts | null = null
+  consultas: Consulta[] = []
+  pacientes: PacienteResponse[] = []
+  relatorioLinhas: PacienteRelatorioLinha[] = []
 
-  get filtersStore() {
-    return useDashboardFiltersStore()
+  consultasCarregando = false
+  pacientesCarregando = false
+  indicadoresCarregando = false
+
+  get appStore() {
+    return useAppStore()
   }
 
-  get preset() {
-    return this.filtersStore.preset
+  get contextoStore() {
+    return useContextoStore()
   }
 
-  get startDate() {
-    return this.filtersStore.startDate
+  get saudacao(): string {
+    const saudacao = saudacaoPorHorario()
+    const nome = this.contextoStore.contexto?.nome
+    return nome ? `${saudacao}, ${nome}` : saudacao
   }
 
-  get endDate() {
-    return this.filtersStore.endDate
+  get agendaHoje(): Consulta[] {
+    const hoje = new Date()
+    return this.consultas
+      .filter((consulta) => isSameDay(consulta.dataHora, hoje))
+      .sort((a, b) => a.dataHora.localeCompare(b.dataHora))
   }
 
-  get comparison() {
-    return this.filtersStore.comparison
+  get aguardandoConfirmacao(): number {
+    return this.consultas.filter((consulta) => consulta.status === 'AGENDADA').length
   }
 
-  get patientStatuses() {
-    return this.filtersStore.patientStatuses
+  get novosPacientes(): number {
+    const limite = new Date()
+    limite.setDate(limite.getDate() - DIAS_NOVOS_PACIENTES)
+    return this.pacientes.filter((paciente) => new Date(paciente.criadoEm) >= limite).length
   }
 
-  get patientsGrowthLabels(): string[] {
-    return this.charts?.patientsGrowth.map((point) => formatDayLabel(point.date)) ?? []
-  }
-
-  get patientsGrowthValues(): number[] {
-    return this.charts?.patientsGrowth.map((point) => point.value) ?? []
-  }
-
-  get satisfactionTrendLabels(): string[] {
-    return this.charts?.satisfactionTrend.map((point) => formatDayLabel(point.date)) ?? []
-  }
-
-  get satisfactionTrendValues(): number[] {
-    return this.charts?.satisfactionTrend.map((point) => point.value) ?? []
-  }
-
-  get appointmentsStatusLabels(): string[] {
-    return this.charts?.appointmentsByStatus.map((item) => item.label) ?? []
-  }
-
-  get appointmentsStatusValues(): number[] {
-    return this.charts?.appointmentsByStatus.map((item) => item.value) ?? []
+  get cards(): SummaryCardItem[] {
+    return [
+      {
+        label: this.$t('home.resumo.consultasHoje') as string,
+        value: this.consultasCarregando ? '—' : this.agendaHoje.length,
+        icon: 'mdi-calendar-today',
+        color: 'primary',
+      },
+      {
+        label: this.$t('home.resumo.aguardandoConfirmacao') as string,
+        value: this.consultasCarregando ? '—' : this.aguardandoConfirmacao,
+        icon: 'mdi-clock-alert-outline',
+        color: 'warning',
+      },
+      {
+        label: this.$t('home.resumo.totalPacientes') as string,
+        value: this.pacientesCarregando ? '—' : this.pacientes.length,
+        icon: 'mdi-account-group-outline',
+        color: 'secondary',
+      },
+      {
+        label: this.$t('home.resumo.novosPacientes') as string,
+        value: this.pacientesCarregando ? '—' : this.novosPacientes,
+        icon: 'mdi-account-plus-outline',
+        color: 'success',
+      },
+    ]
   }
 
   mounted() {
-    this.loadData()
+    this.carregarConsultas()
+    this.carregarPacientes()
+    this.carregarIndicadores()
   }
 
-  @Watch('preset')
-  @Watch('startDate')
-  @Watch('endDate')
-  @Watch('comparison')
-  @Watch('patientStatuses')
-  onFiltersChanged() {
-    this.loadData()
-  }
-
-  async loadData() {
-    const filters = {
-      preset: this.filtersStore.preset,
-      startDate: this.filtersStore.startDate,
-      endDate: this.filtersStore.endDate,
-      comparison: this.filtersStore.comparison,
-      patientStatuses: this.filtersStore.patientStatuses,
+  async carregarConsultas() {
+    this.consultasCarregando = true
+    try {
+      this.consultas = await consultaService.listar()
+    } catch (e) {
+      this.appStore.setToast({ mensagem: extrairMensagemErro(e, this.$t('erro.carregarConsultas') as string), erro: true })
+    } finally {
+      this.consultasCarregando = false
     }
-    const [overview, charts] = await Promise.all([
-      dashboardService.getOverview(filters),
-      dashboardService.getCharts(filters),
-    ])
-    this.overview = overview
-    this.charts = charts
+  }
+
+  async carregarPacientes() {
+    this.pacientesCarregando = true
+    try {
+      this.pacientes = await pacienteService.listar()
+    } catch (e) {
+      this.appStore.setToast({ mensagem: extrairMensagemErro(e, this.$t('erro.carregarPacientes') as string), erro: true })
+    } finally {
+      this.pacientesCarregando = false
+    }
+  }
+
+  async carregarIndicadores() {
+    this.indicadoresCarregando = true
+    try {
+      const relatorio = await pacienteService.relatorio()
+      this.relatorioLinhas = relatorio.linhas
+    } catch (e) {
+      this.appStore.setToast({ mensagem: extrairMensagemErro(e, this.$t('erro.carregarIndicadores') as string), erro: true })
+    } finally {
+      this.indicadoresCarregando = false
+    }
+  }
+
+  novaConsulta() {
+    this.$router.push('/consultas/novo')
+  }
+
+  novoPaciente() {
+    this.$router.push('/pacientes/novo')
   }
 }
 </script>
 
 <style scoped lang="scss">
-.analytics-dashboard__header {
+.home__header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
   margin-bottom: 24px;
 }
 
-.analytics-dashboard__title {
+.home__title {
   font-size: 1.75rem;
   font-weight: 700;
-  margin: 0 0 4px;
-}
-
-.analytics-dashboard__subtitle {
-  color: rgb(var(--v-theme-on-surface-variant));
   margin: 0;
-  max-width: 60ch;
 }
 
-.analytics-dashboard__charts {
+.home__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.home__section {
+  margin-bottom: 20px;
+}
+
+.home__section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: rgb(var(--v-theme-on-surface-variant));
+  margin: 4px 0 12px;
+}
+
+.home__analytics-grid {
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 16px;
 
   @media (max-width: 960px) {
     grid-template-columns: 1fr;
   }
-}
-
-.analytics-dashboard__chart-full {
-  grid-column: 1 / -1;
 }
 </style>

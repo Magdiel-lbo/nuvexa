@@ -123,18 +123,26 @@ code {
   flex-direction: column;
 }
 
+/* O Vuetify aplica color: on-surface-variant (tom secundário) em qualquer v-card
+   color="surface-variant" — o que enfraquece texto/labels soltos dentro do card que não
+   têm cor própria (ex.: campos de formulário). Mantém o fundo diferenciado, mas o texto
+   volta a ser on-surface (tom principal) em todos os cards do sistema. */
+.v-card.bg-surface-variant {
+  color: rgb(var(--v-theme-on-surface));
+}
+
 .authf-title {
   margin: 0;
   font-size: 20px;
   font-weight: 700;
-  color: var(--ff-text, #eaeff5);
+  color: var(--ff-text, #e8f2ed);
   letter-spacing: -0.01em;
 }
 
 .authf-subtitle {
   margin: 4px 0 0;
   font-size: 13px;
-  color: var(--ff-text-muted, #77818c);
+  color: var(--ff-text-muted, #8fa69c);
   line-height: 1.5;
 }
 
@@ -153,16 +161,16 @@ code {
 .authf-label {
   font-size: 12px;
   font-weight: 600;
-  color: #8b959f;
+  color: var(--ff-text-muted, #8fa69c);
   letter-spacing: 0.03em;
 }
 
 .authf-input {
   font-family: inherit;
   font-size: 14px;
-  color: var(--ff-text, #eaeff5);
-  background: var(--ff-field-bg, #1a2026);
-  border: 1px solid var(--ff-field-border, #2b343d);
+  color: var(--ff-text, #e8f2ed);
+  background: var(--ff-field-bg, #14261f);
+  border: 1px solid var(--ff-field-border, #22362e);
   border-radius: 12px;
   padding: 0 14px;
   height: 48px;
@@ -173,7 +181,7 @@ code {
 }
 
 .authf-input::placeholder {
-  color: #5f6a75;
+  color: var(--ff-text-muted, #8fa69c);
 }
 
 .authf-input:focus {
@@ -181,21 +189,21 @@ code {
 }
 
 .authf-input.authf-input--error {
-  border-color: #e5484d;
+  border-color: var(--ff-error, #f2666b);
 }
 
 .authf-input:-webkit-autofill,
 .authf-input:-webkit-autofill:hover,
 .authf-input:-webkit-autofill:focus {
-  -webkit-text-fill-color: var(--ff-text, #eaeff5);
-  -webkit-box-shadow: 0 0 0 1000px var(--ff-field-bg, #1a2026) inset;
-  box-shadow: 0 0 0 1000px var(--ff-field-bg, #1a2026) inset;
+  -webkit-text-fill-color: var(--ff-text, #e8f2ed);
+  -webkit-box-shadow: 0 0 0 1000px var(--ff-field-bg, #14261f) inset;
+  box-shadow: 0 0 0 1000px var(--ff-field-bg, #14261f) inset;
   transition: background-color 5000s ease-in-out 0s;
 }
 
 .authf-error {
   font-size: 12px;
-  color: #e5484d;
+  color: var(--ff-error, #f2666b);
 }
 
 .authf-row {
@@ -231,7 +239,7 @@ code {
 
 .authf-checkbox-text {
   font-size: 13px;
-  color: #8b959f;
+  color: var(--ff-text-muted, #8fa69c);
 }
 
 .authf-checkbox-text--terms {
@@ -282,12 +290,12 @@ code {
 .authf-divider__line {
   flex: 1;
   height: 1px;
-  background: var(--ff-field-border, #2b343d);
+  background: var(--ff-field-border, #22362e);
 }
 
 .authf-divider__text {
   font-size: 11px;
-  color: #5f6a75;
+  color: var(--ff-text-muted, #8fa69c);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -296,9 +304,9 @@ code {
   font-family: inherit;
   font-size: 14px;
   font-weight: 500;
-  color: #cfd8e0;
+  color: var(--ff-text, #e8f2ed);
   background: transparent;
-  border: 1px solid var(--ff-field-border, #2b343d);
+  border: 1px solid var(--ff-field-border, #22362e);
   border-radius: 12px;
   height: 48px;
   cursor: pointer;
@@ -309,21 +317,21 @@ code {
 }
 
 .authf-google-btn:hover {
-  border-color: #45505b;
-  background: #121b23;
+  border-color: #34493f;
+  background: #0f1e19;
 }
 
 .authf-footer {
   font-size: 13px;
-  color: var(--ff-text-muted, #77818c);
+  color: var(--ff-text-muted, #8fa69c);
   text-align: center;
 }
 
 .authf-alert {
   font-size: 13px;
-  color: #ffb4b4;
-  background: rgba(229, 72, 77, 0.12);
-  border: 1px solid rgba(229, 72, 77, 0.4);
+  color: var(--ff-error, #f2666b);
+  background: rgba(242, 102, 107, 0.12);
+  border: 1px solid rgba(242, 102, 107, 0.4);
   border-radius: 12px;
   padding: 12px 14px;
 }

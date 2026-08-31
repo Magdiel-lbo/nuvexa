@@ -20,10 +20,34 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'Avaliações' },
   },
   {
+    path: '/prontuarios',
+    name: 'prontuarios',
+    component: () => import('../pages/EmConstrucao.vue'),
+    meta: { title: 'Prontuários' },
+  },
+  {
     path: '/configuracoes',
     name: 'configuracoes',
     component: () => import('../pages/EmConstrucao.vue'),
     meta: { title: 'Configurações' },
+  },
+  {
+    path: '/configuracoes/minha-conta',
+    name: 'configuracoes-minha-conta',
+    component: () => import('../pages/EmConstrucao.vue'),
+    meta: { title: 'Minha conta' },
+  },
+  {
+    path: '/configuracoes/preferencias',
+    name: 'configuracoes-preferencias',
+    component: () => import('../pages/EmConstrucao.vue'),
+    meta: { title: 'Preferências' },
+  },
+  {
+    path: '/configuracoes/aparencia',
+    name: 'configuracoes-aparencia',
+    component: () => import('../pages/EmConstrucao.vue'),
+    meta: { title: 'Aparência' },
   },
 ]
 

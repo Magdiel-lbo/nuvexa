@@ -1,8 +1,10 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
-import { verticalRegistry } from '../core/verticais/vertical-registry'
 import authRoutes from './auth.routes'
 import workspaceRoutes from './workspace.routes'
 import consultaRoutes from './consulta.routes'
+import gestaoRoutes from './gestao.routes'
+import relatoriosRoutes from './relatorios.routes'
+import nutricaoRoutes from '../nutricao/routes/nutricao.routes'
 import { useAuthStore } from '../core/auth/auth.store'
 import { useContextoStore } from '../core/contexto/contexto.store'
 
@@ -21,11 +23,11 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../pages/dashboard/Dashboard.vue'),
     meta: { title: 'Dashboard' },
   },
-  // Cada vertical registrada (bootstrap em main.ts) contribui suas próprias rotas — o
-  // router principal só compõe, não conhece nutrição/psicologia/etc. especificamente.
-  ...verticalRegistry.listarDisponiveis().flatMap((vertical) => vertical.rotas),
+  ...nutricaoRoutes,
   ...consultaRoutes,
   ...workspaceRoutes,
+  ...gestaoRoutes,
+  ...relatoriosRoutes,
   ...authRoutes,
 ]
 

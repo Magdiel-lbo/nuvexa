@@ -60,8 +60,8 @@ public class ConsultaService {
         return ConsultaResponseDTO.from(buscarConsultaOuFalhar(id));
     }
 
-    public List<ConsultaResponseDTO> findAll(Long pacienteId) {
-        return buscarConsultas(pacienteId).stream()
+    public List<ConsultaResponseDTO> findAll(Long pacienteId, String busca) {
+        return buscarConsultas(pacienteId, normalizarBusca(busca)).stream()
                 .map(ConsultaResponseDTO::from)
                 .toList();
     }
@@ -72,20 +72,25 @@ public class ConsultaService {
         log.info("Consulta removida com id={}", id);
     }
 
-    private List<Consulta> buscarConsultas(Long pacienteId) {
+    private List<Consulta> buscarConsultas(Long pacienteId, String busca) {
         QConsulta consulta = QConsulta.consulta;
 
         // Escopo aplicado na própria query, mesmo padrão de PacienteService: nenhuma consulta de
         // outra organização chega ao Java.
         BooleanExpression filtroOrganizacao = consulta.organizacao.id.eq(contextoDeAutenticacao.organizacaoAtualId());
         BooleanExpression filtroPaciente = pacienteId == null ? null : consulta.paciente.id.eq(pacienteId);
+        BooleanExpression filtroBusca = busca == null ? null : consulta.paciente.nome.containsIgnoreCase(busca);
 
         return queryFactory
                 .selectFrom(consulta)
                 .join(consulta.paciente).fetchJoin()
-                .where(filtroOrganizacao, filtroPaciente)
+                .where(filtroOrganizacao, filtroPaciente, filtroBusca)
                 .orderBy(consulta.dataHora.desc())
                 .fetch();
+    }
+
+    private String normalizarBusca(String busca) {
+        return (busca == null || busca.isBlank()) ? null : busca.trim();
     }
 
     /**

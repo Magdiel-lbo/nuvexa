@@ -19,8 +19,8 @@ import lombok.experimental.SuperBuilder;
 import java.time.LocalDateTime;
 
 /**
- * Fica em {@code core}, não em {@code verticals.nutricao}: agendamento não é conceito exclusivo
- * de uma vertical — o mesmo raciocínio que já mantém {@link Paciente} fora da vertical.
+ * Fica em {@code core}, não em {@code nutricao}: agendamento não é conceito exclusivo do
+ * domínio de nutrição — o mesmo raciocínio que já mantém {@link Paciente} em {@code core}.
  */
 @Entity
 @Table(name = "consultas")

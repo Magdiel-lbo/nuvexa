@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: nuvexa
       POSTGRES_DB: nuvexa
     ports:
-      - "5432:5432"
+      - "5435:5432"
     volumes:
       - nuvexa-db-data:/var/lib/postgresql/data
 

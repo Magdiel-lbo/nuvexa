@@ -21,7 +21,6 @@ import java.time.LocalDateTime;
 @Builder
 public class ConsultaCreateRequestDTO {
 
-    @NotNull(message = "{consulta.pacienteId.obrigatorio}")
     private Long pacienteId;
 
     @NotNull(message = "{consulta.dataHora.obrigatoria}")
