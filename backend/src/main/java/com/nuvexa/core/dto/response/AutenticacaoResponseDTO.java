@@ -1,0 +1,30 @@
+package com.nuvexa.core.dto.response;
+
+import com.nuvexa.core.model.Usuario;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class AutenticacaoResponseDTO {
+
+    private String token;
+
+    private String tipoToken;
+
+    private String perfil;
+
+    public static AutenticacaoResponseDTO of(String token, Usuario usuario) {
+        return AutenticacaoResponseDTO.builder()
+                .token(token)
+                .tipoToken("Bearer")
+                .perfil(usuario.getPerfil().name())
+                .build();
+    }
+}

@@ -1,7 +1,7 @@
 package com.nuvexa.nutricao.report.dto.response;
 
-import com.nuvexa.core.paciente.model.Paciente;
-import com.nuvexa.core.paciente.model.Sexo;
+import com.nuvexa.core.model.Paciente;
+import com.nuvexa.core.model.Sexo;
 import com.nuvexa.platform.dto.EnumOpcaoDTO;
 import com.nuvexa.platform.util.EnumOpcaoResolver;
 import com.nuvexa.relatorios.RelatorioColuna;

@@ -1,9 +1,9 @@
 package com.nuvexa.nutricao.service;
 
-import com.nuvexa.core.contexto.ContextoDeAutenticacao;
-import com.nuvexa.core.paciente.model.Paciente;
-import com.nuvexa.core.paciente.model.QPaciente;
-import com.nuvexa.core.paciente.repository.PacienteRepository;
+import com.nuvexa.core.service.ContextoDeAutenticacao;
+import com.nuvexa.core.model.Paciente;
+import com.nuvexa.core.model.QPaciente;
+import com.nuvexa.core.repository.PacienteRepository;
 import com.nuvexa.platform.exception.NegocioException;
 import com.nuvexa.nutricao.calculator.ImcCalculator;
 import com.nuvexa.nutricao.calculator.GastoCaloricoCalculator;

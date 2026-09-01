@@ -1,7 +1,7 @@
 package com.nuvexa.nutricao.report.service;
 
-import com.nuvexa.core.contexto.ContextoDeAutenticacao;
-import com.nuvexa.core.paciente.model.QPaciente;
+import com.nuvexa.core.service.ContextoDeAutenticacao;
+import com.nuvexa.core.model.QPaciente;
 import com.nuvexa.relatorios.RelatorioColuna;
 import com.nuvexa.relatorios.RelatorioResponseDTO;
 import com.nuvexa.relatorios.excel.RelatorioExcelWriter;

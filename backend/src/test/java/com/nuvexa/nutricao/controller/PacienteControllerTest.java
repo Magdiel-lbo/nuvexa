@@ -7,7 +7,7 @@ import com.nuvexa.nutricao.dto.request.PacienteCreateRequestDTO;
 import com.nuvexa.nutricao.dto.request.PacienteUpdateRequestDTO;
 import com.nuvexa.nutricao.dto.response.PacienteResponseDTO;
 import com.nuvexa.nutricao.model.NivelAtividade;
-import com.nuvexa.core.paciente.model.Sexo;
+import com.nuvexa.core.model.Sexo;
 import com.nuvexa.nutricao.model.Objetivo;
 import com.nuvexa.platform.exception.NegocioException;
 import com.nuvexa.nutricao.service.PacienteService;

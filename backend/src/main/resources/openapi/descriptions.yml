@@ -1,0 +1,217 @@
+# Textos humanos do Swagger/OpenAPI, fora do código Java: tag, summary, description,
+# descrição de parâmetros e descrição/schema de respostas de erro.
+#
+# Cada bloco de topo é o simple name de um @RestController. Cada entrada em "endpoints" é a
+# chave "HTTP_METHOD path" da rota (ex.: "GET /api/v1/pacientes/{id}") — a identidade real do
+# endpoint no Spring/OpenAPI, montada por OperationDescriptionCustomizer a partir do
+# @RequestMapping efetivo do método. Não é o nome do método Java (evita colisão em caso de
+# sobrecarga) nem depende de posição.
+#
+# "parameters": chave = nome real do @PathVariable/@RequestParam (é assim que o Springdoc expõe
+# o parâmetro; o customizer só anexa a descrição ao parâmetro que ele mesmo já inferiu).
+#
+# "responses": se o código HTTP já existir na operação (200/201/204, inferidos pelo Springdoc a
+# partir do tipo de retorno/@ResponseStatus), o customizer só define a "description" e preserva
+# o schema já inferido. Se o código não existir (erros que o Springdoc não tem como prever —
+# 400/403/404/409), o customizer cria a resposta; "schema" (opcional) referencia, por nome, um
+# schema já registrado — hoje só "ApiErro" — sem duplicar a definição.
+#
+# HTTP method, path, tipos de request/response e DTOs continuam vindo só do código.
+# Endpoint/parâmetro/resposta sem entrada aqui simplesmente não ganha texto customizado.
+
+PacienteController:
+  tag: "Pacientes"
+  tagDescription: "Cadastro e consulta de pacientes e seus perfis nutricionais"
+  endpoints:
+    "GET /api/v1/pacientes":
+      summary: "Listar pacientes"
+      description: "Retorna os pacientes da organização do usuário autenticado, opcionalmente filtrados por nome"
+      parameters:
+        busca:
+          description: "Termo de busca por nome do paciente"
+    "GET /api/v1/pacientes/{id}":
+      summary: "Buscar paciente por ID"
+      parameters:
+        id:
+          description: "ID do paciente"
+      responses:
+        "200":
+          description: "Paciente encontrado"
+        "404":
+          description: "Paciente não encontrado"
+          schema: "ApiErro"
+    "GET /api/v1/pacientes/enums":
+      summary: "Listar opções de enums do paciente"
+      description: "Retorna os valores possíveis (com rótulo traduzido) para sexo, objetivo e nível de atividade, usados para popular selects no frontend"
+    "POST /api/v1/pacientes":
+      summary: "Cadastrar paciente"
+      responses:
+        "201":
+          description: "Paciente criado com sucesso"
+        "400":
+          description: "Dados inválidos"
+          schema: "ApiErro"
+    "PUT /api/v1/pacientes/{id}":
+      summary: "Atualizar paciente"
+      parameters:
+        id:
+          description: "ID do paciente"
+      responses:
+        "200":
+          description: "Paciente atualizado com sucesso"
+        "400":
+          description: "Dados inválidos"
+          schema: "ApiErro"
+        "404":
+          description: "Paciente não encontrado"
+          schema: "ApiErro"
+    "DELETE /api/v1/pacientes/{id}":
+      summary: "Remover perfil nutricional do paciente"
+      description: "Remove o perfil nutricional; o cadastro do paciente é preservado. Requer papel ADMIN"
+      parameters:
+        id:
+          description: "ID do paciente"
+      responses:
+        "204":
+          description: "Perfil nutricional removido com sucesso"
+        "403":
+          description: "Usuário sem papel ADMIN"
+          schema: "ApiErro"
+        "404":
+          description: "Paciente não encontrado"
+          schema: "ApiErro"
+
+ConsultaController:
+  tag: "Consultas"
+  tagDescription: "Agendamento e consulta de atendimentos de pacientes"
+  endpoints:
+    "GET /api/v1/consultas":
+      summary: "Listar consultas"
+      description: "Retorna as consultas da organização do usuário autenticado, com filtro opcional por paciente e por busca livre"
+      parameters:
+        pacienteId:
+          description: "ID do paciente para filtrar as consultas"
+        busca:
+          description: "Termo de busca livre"
+    "GET /api/v1/consultas/{id}":
+      summary: "Buscar consulta por ID"
+      parameters:
+        id:
+          description: "ID da consulta"
+      responses:
+        "200":
+          description: "Consulta encontrada"
+        "404":
+          description: "Consulta não encontrada"
+          schema: "ApiErro"
+    "POST /api/v1/consultas":
+      summary: "Agendar consulta"
+      responses:
+        "201":
+          description: "Consulta agendada com sucesso"
+        "400":
+          description: "Dados inválidos"
+          schema: "ApiErro"
+    "PUT /api/v1/consultas/{id}":
+      summary: "Atualizar consulta"
+      parameters:
+        id:
+          description: "ID da consulta"
+      responses:
+        "200":
+          description: "Consulta atualizada com sucesso"
+        "400":
+          description: "Dados inválidos"
+          schema: "ApiErro"
+        "404":
+          description: "Consulta não encontrada"
+          schema: "ApiErro"
+    "DELETE /api/v1/consultas/{id}":
+      summary: "Remover consulta"
+      parameters:
+        id:
+          description: "ID da consulta"
+      responses:
+        "204":
+          description: "Consulta removida com sucesso"
+        "404":
+          description: "Consulta não encontrada"
+          schema: "ApiErro"
+
+ContextoController:
+  tag: "Contexto"
+  tagDescription: "Dados do usuário autenticado e da organização/papel em uso"
+  endpoints:
+    "GET /api/v1/contexto":
+      summary: "Obter contexto atual"
+      description: "Retorna quem está autenticado, em qual organização e com qual papel — usado pelo frontend para decidir o que exibir"
+
+PacienteRelatorioController:
+  tag: "Relatório de pacientes"
+  tagDescription: "Geração de relatório de pacientes em JSON ou planilha Excel"
+  endpoints:
+    "GET /api/v1/pacientes/relatorio":
+      summary: "Gerar relatório de pacientes"
+      description: "Retorna as linhas do relatório em JSON, com os mesmos filtros disponíveis na versão Excel"
+      parameters:
+        busca:
+          description: "Termo de busca por nome do paciente"
+        sexo:
+          description: "Filtro por sexo"
+        objetivo:
+          description: "Filtro por objetivo"
+        nivelAtividade:
+          description: "Filtro por nível de atividade"
+    "GET /api/v1/pacientes/relatorio/excel":
+      summary: "Baixar relatório de pacientes em Excel"
+      description: "Gera e retorna o relatório como planilha .xlsx (attachment) com os mesmos filtros da versão JSON"
+      parameters:
+        busca:
+          description: "Termo de busca por nome do paciente"
+        sexo:
+          description: "Filtro por sexo"
+        objetivo:
+          description: "Filtro por objetivo"
+        nivelAtividade:
+          description: "Filtro por nível de atividade"
+      responses:
+        "200":
+          description: "Planilha gerada com sucesso"
+
+AutenticacaoController:
+  tag: "Autenticação"
+  tagDescription: "Cadastro, login e recuperação de senha"
+  endpoints:
+    "POST /api/v1/auth/cadastrar":
+      summary: "Cadastrar organização e usuário"
+      description: "Cria a organização e o usuário administrador inicial, retornando o token de acesso"
+      responses:
+        "201":
+          description: "Cadastro criado com sucesso"
+        "400":
+          description: "Dados inválidos"
+          schema: "ApiErro"
+        "409":
+          description: "E-mail já cadastrado"
+          schema: "ApiErro"
+    "POST /api/v1/auth/login":
+      summary: "Autenticar usuário"
+      description: "Valida as credenciais e retorna o token JWT de acesso"
+      responses:
+        "200":
+          description: "Login efetuado com sucesso"
+        "401":
+          description: "Credenciais inválidas"
+          schema: "ApiErro"
+    "POST /api/v1/auth/esqueci-senha":
+      summary: "Solicitar recuperação de senha"
+      description: "Envia por e-mail um link para redefinição de senha, se o e-mail informado estiver cadastrado"
+    "POST /api/v1/auth/redefinir-senha":
+      summary: "Redefinir senha"
+      description: "Define uma nova senha a partir do token recebido por e-mail"
+      responses:
+        "200":
+          description: "Senha redefinida com sucesso"
+        "400":
+          description: "Token inválido ou expirado"
+          schema: "ApiErro"

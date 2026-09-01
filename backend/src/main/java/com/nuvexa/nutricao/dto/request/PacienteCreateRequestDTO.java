@@ -1,8 +1,8 @@
 package com.nuvexa.nutricao.dto.request;
 
-import com.nuvexa.core.organizacao.model.Organizacao;
-import com.nuvexa.core.paciente.model.Paciente;
-import com.nuvexa.core.paciente.model.Sexo;
+import com.nuvexa.core.model.Organizacao;
+import com.nuvexa.core.model.Paciente;
+import com.nuvexa.core.model.Sexo;
 import com.nuvexa.nutricao.model.NivelAtividade;
 import com.nuvexa.nutricao.model.Objetivo;
 import com.nuvexa.nutricao.model.PerfilNutricional;

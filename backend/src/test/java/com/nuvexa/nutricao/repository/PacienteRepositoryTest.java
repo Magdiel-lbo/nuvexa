@@ -1,12 +1,12 @@
 package com.nuvexa.nutricao.repository;
 
-import com.nuvexa.core.organizacao.model.Organizacao;
-import com.nuvexa.core.organizacao.model.StatusOrganizacao;
-import com.nuvexa.core.organizacao.model.TipoOrganizacao;
-import com.nuvexa.core.organizacao.repository.OrganizacaoRepository;
-import com.nuvexa.core.paciente.model.Sexo;
-import com.nuvexa.core.paciente.model.Paciente;
-import com.nuvexa.core.paciente.repository.PacienteRepository;
+import com.nuvexa.core.model.Organizacao;
+import com.nuvexa.core.model.StatusOrganizacao;
+import com.nuvexa.core.model.TipoOrganizacao;
+import com.nuvexa.core.repository.OrganizacaoRepository;
+import com.nuvexa.core.model.Sexo;
+import com.nuvexa.core.model.Paciente;
+import com.nuvexa.core.repository.PacienteRepository;
 import com.nuvexa.nutricao.model.NivelAtividade;
 import com.nuvexa.nutricao.model.Objetivo;
 import com.nuvexa.nutricao.model.PerfilNutricional;

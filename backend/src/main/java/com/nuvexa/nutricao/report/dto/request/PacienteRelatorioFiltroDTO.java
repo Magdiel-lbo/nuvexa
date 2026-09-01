@@ -1,6 +1,6 @@
 package com.nuvexa.nutricao.report.dto.request;
 
-import com.nuvexa.core.paciente.model.Sexo;
+import com.nuvexa.core.model.Sexo;
 import com.nuvexa.nutricao.model.NivelAtividade;
 import com.nuvexa.nutricao.model.Objetivo;
 import lombok.AllArgsConstructor;

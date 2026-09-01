@@ -1,6 +1,6 @@
 package com.nuvexa.nutricao.calculator;
 
-import com.nuvexa.core.paciente.model.Sexo;
+import com.nuvexa.core.model.Sexo;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;

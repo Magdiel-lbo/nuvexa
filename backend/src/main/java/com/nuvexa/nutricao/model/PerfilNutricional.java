@@ -1,6 +1,6 @@
 package com.nuvexa.nutricao.model;
 
-import com.nuvexa.core.paciente.model.Paciente;
+import com.nuvexa.core.model.Paciente;
 import com.nuvexa.platform.persistence.ModeloAbstrato;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

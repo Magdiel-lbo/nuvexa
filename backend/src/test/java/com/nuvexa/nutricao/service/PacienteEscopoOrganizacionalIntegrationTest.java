@@ -1,16 +1,16 @@
 package com.nuvexa.nutricao.service;
 
-import com.nuvexa.core.contexto.ContextoDeAutenticacao;
-import com.nuvexa.core.organizacao.model.Organizacao;
-import com.nuvexa.core.organizacao.model.StatusOrganizacao;
-import com.nuvexa.core.organizacao.model.TipoOrganizacao;
-import com.nuvexa.core.organizacao.repository.OrganizacaoRepository;
-import com.nuvexa.core.paciente.model.Paciente;
-import com.nuvexa.core.paciente.model.Sexo;
-import com.nuvexa.core.paciente.repository.PacienteRepository;
+import com.nuvexa.core.service.ContextoDeAutenticacao;
+import com.nuvexa.core.model.Organizacao;
+import com.nuvexa.core.model.StatusOrganizacao;
+import com.nuvexa.core.model.TipoOrganizacao;
+import com.nuvexa.core.repository.OrganizacaoRepository;
+import com.nuvexa.core.model.Paciente;
+import com.nuvexa.core.model.Sexo;
+import com.nuvexa.core.repository.PacienteRepository;
 import com.nuvexa.platform.config.MessageConfig;
 import com.nuvexa.platform.config.ModelMapperConfig;
-import com.nuvexa.platform.config.querydsl.QuerydslConfig;
+import com.nuvexa.platform.config.QuerydslConfig;
 import com.nuvexa.platform.exception.NegocioException;
 import com.nuvexa.nutricao.calculator.GastoCaloricoCalculator;
 import com.nuvexa.nutricao.calculator.ImcCalculator;
