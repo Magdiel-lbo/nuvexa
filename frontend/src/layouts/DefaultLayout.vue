@@ -18,61 +18,17 @@
       <v-divider />
 
       <v-list nav density="comfortable" class="app-sidebar__list">
-        <v-list-subheader v-if="!isRail">{{ $t('menu.grupoAtendimento') }}</v-list-subheader>
-        <v-divider v-else class="my-2 mx-4" />
+        <div v-if="menuStore.carregando && !menuStore.itens.length" class="app-sidebar__loading">
+          <v-progress-circular indeterminate size="20" width="2" color="primary" />
+        </div>
 
-        <v-list-item
-          v-for="item in atendimentoItems"
-          :key="item.to"
-          :to="item.to"
-          :prepend-icon="item.icon"
-          :title="isRail ? undefined : item.label"
-          rounded="lg"
-        >
-          <v-tooltip v-if="isRail" activator="parent" location="end">{{ item.label }}</v-tooltip>
-        </v-list-item>
-
-        <v-list-subheader v-if="!isRail">{{ $t('menu.grupoRelatorios') }}</v-list-subheader>
-        <v-divider v-else class="my-2 mx-4" />
-
-        <v-list-item
-          v-for="item in relatoriosItems"
-          :key="item.to"
-          :to="item.to"
-          :prepend-icon="item.icon"
-          :title="isRail ? undefined : item.label"
-          rounded="lg"
-        >
-          <v-tooltip v-if="isRail" activator="parent" location="end">{{ item.label }}</v-tooltip>
-        </v-list-item>
-
-        <v-list-subheader v-if="!isRail">{{ $t('menu.grupoGestao') }}</v-list-subheader>
-        <v-divider v-else class="my-2 mx-4" />
-
-        <v-list-item
-          v-for="item in gestaoItems"
-          :key="item.to"
-          :to="item.to"
-          :prepend-icon="item.icon"
-          :title="isRail ? undefined : item.label"
-          rounded="lg"
-        >
-          <v-tooltip v-if="isRail" activator="parent" location="end">{{ item.label }}</v-tooltip>
-        </v-list-item>
-
-        <v-list-subheader v-if="!isRail">{{ $t('menu.grupoSistema') }}</v-list-subheader>
-        <v-divider v-else class="my-2 mx-4" />
-
-        <v-list-item
-          v-for="item in sistemaItems"
-          :key="item.to"
-          :to="item.to"
-          :prepend-icon="item.icon"
-          :title="isRail ? undefined : item.label"
-          rounded="lg"
-        >
-          <v-tooltip v-if="isRail" activator="parent" location="end">{{ item.label }}</v-tooltip>
-        </v-list-item>
+        <AppMenuNode
+          v-for="item in menuStore.itens"
+          :key="item.id"
+          :item="item"
+          :depth="0"
+          :is-rail="isRail"
+        />
       </v-list>
     </v-navigation-drawer>
 
@@ -145,17 +101,13 @@ import { useAppStore } from '../store/app.store'
 import { useAuthStore } from '../core/auth/auth.store'
 import { useThemeStore } from '../store/theme.store'
 import { useContextoStore } from '../core/contexto/contexto.store'
+import { useMenuStore } from '../core/menu/menu.store'
 import BrandMark from '../components/common/BrandMark.vue'
-
-interface NavItem {
-  to: string
-  label: string
-  icon: string
-}
+import AppMenuNode from './components/AppMenuNode.vue'
 
 const MOBILE_BREAKPOINT = 960
 
-@Component({ name: 'DefaultLayout', components: { BrandMark } })
+@Component({ name: 'DefaultLayout', components: { BrandMark, AppMenuNode } })
 export default class DefaultLayout extends Vue {
   isMobile = false
   rail = false
@@ -198,51 +150,14 @@ export default class DefaultLayout extends Vue {
     return perfil ? (this.$t(`perfil.${perfil}`) as string) : ''
   }
 
-  get atendimentoItems(): NavItem[] {
-    return [
-      { to: '/', label: this.$t('menu.dashboard') as string, icon: 'mdi-view-dashboard-outline' },
-      { to: '/agenda', label: this.$t('menu.agenda') as string, icon: 'mdi-calendar-month-outline' },
-      { to: '/consultas', label: this.$t('menu.consultas') as string, icon: 'mdi-calendar-check-outline' },
-      { to: '/pacientes', label: this.$t('menu.pacientes') as string, icon: 'mdi-account-group-outline' },
-      { to: '/prontuarios', label: this.$t('menu.prontuarios') as string, icon: 'mdi-file-document-outline' },
-      { to: '/nutricao', label: this.$t('menu.nutricao') as string, icon: 'mdi-food-apple-outline' },
-      { to: '/avaliacoes', label: this.$t('menu.avaliacoes') as string, icon: 'mdi-clipboard-pulse-outline' },
-    ]
-  }
-
-  get relatoriosItems(): NavItem[] {
-    return [
-      { to: '/relatorios', label: this.$t('menu.relatoriosPacientes') as string, icon: 'mdi-account-multiple-outline' },
-      { to: '/relatorios/consultas', label: this.$t('menu.relatoriosConsultas') as string, icon: 'mdi-calendar-text-outline' },
-      { to: '/relatorios/evolucao-nutricional', label: this.$t('menu.relatoriosEvolucaoNutricional') as string, icon: 'mdi-trending-up' },
-      { to: '/relatorios/financeiro', label: this.$t('menu.relatoriosFinanceiro') as string, icon: 'mdi-cash-multiple' },
-      { to: '/relatorios/notas-fiscais', label: this.$t('menu.relatoriosNotasFiscais') as string, icon: 'mdi-receipt-text-outline' },
-    ]
-  }
-
-  get gestaoItems(): NavItem[] {
-    return [
-      { to: '/empresa', label: this.$t('menu.empresa') as string, icon: 'mdi-domain' },
-      { to: '/usuarios', label: this.$t('menu.usuarios') as string, icon: 'mdi-account-multiple-outline' },
-      { to: '/vinculos-permissoes', label: this.$t('menu.vinculosPermissoes') as string, icon: 'mdi-shield-account-outline' },
-      { to: '/notificacoes', label: this.$t('menu.notificacoes') as string, icon: 'mdi-bell-outline' },
-      { to: '/integracoes', label: this.$t('menu.integracoes') as string, icon: 'mdi-puzzle-outline' },
-      { to: '/ia', label: this.$t('menu.ia') as string, icon: 'mdi-robot-outline' },
-      { to: '/financeiro', label: this.$t('menu.gestaoFinanceiro') as string, icon: 'mdi-finance' },
-    ]
-  }
-
-  get sistemaItems(): NavItem[] {
-    return [
-      { to: '/configuracoes/minha-conta', label: this.$t('menu.minhaConta') as string, icon: 'mdi-account-circle-outline' },
-      { to: '/configuracoes/preferencias', label: this.$t('menu.preferencias') as string, icon: 'mdi-tune' },
-      { to: '/configuracoes/aparencia', label: this.$t('menu.aparencia') as string, icon: 'mdi-palette-outline' },
-    ]
+  get menuStore() {
+    return useMenuStore()
   }
 
   mounted() {
     this.updateIsMobile()
     window.addEventListener('resize', this.updateIsMobile)
+    this.menuStore.carregar()
   }
 
   beforeUnmount() {
@@ -270,6 +185,7 @@ export default class DefaultLayout extends Vue {
   sair() {
     this.authStore.logout()
     this.contextoStore.limpar()
+    this.menuStore.limpar()
     this.$router.push('/login')
   }
 }
@@ -311,6 +227,12 @@ export default class DefaultLayout extends Vue {
 
 .app-sidebar__list {
   padding: 8px;
+}
+
+.app-sidebar__loading {
+  display: flex;
+  justify-content: center;
+  padding: 16px 0;
 }
 
 .topbar-title__text {

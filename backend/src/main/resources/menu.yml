@@ -1,0 +1,85 @@
+menu:
+  itens:
+    - id: dashboard
+      labelKey: menu.dashboard
+      icon: mdi-view-dashboard-outline
+      route: /
+    - id: atendimento
+      labelKey: menu.grupoAtendimento
+      icon: mdi-account-heart-outline
+      children:
+        - id: agenda
+          labelKey: menu.agenda
+          route: /agenda
+        - id: consultas
+          labelKey: menu.consultas
+          route: /consultas
+        - id: pacientes
+          labelKey: menu.pacientes
+          route: /pacientes
+        - id: prontuarios
+          labelKey: menu.prontuarios
+          route: /prontuarios
+        - id: nutricao
+          labelKey: menu.nutricao
+          route: /nutricao
+        - id: avaliacoes
+          labelKey: menu.avaliacoes
+          route: /avaliacoes
+    - id: relatorios
+      labelKey: menu.grupoRelatorios
+      icon: mdi-chart-box-outline
+      children:
+        - id: relatorios-pacientes
+          labelKey: menu.relatoriosPacientes
+          route: /relatorios
+        - id: relatorios-consultas
+          labelKey: menu.relatoriosConsultas
+          route: /relatorios/consultas
+        - id: relatorios-evolucao-nutricional
+          labelKey: menu.relatoriosEvolucaoNutricional
+          route: /relatorios/evolucao-nutricional
+        - id: relatorios-financeiro
+          labelKey: menu.relatoriosFinanceiro
+          route: /relatorios/financeiro
+        - id: relatorios-notas-fiscais
+          labelKey: menu.relatoriosNotasFiscais
+          route: /relatorios/notas-fiscais
+    - id: gestao
+      labelKey: menu.grupoGestao
+      icon: mdi-domain
+      children:
+        - id: empresa
+          labelKey: menu.empresa
+          route: /empresa
+        - id: usuarios
+          labelKey: menu.usuarios
+          route: /usuarios
+        - id: vinculos-permissoes
+          labelKey: menu.vinculosPermissoes
+          route: /vinculos-permissoes
+        - id: notificacoes
+          labelKey: menu.notificacoes
+          route: /notificacoes
+        - id: integracoes
+          labelKey: menu.integracoes
+          route: /integracoes
+        - id: ia
+          labelKey: menu.ia
+          route: /ia
+        - id: gestao-financeiro
+          labelKey: menu.gestaoFinanceiro
+          route: /financeiro
+    - id: sistema
+      labelKey: menu.grupoSistema
+      icon: mdi-cog-outline
+      children:
+        - id: minha-conta
+          labelKey: menu.minhaConta
+          route: /configuracoes/minha-conta
+        - id: preferencias
+          labelKey: menu.preferencias
+          route: /configuracoes/preferencias
+        - id: aparencia
+          labelKey: menu.aparencia
+          route: /configuracoes/aparencia
