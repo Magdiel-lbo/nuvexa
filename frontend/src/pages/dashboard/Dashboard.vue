@@ -2,15 +2,6 @@
   <div class="home">
     <div class="home__header">
       <h1 class="home__title">{{ saudacao }}</h1>
-
-      <div class="home__actions">
-        <v-btn color="primary" prepend-icon="mdi-plus" size="large" @click="novaConsulta">
-          {{ $t('consulta.novo') }}
-        </v-btn>
-        <v-btn variant="outlined" color="primary" prepend-icon="mdi-plus" size="large" @click="novoPaciente">
-          {{ $t('paciente.novo') }}
-        </v-btn>
-      </div>
     </div>
 
     <NuvexaSummaryCards class="home__section" :cards="cards" />
@@ -187,13 +178,6 @@ export default class Dashboard extends Vue {
     }
   }
 
-  novaConsulta() {
-    this.$router.push('/consultas/novo')
-  }
-
-  novoPaciente() {
-    this.$router.push('/pacientes/novo')
-  }
 }
 </script>
 
@@ -211,12 +195,6 @@ export default class Dashboard extends Vue {
   font-size: 1.75rem;
   font-weight: 700;
   margin: 0;
-}
-
-.home__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
 }
 
 .home__section {

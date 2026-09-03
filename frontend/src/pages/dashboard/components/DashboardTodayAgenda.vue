@@ -11,8 +11,6 @@
         icon="mdi-calendar-blank-outline"
         :title="$t('home.agenda.vazio.titulo') as string"
         :description="$t('home.agenda.vazio.descricao') as string"
-        :action-label="$t('consulta.novo') as string"
-        @action="novaConsulta"
       />
 
       <template v-else>
@@ -94,10 +92,6 @@ export default class DashboardTodayAgenda extends Vue {
 
   verConsultas() {
     this.$router.push('/consultas')
-  }
-
-  novaConsulta() {
-    this.$router.push('/consultas/novo')
   }
 }
 </script>
