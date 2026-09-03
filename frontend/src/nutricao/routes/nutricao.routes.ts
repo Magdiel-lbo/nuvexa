@@ -21,8 +21,8 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/pacientes/:id',
-    name: 'paciente-detalhe',
-    component: () => import('../pages/PacienteDetalhe.vue'),
+    name: 'paciente-visualizar',
+    component: () => import('../pages/PacienteFormulario.vue'),
     meta: { title: 'Paciente' },
   },
   {
