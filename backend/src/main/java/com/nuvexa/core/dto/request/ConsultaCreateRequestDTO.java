@@ -5,6 +5,7 @@ import com.nuvexa.core.model.StatusConsulta;
 import com.nuvexa.core.model.TipoConsulta;
 import com.nuvexa.core.model.Organizacao;
 import com.nuvexa.core.model.Paciente;
+import com.nuvexa.core.model.Usuario;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,6 +24,9 @@ public class ConsultaCreateRequestDTO {
 
     private Long pacienteId;
 
+    @NotNull(message = "{consulta.profissionalId.obrigatorio}")
+    private Long profissionalId;
+
     @NotNull(message = "{consulta.dataHora.obrigatoria}")
     private LocalDateTime dataHora;
 
@@ -37,10 +41,11 @@ public class ConsultaCreateRequestDTO {
 
     private String observacoes;
 
-    public Consulta toConsulta(Organizacao organizacao, Paciente paciente) {
+    public Consulta toConsulta(Organizacao organizacao, Paciente paciente, Usuario profissional) {
         return Consulta.builder()
                 .organizacao(organizacao)
                 .paciente(paciente)
+                .profissional(profissional)
                 .dataHora(dataHora)
                 .duracaoMinutos(duracaoMinutos)
                 .tipo(tipo)

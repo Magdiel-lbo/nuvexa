@@ -39,6 +39,14 @@ public class Consulta extends ModeloAbstrato {
     @JoinColumn(name = "paciente_id", nullable = false)
     private Paciente paciente;
 
+    /**
+     * Profissional responsável por esta consulta. Independente do(s) profissional(is)
+     * vinculados ao paciente ({@link PacienteProfissional}) — não herda de {@link #paciente}.
+     */
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "profissional_id", nullable = false)
+    private Usuario profissional;
+
     @Column(name = "data_hora", nullable = false)
     private LocalDateTime dataHora;
 

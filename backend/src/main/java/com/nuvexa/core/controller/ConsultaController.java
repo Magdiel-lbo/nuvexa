@@ -3,6 +3,7 @@ package com.nuvexa.core.controller;
 import com.nuvexa.core.dto.request.ConsultaCreateRequestDTO;
 import com.nuvexa.core.dto.request.ConsultaUpdateRequestDTO;
 import com.nuvexa.core.dto.response.ConsultaResponseDTO;
+import com.nuvexa.core.dto.response.ProfissionalResponseDTO;
 import com.nuvexa.core.service.ConsultaService;
 import com.nuvexa.platform.web.BaseController;
 import jakarta.validation.Valid;
@@ -39,6 +40,12 @@ public class ConsultaController extends BaseController {
     @ResponseStatus(HttpStatus.OK)
     public ConsultaResponseDTO findById(@PathVariable Long id) {
         return consultaService.findById(id);
+    }
+
+    @GetMapping("/profissionais")
+    @ResponseStatus(HttpStatus.OK)
+    public List<ProfissionalResponseDTO> listarProfissionais() {
+        return consultaService.listarProfissionais();
     }
 
     @PostMapping

@@ -3,6 +3,7 @@ package com.nuvexa.core.dto.request;
 import com.nuvexa.core.model.Consulta;
 import com.nuvexa.core.model.StatusConsulta;
 import com.nuvexa.core.model.TipoConsulta;
+import com.nuvexa.core.model.Usuario;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,8 +16,11 @@ import java.time.LocalDateTime;
 
 /**
  * Sem {@code pacienteId} de propósito: quem a consulta pertence não é editável — só criável.
- * Campos idênticos aos de {@link Consulta}, então usa {@code ModelMapper} (exceção documentada
- * na skill nuvexa-backend para atualização campo-a-campo pura).
+ * {@code profissionalId} já é o responsável pela consulta e pode ser reatribuído no update
+ * (diferente de {@code pacienteId}). Os demais campos são idênticos aos de {@link Consulta},
+ * então usa {@code ModelMapper} para eles (exceção documentada na skill nuvexa-backend para
+ * atualização campo-a-campo pura) — {@code profissionalId} é resolvido e setado à parte pelo
+ * service, sem passar pelo {@code ModelMapper}, já que é um id de relação, não um campo escalar.
  */
 @Getter
 @Setter
@@ -24,6 +28,9 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class ConsultaUpdateRequestDTO {
+
+    @NotNull(message = "{consulta.profissionalId.obrigatorio}")
+    private Long profissionalId;
 
     @NotNull(message = "{consulta.dataHora.obrigatoria}")
     private LocalDateTime dataHora;
@@ -39,7 +46,8 @@ public class ConsultaUpdateRequestDTO {
 
     private String observacoes;
 
-    public void atualizar(Consulta consulta, ModelMapper modelMapper) {
+    public void atualizar(Consulta consulta, Usuario profissional, ModelMapper modelMapper) {
         modelMapper.map(this, consulta);
+        consulta.setProfissional(profissional);
     }
 }

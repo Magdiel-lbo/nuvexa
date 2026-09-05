@@ -24,6 +24,10 @@ public class ConsultaResponseDTO {
 
     private String pacienteNome;
 
+    private Long profissionalId;
+
+    private String profissionalNome;
+
     private LocalDateTime dataHora;
 
     private Integer duracaoMinutos;
@@ -39,6 +43,8 @@ public class ConsultaResponseDTO {
                 .id(consulta.getId())
                 .pacienteId(consulta.getPaciente().getId())
                 .pacienteNome(consulta.getPaciente().getNome())
+                .profissionalId(consulta.getProfissional().getId())
+                .profissionalNome(consulta.getProfissional().getNome())
                 .dataHora(consulta.getDataHora())
                 .duracaoMinutos(consulta.getDuracaoMinutos())
                 .tipo(consulta.getTipo())

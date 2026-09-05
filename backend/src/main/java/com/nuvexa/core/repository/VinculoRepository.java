@@ -8,4 +8,6 @@ import java.util.List;
 public interface VinculoRepository extends JpaRepository<Vinculo, Long> {
 
     List<Vinculo> findByUsuarioIdAndAtivoTrueOrderByIdAsc(Long usuarioId);
+
+    List<Vinculo> findByOrganizacaoIdAndAtivoTrueOrderByUsuario_NomeAsc(Long organizacaoId);
 }

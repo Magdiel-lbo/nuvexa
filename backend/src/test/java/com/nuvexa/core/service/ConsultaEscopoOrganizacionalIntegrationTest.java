@@ -3,6 +3,7 @@ package com.nuvexa.core.service;
 import com.nuvexa.core.dto.request.ConsultaCreateRequestDTO;
 import com.nuvexa.core.dto.request.ConsultaUpdateRequestDTO;
 import com.nuvexa.core.dto.response.ConsultaResponseDTO;
+import com.nuvexa.core.dto.response.ProfissionalResponseDTO;
 import com.nuvexa.core.model.Consulta;
 import com.nuvexa.core.model.StatusConsulta;
 import com.nuvexa.core.model.TipoConsulta;
@@ -13,8 +14,14 @@ import com.nuvexa.core.model.StatusOrganizacao;
 import com.nuvexa.core.model.TipoOrganizacao;
 import com.nuvexa.core.repository.OrganizacaoRepository;
 import com.nuvexa.core.model.Paciente;
+import com.nuvexa.core.model.PapelOrganizacional;
+import com.nuvexa.core.model.Perfil;
 import com.nuvexa.core.model.Sexo;
+import com.nuvexa.core.model.Usuario;
+import com.nuvexa.core.model.Vinculo;
 import com.nuvexa.core.repository.PacienteRepository;
+import com.nuvexa.core.repository.UsuarioRepository;
+import com.nuvexa.core.repository.VinculoRepository;
 import com.nuvexa.platform.config.MessageConfig;
 import com.nuvexa.platform.config.ModelMapperConfig;
 import com.nuvexa.platform.config.QuerydslConfig;
@@ -57,6 +64,12 @@ class ConsultaEscopoOrganizacionalIntegrationTest {
     @Autowired
     private OrganizacaoRepository organizacaoRepository;
 
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private VinculoRepository vinculoRepository;
+
     @MockitoBean
     private ContextoDeAutenticacao contextoDeAutenticacao;
 
@@ -64,6 +77,8 @@ class ConsultaEscopoOrganizacionalIntegrationTest {
     private Organizacao outraOrganizacao;
     private Paciente meuPaciente;
     private Paciente pacienteAlheio;
+    private Usuario meuProfissional;
+    private Usuario profissionalAlheio;
 
     @BeforeEach
     void setUp() {
@@ -71,6 +86,8 @@ class ConsultaEscopoOrganizacionalIntegrationTest {
         outraOrganizacao = novaOrganizacao("Clínica B");
         meuPaciente = novoPaciente(minhaOrganizacao, "Ana da Minha Clinica");
         pacienteAlheio = novoPaciente(outraOrganizacao, "Bruno da Outra Clinica");
+        meuProfissional = novoProfissionalVinculado(minhaOrganizacao, "Joana Nutri");
+        profissionalAlheio = novoProfissionalVinculado(outraOrganizacao, "Carlos Nutri");
         estarLogadoEm(minhaOrganizacao);
     }
 
@@ -96,10 +113,28 @@ class ConsultaEscopoOrganizacionalIntegrationTest {
         when(contextoDeAutenticacao.organizacaoAtualId()).thenReturn(organizacao.getId());
     }
 
-    private Consulta novaConsulta(Organizacao organizacao, Paciente paciente) {
+    private Usuario novoProfissionalVinculado(Organizacao organizacao, String nome) {
+        Usuario usuario = usuarioRepository.saveAndFlush(Usuario.builder()
+                .nome(nome)
+                .email(nome.toLowerCase().replace(" ", ".") + "@nuvexa.com")
+                .senha("hash")
+                .perfil(Perfil.PROFISSIONAL)
+                .ativo(true)
+                .build());
+        vinculoRepository.saveAndFlush(Vinculo.builder()
+                .usuario(usuario)
+                .organizacao(organizacao)
+                .papel(PapelOrganizacional.MEMBRO)
+                .ativo(true)
+                .build());
+        return usuario;
+    }
+
+    private Consulta novaConsulta(Organizacao organizacao, Paciente paciente, Usuario profissional) {
         return consultaRepository.saveAndFlush(Consulta.builder()
                 .organizacao(organizacao)
                 .paciente(paciente)
+                .profissional(profissional)
                 .dataHora(LocalDateTime.of(2026, 10, 9, 14, 30))
                 .duracaoMinutos(30)
                 .tipo(TipoConsulta.RETORNO)
@@ -107,9 +142,10 @@ class ConsultaEscopoOrganizacionalIntegrationTest {
                 .build());
     }
 
-    private ConsultaCreateRequestDTO createRequest(Long pacienteId) {
+    private ConsultaCreateRequestDTO createRequest(Long pacienteId, Long profissionalId) {
         ConsultaCreateRequestDTO request = new ConsultaCreateRequestDTO();
         request.setPacienteId(pacienteId);
+        request.setProfissionalId(profissionalId);
         request.setDataHora(LocalDateTime.of(2026, 10, 9, 14, 30));
         request.setDuracaoMinutos(30);
         request.setTipo(TipoConsulta.PRIMEIRA_CONSULTA);
@@ -117,8 +153,9 @@ class ConsultaEscopoOrganizacionalIntegrationTest {
         return request;
     }
 
-    private ConsultaUpdateRequestDTO updateRequest() {
+    private ConsultaUpdateRequestDTO updateRequest(Long profissionalId) {
         ConsultaUpdateRequestDTO request = new ConsultaUpdateRequestDTO();
+        request.setProfissionalId(profissionalId);
         request.setDataHora(LocalDateTime.of(2026, 10, 10, 9, 0));
         request.setDuracaoMinutos(45);
         request.setTipo(TipoConsulta.AVALIACAO);
@@ -128,8 +165,8 @@ class ConsultaEscopoOrganizacionalIntegrationTest {
 
     @Test
     void deveListarApenasConsultasDaOrganizacaoAtual() {
-        novaConsulta(minhaOrganizacao, meuPaciente);
-        novaConsulta(outraOrganizacao, pacienteAlheio);
+        novaConsulta(minhaOrganizacao, meuPaciente, meuProfissional);
+        novaConsulta(outraOrganizacao, pacienteAlheio, profissionalAlheio);
 
         List<ConsultaResponseDTO> resultado = consultaService.findAll(null, null);
 
@@ -139,7 +176,7 @@ class ConsultaEscopoOrganizacionalIntegrationTest {
 
     @Test
     void deveCriarConsultaParaPacienteDaPropriaOrganizacao() {
-        ConsultaResponseDTO criada = consultaService.create(createRequest(meuPaciente.getId()));
+        ConsultaResponseDTO criada = consultaService.create(createRequest(meuPaciente.getId(), meuProfissional.getId()));
 
         Consulta persistida = consultaRepository.findById(criada.getId()).orElseThrow();
         assertThat(persistida.getOrganizacao().getId()).isEqualTo(minhaOrganizacao.getId());
@@ -147,24 +184,60 @@ class ConsultaEscopoOrganizacionalIntegrationTest {
 
     @Test
     void naoDeveCriarConsultaParaPacienteDeOutraOrganizacao() {
-        assertThatThrownBy(() -> consultaService.create(createRequest(pacienteAlheio.getId())))
+        assertThatThrownBy(() -> consultaService.create(createRequest(pacienteAlheio.getId(), meuProfissional.getId())))
                 .isInstanceOf(NegocioException.class)
                 .satisfies(ex -> assertThat(((NegocioException) ex).getStatus()).isEqualTo(HttpStatus.NOT_FOUND));
     }
 
     @Test
-    void deveEditarConsultaDaPropriaOrganizacao() {
-        Consulta consulta = novaConsulta(minhaOrganizacao, meuPaciente);
+    void naoDeveCriarConsultaComProfissionalDeOutraOrganizacao() {
+        assertThatThrownBy(() -> consultaService.create(createRequest(meuPaciente.getId(), profissionalAlheio.getId())))
+                .isInstanceOf(NegocioException.class)
+                .satisfies(ex -> assertThat(((NegocioException) ex).getStatus()).isEqualTo(HttpStatus.BAD_REQUEST));
+    }
 
-        ConsultaResponseDTO atualizada = consultaService.update(consulta.getId(), updateRequest());
+    @Test
+    void naoDeveCriarConsultaComProfissionalInexistente() {
+        assertThatThrownBy(() -> consultaService.create(createRequest(meuPaciente.getId(), 999_999L)))
+                .isInstanceOf(NegocioException.class)
+                .satisfies(ex -> assertThat(((NegocioException) ex).getStatus()).isEqualTo(HttpStatus.BAD_REQUEST));
+    }
+
+    @Test
+    void deveEditarConsultaDaPropriaOrganizacao() {
+        Consulta consulta = novaConsulta(minhaOrganizacao, meuPaciente, meuProfissional);
+
+        ConsultaResponseDTO atualizada = consultaService.update(consulta.getId(), updateRequest(meuProfissional.getId()));
 
         assertThat(atualizada.getStatus()).isEqualTo(StatusConsulta.CONFIRMADA);
         assertThat(atualizada.getTipo()).isEqualTo(TipoConsulta.AVALIACAO);
     }
 
     @Test
+    void deveReatribuirProfissionalDaPropriaOrganizacaoNoUpdate() {
+        Usuario outroProfissionalMesmaOrg = novoProfissionalVinculado(minhaOrganizacao, "Carla Nutri");
+        Consulta consulta = novaConsulta(minhaOrganizacao, meuPaciente, meuProfissional);
+
+        ConsultaResponseDTO atualizada = consultaService.update(consulta.getId(), updateRequest(outroProfissionalMesmaOrg.getId()));
+
+        assertThat(atualizada.getProfissionalId()).isEqualTo(outroProfissionalMesmaOrg.getId());
+    }
+
+    @Test
+    void naoDeveEditarComProfissionalDeOutraOrganizacao() {
+        Consulta consulta = novaConsulta(minhaOrganizacao, meuPaciente, meuProfissional);
+
+        assertThatThrownBy(() -> consultaService.update(consulta.getId(), updateRequest(profissionalAlheio.getId())))
+                .isInstanceOf(NegocioException.class)
+                .satisfies(ex -> assertThat(((NegocioException) ex).getStatus()).isEqualTo(HttpStatus.BAD_REQUEST));
+
+        assertThat(consultaRepository.findById(consulta.getId()).orElseThrow().getProfissional().getId())
+                .isEqualTo(meuProfissional.getId());
+    }
+
+    @Test
     void naoDeveAcessarConsultaDeOutraOrganizacao() {
-        Consulta alheia = novaConsulta(outraOrganizacao, pacienteAlheio);
+        Consulta alheia = novaConsulta(outraOrganizacao, pacienteAlheio, profissionalAlheio);
 
         assertThatThrownBy(() -> consultaService.findById(alheia.getId()))
                 .isInstanceOf(NegocioException.class)
@@ -173,9 +246,9 @@ class ConsultaEscopoOrganizacionalIntegrationTest {
 
     @Test
     void naoDeveEditarConsultaDeOutraOrganizacao() {
-        Consulta alheia = novaConsulta(outraOrganizacao, pacienteAlheio);
+        Consulta alheia = novaConsulta(outraOrganizacao, pacienteAlheio, profissionalAlheio);
 
-        assertThatThrownBy(() -> consultaService.update(alheia.getId(), updateRequest()))
+        assertThatThrownBy(() -> consultaService.update(alheia.getId(), updateRequest(meuProfissional.getId())))
                 .isInstanceOf(NegocioException.class)
                 .satisfies(ex -> assertThat(((NegocioException) ex).getStatus()).isEqualTo(HttpStatus.NOT_FOUND));
 
@@ -185,7 +258,7 @@ class ConsultaEscopoOrganizacionalIntegrationTest {
 
     @Test
     void naoDeveExcluirConsultaDeOutraOrganizacao() {
-        Consulta alheia = novaConsulta(outraOrganizacao, pacienteAlheio);
+        Consulta alheia = novaConsulta(outraOrganizacao, pacienteAlheio, profissionalAlheio);
 
         assertThatThrownBy(() -> consultaService.delete(alheia.getId()))
                 .isInstanceOf(NegocioException.class)
@@ -196,9 +269,9 @@ class ConsultaEscopoOrganizacionalIntegrationTest {
 
     @Test
     void deveFiltrarPorPaciente() {
-        novaConsulta(minhaOrganizacao, meuPaciente);
+        novaConsulta(minhaOrganizacao, meuPaciente, meuProfissional);
         Paciente outroPacienteMesmaOrg = novoPaciente(minhaOrganizacao, "Carla da Minha Clinica");
-        novaConsulta(minhaOrganizacao, outroPacienteMesmaOrg);
+        novaConsulta(minhaOrganizacao, outroPacienteMesmaOrg, meuProfissional);
 
         List<ConsultaResponseDTO> resultado = consultaService.findAll(meuPaciente.getId(), null);
 
@@ -208,9 +281,9 @@ class ConsultaEscopoOrganizacionalIntegrationTest {
 
     @Test
     void deveFiltrarPorNomeDoPacienteCaseInsensitive() {
-        novaConsulta(minhaOrganizacao, meuPaciente);
+        novaConsulta(minhaOrganizacao, meuPaciente, meuProfissional);
         Paciente carla = novoPaciente(minhaOrganizacao, "Carla da Minha Clinica");
-        novaConsulta(minhaOrganizacao, carla);
+        novaConsulta(minhaOrganizacao, carla, meuProfissional);
 
         List<ConsultaResponseDTO> resultado = consultaService.findAll(null, "ana");
 
@@ -220,10 +293,18 @@ class ConsultaEscopoOrganizacionalIntegrationTest {
 
     @Test
     void deveIgnorarBuscaEmBranco() {
-        novaConsulta(minhaOrganizacao, meuPaciente);
+        novaConsulta(minhaOrganizacao, meuPaciente, meuProfissional);
 
         List<ConsultaResponseDTO> resultado = consultaService.findAll(null, "   ");
 
         assertThat(resultado).hasSize(1);
+    }
+
+    @Test
+    void deveListarApenasProfissionaisDaOrganizacaoAtual() {
+        List<ProfissionalResponseDTO> resultado = consultaService.listarProfissionais();
+
+        assertThat(resultado).hasSize(1);
+        assertThat(resultado.getFirst().getId()).isEqualTo(meuProfissional.getId());
     }
 }
