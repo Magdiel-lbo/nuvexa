@@ -12,6 +12,17 @@
         />
       </v-col>
 
+      <v-col cols="12">
+        <v-select
+          v-model="model.profissionalId"
+          :items="profissionalOptions"
+          item-title="label"
+          item-value="value"
+          :label="$t('consulta.profissional')"
+          :rules="[rules.obrigatorio]"
+        />
+      </v-col>
+
       <v-col cols="12" md="6">
         <v-text-field
           v-model="model.dataHora"
@@ -70,6 +81,7 @@ import type { ConsultaStatus, ConsultaTipo } from '../../../types/consulta'
 
 export interface ConsultaFormModel {
   pacienteId: number | null
+  profissionalId: number | null
   dataHora: string
   duracaoMinutos: number
   tipo: ConsultaTipo
@@ -96,6 +108,9 @@ export default class ConsultaForm extends Vue {
 
   @Prop({ default: () => [] })
   pacienteOptions!: { value: number; label: string }[]
+
+  @Prop({ default: () => [] })
+  profissionalOptions!: { value: number; label: string }[]
 
   formValido = true
 

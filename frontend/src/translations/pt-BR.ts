@@ -75,6 +75,7 @@ export default {
     salvarConsulta: 'Erro ao salvar consulta',
     carregarConsultas: 'Erro ao carregar consultas',
     carregarIndicadores: 'Erro ao carregar indicadores',
+    carregarProfissionais: 'Erro ao carregar profissionais',
   },
   contexto: {
     organizacaoAtual: 'Organização atual',
@@ -300,6 +301,7 @@ export default {
     detalhes: 'Detalhes da consulta',
     dataHora: 'Data e hora',
     duracao: 'Duração (min)',
+    profissional: 'Profissional',
     observacoes: 'Observações',
     motivoCancelamento: 'Motivo do cancelamento',
     status: {

@@ -19,6 +19,7 @@
           :readonly="isView"
           :mostrar-selecao-paciente="isCriacao"
           :paciente-options="pacienteOptions"
+          :profissional-options="profissionalOptions"
           @submit="onSubmit"
           @cancel="voltar"
         />
@@ -48,6 +49,7 @@ function fromDatetimeLocal(value: string): string {
 function formModelPadrao(): ConsultaFormModel {
   return {
     pacienteId: null,
+    profissionalId: null,
     dataHora: '',
     duracaoMinutos: 30,
     tipo: 'PRIMEIRA_CONSULTA',
@@ -66,6 +68,7 @@ export default class ConsultaFormulario extends Vue {
   consulta: Consulta | null = null
   form: ConsultaFormModel | null = null
   pacienteOptions: { value: number; label: string }[] = []
+  profissionalOptions: { value: number; label: string }[] = []
   carregando = false
   salvando = false
 
@@ -94,6 +97,8 @@ export default class ConsultaFormulario extends Vue {
   async created() {
     this.carregando = true
     try {
+      await this.carregarProfissionais()
+
       if (this.isCriacao) {
         await this.carregarPacientes()
         this.form = formModelPadrao()
@@ -108,6 +113,7 @@ export default class ConsultaFormulario extends Vue {
       this.consulta = consulta
       this.form = {
         pacienteId: consulta.pacienteId,
+        profissionalId: consulta.profissionalId,
         dataHora: toDatetimeLocal(consulta.dataHora),
         duracaoMinutos: consulta.duracaoMinutos,
         tipo: consulta.tipo,
@@ -125,6 +131,15 @@ export default class ConsultaFormulario extends Vue {
       this.pacienteOptions = pacientes.map((paciente) => ({ value: paciente.id, label: paciente.nome }))
     } catch (e) {
       this.appStore.setToast({ mensagem: extrairMensagemErro(e, this.$t('erro.carregarPacientes') as string), erro: true })
+    }
+  }
+
+  async carregarProfissionais() {
+    try {
+      const profissionais = await consultaService.listarProfissionais()
+      this.profissionalOptions = profissionais.map((profissional) => ({ value: profissional.id, label: profissional.nome }))
+    } catch (e) {
+      this.appStore.setToast({ mensagem: extrairMensagemErro(e, this.$t('erro.carregarProfissionais') as string), erro: true })
     }
   }
 
@@ -150,11 +165,12 @@ export default class ConsultaFormulario extends Vue {
 
   private async criar() {
     const form = this.form as ConsultaFormModel
-    if (!form.pacienteId) {
+    if (!form.pacienteId || !form.profissionalId) {
       return
     }
     await consultaService.criar({
       pacienteId: form.pacienteId,
+      profissionalId: form.profissionalId,
       dataHora: fromDatetimeLocal(form.dataHora),
       duracaoMinutos: form.duracaoMinutos,
       tipo: form.tipo,
@@ -165,7 +181,11 @@ export default class ConsultaFormulario extends Vue {
 
   private async atualizar() {
     const form = this.form as ConsultaFormModel
+    if (!form.profissionalId) {
+      return
+    }
     await consultaService.atualizar((this.consulta as Consulta).id, {
+      profissionalId: form.profissionalId,
       dataHora: fromDatetimeLocal(form.dataHora),
       duracaoMinutos: form.duracaoMinutos,
       tipo: form.tipo,

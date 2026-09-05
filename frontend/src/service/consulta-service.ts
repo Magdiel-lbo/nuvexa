@@ -1,6 +1,6 @@
 import type { AxiosInstance } from 'axios'
 import http from '../core/http/client'
-import type { Consulta, ConsultaCreateRequest, ConsultaUpdateRequest } from '../types/consulta'
+import type { Consulta, ConsultaCreateRequest, ConsultaUpdateRequest, Profissional } from '../types/consulta'
 
 class ConsultaService {
   private http: AxiosInstance
@@ -28,6 +28,11 @@ class ConsultaService {
     return data
   }
 
+  async listarProfissionais(): Promise<Profissional[]> {
+    const { data } = await this.http.get('/consultas/profissionais')
+    return data
+  }
+
   async criar(dados: ConsultaCreateRequest): Promise<Consulta> {
     const { data } = await this.http.post('/consultas', dados)
     return data
@@ -42,6 +47,7 @@ class ConsultaService {
   // existe PATCH parcial. Preserva todos os outros campos, só troca o status.
   async cancelar(consulta: Consulta): Promise<Consulta> {
     return this.atualizar(consulta.id, {
+      profissionalId: consulta.profissionalId,
       dataHora: consulta.dataHora,
       duracaoMinutos: consulta.duracaoMinutos,
       tipo: consulta.tipo,
