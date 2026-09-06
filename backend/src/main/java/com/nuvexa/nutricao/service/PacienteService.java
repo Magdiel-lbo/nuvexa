@@ -81,7 +81,7 @@ public class PacienteService {
     }
 
     public PacienteEnumsResponseDTO getEnums() {
-        return PacienteEnumsResponseDTO.of(messageSource, MESSAGE_LOCALE);
+        return PacienteEnumsResponseDTO.of();
     }
 
     public void delete(Long id) {

@@ -1,11 +1,11 @@
 import type { ConsultaStatus } from '../types/consulta'
 
 const STATUS_COLORS: Record<ConsultaStatus, string> = {
-  AGENDADA: 'secondary',
-  CONFIRMADA: 'success',
-  REALIZADA: 'primary',
+  AGENDADA: 'on-surface-variant',
+  CONFIRMADA: 'info',
+  REALIZADA: 'success',
   CANCELADA: 'error',
-  FALTOU: 'warning',
+  FALTOU: 'error',
 }
 
 export function consultaStatusColor(status: ConsultaStatus): string {

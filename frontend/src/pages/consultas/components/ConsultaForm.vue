@@ -2,7 +2,7 @@
   <v-form ref="form" v-model="formValido" :disabled="readonly" @submit.prevent="salvar">
     <v-row>
       <v-col v-if="mostrarSelecaoPaciente" cols="12">
-        <v-select
+        <v-autocomplete
           v-model="model.pacienteId"
           :items="pacienteOptions"
           item-title="label"

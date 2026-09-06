@@ -1,6 +1,13 @@
 <template>
   <div class="summary-grid">
-    <v-card v-for="item in cards" :key="item.label" variant="flat" color="surface-variant" class="summary-card">
+    <v-card
+      v-for="item in cards"
+      :key="item.label"
+      variant="flat"
+      color="surface-variant"
+      class="summary-card"
+      :style="{ borderLeftColor: `rgb(var(--v-theme-${item.color}))` }"
+    >
       <v-card-text class="d-flex align-center ga-4">
         <v-avatar :color="item.color" variant="tonal" size="44" rounded="lg">
           <v-icon :icon="item.icon" size="22" />
@@ -48,6 +55,7 @@ export default class NuvexaSummaryCards extends Vue {
 
 .summary-card {
   border-radius: 12px;
+  border-left: 3px solid transparent;
 }
 
 .summary-card__value {

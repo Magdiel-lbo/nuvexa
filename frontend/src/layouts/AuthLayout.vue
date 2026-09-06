@@ -5,18 +5,7 @@
         <div class="auth-grid">
           <div class="auth-brand">
             <div class="auth-logo">
-              <svg width="64" height="64" viewBox="0 0 64 64" fill="none" class="auth-brand__mark" aria-hidden="true">
-                <g stroke="currentColor" stroke-width="3" stroke-linecap="round">
-                  <line x1="32" y1="32" x2="32" y2="13" />
-                  <line x1="32" y1="32" x2="48.5" y2="41.5" />
-                  <line x1="32" y1="32" x2="15.5" y2="41.5" />
-                </g>
-                <circle cx="32" cy="32" r="7.5" fill="currentColor" />
-                <circle cx="32" cy="13" r="5.5" fill="currentColor" />
-                <circle cx="48.5" cy="41.5" r="5.5" fill="currentColor" />
-                <circle cx="15.5" cy="41.5" r="5.5" fill="currentColor" />
-                <circle cx="32" cy="32" r="26" stroke="currentColor" stroke-width="2" opacity="0.28" />
-              </svg>
+              <BrandMark :size="64" class="auth-brand__mark" />
               <div class="auth-brand__wordmark">
                 <span class="auth-brand__name">Nuvexa</span>
                 <span class="auth-brand__vertical">{{ $t('auth.marcaVertical') }}</span>
@@ -28,18 +17,7 @@
 
           <div class="auth-form-panel">
             <div class="auth-form-panel__mobile-brand">
-              <svg width="30" height="30" viewBox="0 0 64 64" fill="none" class="auth-brand__mark" aria-hidden="true">
-                <g stroke="currentColor" stroke-width="3" stroke-linecap="round">
-                  <line x1="32" y1="32" x2="32" y2="13" />
-                  <line x1="32" y1="32" x2="48.5" y2="41.5" />
-                  <line x1="32" y1="32" x2="15.5" y2="41.5" />
-                </g>
-                <circle cx="32" cy="32" r="7.5" fill="currentColor" />
-                <circle cx="32" cy="13" r="5.5" fill="currentColor" />
-                <circle cx="48.5" cy="41.5" r="5.5" fill="currentColor" />
-                <circle cx="15.5" cy="41.5" r="5.5" fill="currentColor" />
-                <circle cx="32" cy="32" r="26" stroke="currentColor" stroke-width="2" opacity="0.28" />
-              </svg>
+              <BrandMark :size="30" class="auth-brand__mark" />
               <div class="auth-brand__wordmark">
                 <span class="auth-brand__name">Nuvexa</span>
                 <span class="auth-brand__vertical">{{ $t('auth.marcaVertical') }}</span>
@@ -63,8 +41,9 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-facing-decorator'
 import { useAppStore } from '../store/app.store'
+import BrandMark from '../components/common/BrandMark.vue'
 
-@Component({ name: 'AuthLayout' })
+@Component({ name: 'AuthLayout', components: { BrandMark } })
 export default class AuthLayout extends Vue {
   get appStore() {
     return useAppStore()

@@ -38,6 +38,7 @@ export default createVuetify({
           error: '#f2666b',
           success: '#37d59f',
           warning: '#f5a524',
+          info: '#5aa9e6',
         },
       },
       fitLight: {
@@ -56,6 +57,7 @@ export default createVuetify({
           error: '#d6373c',
           success: '#0f9d75',
           warning: '#c98416',
+          info: '#1f6fa8',
         },
         variables: {
           'disabled-opacity': 0.6,

@@ -21,7 +21,7 @@ import com.nuvexa.nutricao.dto.response.PacienteResponseDTO;
 import com.nuvexa.nutricao.model.NivelAtividade;
 import com.nuvexa.nutricao.model.Objetivo;
 import com.nuvexa.nutricao.model.PerfilNutricional;
-import com.nuvexa.nutricao.report.dto.request.PacienteRelatorioFiltroDTO;
+import com.nuvexa.nutricao.report.dto.filter.PacienteFiltro;
 import com.nuvexa.nutricao.report.dto.response.PacienteRelatorioLinhaDTO;
 import com.nuvexa.nutricao.report.service.PacienteRelatorioService;
 import com.nuvexa.nutricao.repository.PerfilNutricionalRepository;
@@ -221,7 +221,7 @@ class PacienteEscopoOrganizacionalIntegrationTest {
         novoPaciente(outraOrganizacao, "Igor Alheio");
 
         RelatorioResponseDTO<PacienteRelatorioLinhaDTO> relatorio =
-                pacienteRelatorioService.generate(PacienteRelatorioFiltroDTO.of(null, null, null, null));
+                pacienteRelatorioService.generate(PacienteFiltro.of(null, null, null, null));
 
         assertThat(relatorio.getLinhas())
                 .extracting(PacienteRelatorioLinhaDTO::getNome)
@@ -238,7 +238,7 @@ class PacienteEscopoOrganizacionalIntegrationTest {
         novoPaciente(minhaOrganizacao, "Helena Minha");
         novoPaciente(outraOrganizacao, "Igor Alheio");
 
-        byte[] excel = pacienteRelatorioService.generateExcel(PacienteRelatorioFiltroDTO.of(null, null, null, null));
+        byte[] excel = pacienteRelatorioService.generateExcel(PacienteFiltro.of(null, null, null, null));
 
         try (XSSFWorkbook workbook = new XSSFWorkbook(new ByteArrayInputStream(excel))) {
             Sheet sheet = workbook.getSheet("Pacientes");

@@ -1,5 +1,6 @@
 <template>
-  <v-select
+  <component
+    :is="autocomplete ? VAutocomplete : VSelect"
     :model-value="modelValue"
     @update:model-value="$emit('update:modelValue', $event)"
     :items="items"
@@ -16,16 +17,19 @@
     variant="underlined"
     density="compact"
     hide-details
-    single-line
     class="nuvexa-field"
   />
 </template>
 
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-facing-decorator'
+import { VAutocomplete, VSelect } from 'vuetify/components'
 
 @Component({ name: 'NuvexaSelect', emits: ['update:modelValue'] })
 export default class NuvexaSelect extends Vue {
+  readonly VSelect = VSelect
+  readonly VAutocomplete = VAutocomplete
+
   @Prop({ required: true })
   modelValue!: unknown
 
@@ -55,6 +59,9 @@ export default class NuvexaSelect extends Vue {
 
   @Prop({ type: Boolean, default: false })
   clearable!: boolean
+
+  @Prop({ type: Boolean, default: false })
+  autocomplete!: boolean
 
   @Prop({ default: false })
   disabled!: boolean

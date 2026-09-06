@@ -5,7 +5,7 @@ import com.nuvexa.platform.web.BaseController;
 import com.nuvexa.relatorios.RelatorioResponseDTO;
 import com.nuvexa.nutricao.model.NivelAtividade;
 import com.nuvexa.nutricao.model.Objetivo;
-import com.nuvexa.nutricao.report.dto.request.PacienteRelatorioFiltroDTO;
+import com.nuvexa.nutricao.report.dto.filter.PacienteFiltro;
 import com.nuvexa.nutricao.report.dto.response.PacienteRelatorioLinhaDTO;
 import com.nuvexa.nutricao.report.service.PacienteRelatorioService;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -35,7 +35,7 @@ public class PacienteRelatorioController extends BaseController {
             @RequestParam(required = false) Sexo sexo,
             @RequestParam(required = false) Objetivo objetivo,
             @RequestParam(required = false) NivelAtividade nivelAtividade) {
-        return pacienteRelatorioService.generate(PacienteRelatorioFiltroDTO.of(busca, sexo, objetivo, nivelAtividade));
+        return pacienteRelatorioService.generate(PacienteFiltro.of(busca, sexo, objetivo, nivelAtividade));
     }
 
     /*
@@ -56,7 +56,7 @@ public class PacienteRelatorioController extends BaseController {
             @RequestParam(required = false) Sexo sexo,
             @RequestParam(required = false) Objetivo objetivo,
             @RequestParam(required = false) NivelAtividade nivelAtividade) {
-        byte[] excel = pacienteRelatorioService.generateExcel(PacienteRelatorioFiltroDTO.of(busca, sexo, objetivo, nivelAtividade));
+        byte[] excel = pacienteRelatorioService.generateExcel(PacienteFiltro.of(busca, sexo, objetivo, nivelAtividade));
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"relatorio-pacientes.xlsx\"")

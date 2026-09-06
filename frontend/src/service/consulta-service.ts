@@ -1,6 +1,6 @@
 import type { AxiosInstance } from 'axios'
 import http from '../core/http/client'
-import type { Consulta, ConsultaCreateRequest, ConsultaUpdateRequest, Profissional } from '../types/consulta'
+import type { Consulta, ConsultaCreateRequest, ConsultaRelatorioFiltro, ConsultaUpdateRequest, Profissional } from '../types/consulta'
 
 class ConsultaService {
   private http: AxiosInstance
@@ -58,6 +58,11 @@ class ConsultaService {
 
   async excluir(id: number): Promise<void> {
     await this.http.delete(`/consultas/${id}`)
+  }
+
+  async relatorioExcel(filtro?: ConsultaRelatorioFiltro): Promise<Blob> {
+    const { data } = await this.http.get('/consultas/relatorio/excel', { params: filtro, responseType: 'blob' })
+    return data
   }
 }
 

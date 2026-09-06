@@ -10,9 +10,8 @@ import com.nuvexa.nutricao.calculator.GastoCaloricoCalculator;
 import com.nuvexa.nutricao.calculator.TaxaMetabolicaCalculator;
 import com.nuvexa.nutricao.model.PerfilNutricional;
 import com.nuvexa.nutricao.model.QPerfilNutricional;
-import com.nuvexa.nutricao.report.dto.request.PacienteRelatorioFiltroDTO;
+import com.nuvexa.nutricao.report.dto.filter.PacienteFiltro;
 import com.nuvexa.nutricao.report.dto.response.PacienteRelatorioLinhaDTO;
-import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.MessageSource;
@@ -39,12 +38,12 @@ public class PacienteRelatorioService {
     private final GastoCaloricoCalculator gastoCaloricoCalculator;
 
     @Transactional(readOnly = true)
-    public RelatorioResponseDTO<PacienteRelatorioLinhaDTO> generate(PacienteRelatorioFiltroDTO filtro) {
+    public RelatorioResponseDTO<PacienteRelatorioLinhaDTO> generate(PacienteFiltro filtro) {
         return RelatorioResponseDTO.of(colunas(), linhas(filtro));
     }
 
     @Transactional(readOnly = true)
-    public byte[] generateExcel(PacienteRelatorioFiltroDTO filtro) {
+    public byte[] generateExcel(PacienteFiltro filtro) {
         return RelatorioExcelWriter.write("Pacientes", colunas(), linhas(filtro));
     }
 
@@ -52,29 +51,18 @@ public class PacienteRelatorioService {
         return PacienteRelatorioLinhaDTO.colunas(messageSource, MESSAGE_LOCALE);
     }
 
-    private List<PacienteRelatorioLinhaDTO> linhas(PacienteRelatorioFiltroDTO filtro) {
+    private List<PacienteRelatorioLinhaDTO> linhas(PacienteFiltro filtro) {
         return buscarPerfis(filtro).stream().map(this::toRow).toList();
     }
 
-    private List<PerfilNutricional> buscarPerfis(PacienteRelatorioFiltroDTO filtro) {
+    private List<PerfilNutricional> buscarPerfis(PacienteFiltro filtro) {
         QPerfilNutricional perfilNutricional = QPerfilNutricional.perfilNutricional;
         QPaciente paciente = QPaciente.paciente;
-
-        BooleanExpression filtroBusca = filtro.getBusca() == null || filtro.getBusca().isBlank()
-                ? null
-                : paciente.nome.containsIgnoreCase(filtro.getBusca().trim());
-        BooleanExpression filtroSexo = filtro.getSexo() == null ? null : paciente.sexo.eq(filtro.getSexo());
-        BooleanExpression filtroObjetivo = filtro.getObjetivo() == null ? null : perfilNutricional.objetivo.eq(filtro.getObjetivo());
-        BooleanExpression filtroNivelAtividade = filtro.getNivelAtividade() == null
-                ? null
-                : perfilNutricional.nivelAtividade.eq(filtro.getNivelAtividade());
-        // Escopo organizacional: o relatório nunca enxerga além da organização atual.
-        BooleanExpression filtroOrganizacao = paciente.organizacao.id.eq(contextoDeAutenticacao.organizacaoAtualId());
 
         return queryFactory
                 .selectFrom(perfilNutricional)
                 .join(perfilNutricional.paciente, paciente).fetchJoin()
-                .where(filtroOrganizacao, filtroBusca, filtroSexo, filtroObjetivo, filtroNivelAtividade)
+                .where(filtro.toPredicate(paciente, perfilNutricional, contextoDeAutenticacao.organizacaoAtualId()))
                 .orderBy(paciente.nome.asc())
                 .fetch();
     }

@@ -38,3 +38,11 @@ export interface ConsultaUpdateRequest {
   status: ConsultaStatus
   observacoes: string | null
 }
+
+export interface ConsultaRelatorioFiltro {
+  busca?: string
+  status?: string
+  tipo?: string
+  periodo?: string
+  profissionalId?: string
+}

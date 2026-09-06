@@ -2,6 +2,7 @@ import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import authRoutes from './auth.routes'
 import workspaceRoutes from './workspace.routes'
 import consultaRoutes from './consulta.routes'
+import prontuarioRoutes from './prontuario.routes'
 import gestaoRoutes from './gestao.routes'
 import relatoriosRoutes from './relatorios.routes'
 import nutricaoRoutes from '../nutricao/routes/nutricao.routes'
@@ -25,6 +26,7 @@ const routes: RouteRecordRaw[] = [
   },
   ...nutricaoRoutes,
   ...consultaRoutes,
+  ...prontuarioRoutes,
   ...workspaceRoutes,
   ...gestaoRoutes,
   ...relatoriosRoutes,

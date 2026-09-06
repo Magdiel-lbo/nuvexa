@@ -19,7 +19,15 @@
           </v-btn>
         </div>
 
-        <v-data-table :headers="headers" :items="linhasFormatadas" :loading="carregando" item-value="id" />
+        <v-data-table :headers="headers" :items="linhasFormatadas" :loading="carregando" item-value="id">
+          <template #item.acoes="{ item }">
+            <v-tooltip :text="$t('dashboardPacientes.acoes.visualizar')" location="top">
+              <template #activator="{ props }">
+                <v-btn v-bind="props" icon="mdi-view-grid-outline" variant="text" density="comfortable" size="small" @click="visualizar(item.id)" />
+              </template>
+            </v-tooltip>
+          </template>
+        </v-data-table>
       </v-card-text>
     </v-card>
   </div>
@@ -45,9 +53,10 @@ export default class RelatorioPacientes extends Vue {
   rotulosNivelAtividade: Record<string, string> = {}
 
   get headers() {
-    return [...this.relatorio.colunas]
+    const colunas = [...this.relatorio.colunas]
       .sort((a, b) => a.ordem - b.ordem)
       .map((coluna) => ({ title: coluna.rotulo, key: coluna.chave }))
+    return [...colunas, { title: this.$t('acao.titulo') as string, key: 'acoes', sortable: false, align: 'end' as const }]
   }
 
   get linhasFormatadas() {
@@ -74,6 +83,10 @@ export default class RelatorioPacientes extends Vue {
     } finally {
       this.carregando = false
     }
+  }
+
+  visualizar(id: number) {
+    this.$router.push(`/pacientes/${id}`)
   }
 
   async exportarExcel() {
