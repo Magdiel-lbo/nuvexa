@@ -1,6 +1,12 @@
 import type { AxiosInstance } from 'axios'
 import http from '../core/http/client'
-import type { Prontuario, ProntuarioCreateRequest, ProntuarioEnumsResponse, ProntuarioUpdateRequest } from '../types/prontuario'
+import type {
+  Prontuario,
+  ProntuarioCreateRequest,
+  ProntuarioEnumsResponse,
+  ProntuarioRelatorioFiltro,
+  ProntuarioUpdateRequest,
+} from '../types/prontuario'
 
 class ProntuarioService {
   private http: AxiosInstance
@@ -48,6 +54,11 @@ class ProntuarioService {
       this.enumsCache = this.http.get('/prontuarios/enums').then(({ data }) => data)
     }
     return this.enumsCache
+  }
+
+  async relatorioExcel(filtro?: ProntuarioRelatorioFiltro): Promise<Blob> {
+    const { data } = await this.http.get('/prontuarios/relatorio/excel', { params: filtro, responseType: 'blob' })
+    return data
   }
 }
 

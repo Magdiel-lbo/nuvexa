@@ -33,12 +33,14 @@ import DashboardConsultaAnalytics from './components/DashboardConsultaAnalytics.
 import DashboardPatientGrowth from './components/DashboardPatientGrowth.vue'
 import DashboardInsights from './components/DashboardInsights.vue'
 import consultaService from '../../service/consulta-service'
-import pacienteService from '../../nutricao/services/paciente-service'
+import pacienteService from '../../service/paciente-service'
+import pacienteRelatorioService from '../../nutricao/services/paciente-relatorio-service'
 import { useContextoStore } from '../../core/contexto/contexto.store'
 import { useAppStore } from '../../store/app.store'
 import { extrairMensagemErro } from '../../util/api-util'
 import type { Consulta } from '../../types/consulta'
-import type { PacienteResponse, PacienteRelatorioLinha } from '../../nutricao/types/paciente'
+import type { PacienteResponse } from '../../types/paciente'
+import type { PacienteRelatorioLinha } from '../../nutricao/types/paciente-relatorio'
 
 const DIAS_NOVOS_PACIENTES = 30
 
@@ -169,7 +171,7 @@ export default class Dashboard extends Vue {
   async carregarIndicadores() {
     this.indicadoresCarregando = true
     try {
-      const relatorio = await pacienteService.relatorio()
+      const relatorio = await pacienteRelatorioService.relatorio()
       this.relatorioLinhas = relatorio.linhas
     } catch (e) {
       this.appStore.setToast({ mensagem: extrairMensagemErro(e, this.$t('erro.carregarIndicadores') as string), erro: true })

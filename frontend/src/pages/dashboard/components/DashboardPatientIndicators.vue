@@ -50,7 +50,7 @@ import NuvexaDonutChart from '../../../components/common/NuvexaDonutChart.vue'
 import type { NuvexaBarChartRow } from '../../../components/common/NuvexaBarChart.vue'
 import type { NuvexaDonutChartSlice } from '../../../components/common/NuvexaDonutChart.vue'
 import { carregarRotulosEnum } from '../../../nutricao/utils/enum-rotulos'
-import type { PacienteRelatorioLinha } from '../../../nutricao/types/paciente'
+import type { PacienteRelatorioLinha } from '../../../nutricao/types/paciente-relatorio'
 
 function agrupar(valores: string[]): NuvexaBarChartRow[] {
   const contagem = new Map<string, number>()

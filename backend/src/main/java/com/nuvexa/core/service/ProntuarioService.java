@@ -14,17 +14,14 @@ import com.nuvexa.core.repository.ProntuarioRepository;
 import com.nuvexa.core.repository.VinculoRepository;
 import com.nuvexa.platform.exception.NegocioException;
 import com.querydsl.core.types.dsl.BooleanExpression;
-import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.modelmapper.ModelMapper;
-import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -32,22 +29,18 @@ import java.util.Locale;
 @Log4j2
 public class ProntuarioService {
 
-    private static final Locale MESSAGE_LOCALE = Locale.of("pt", "BR");
-
     private final ProntuarioRepository prontuarioRepository;
     private final PacienteRepository pacienteRepository;
     private final VinculoRepository vinculoRepository;
-    private final ContextoDeAutenticacao contextoDeAutenticacao;
-    private final JPAQueryFactory queryFactory;
-    private final MessageSource messageSource;
     private final ModelMapper modelMapper;
+    private final OrganizacaoScopedContext contexto;
 
     public ProntuarioResponseDTO create(ProntuarioCreateRequestDTO request) {
         Paciente paciente = buscarPacienteOuFalhar(request.getPacienteId());
         Usuario autor = buscarAutorOuFalhar(request.getAutorId());
 
         Prontuario prontuario = prontuarioRepository.save(
-                request.toProntuario(contextoDeAutenticacao.organizacaoAtual(), paciente, autor));
+                request.toProntuario(contexto.getContextoDeAutenticacao().organizacaoAtual(), paciente, autor));
         log.info("Prontuário criado com id={}", prontuario.getId());
         return ProntuarioResponseDTO.from(prontuario);
     }
@@ -87,11 +80,11 @@ public class ProntuarioService {
 
         // Escopo aplicado na própria query, mesmo padrão de ConsultaService: nenhum prontuário de
         // outra organização chega ao Java.
-        BooleanExpression filtroOrganizacao = prontuario.organizacao.id.eq(contextoDeAutenticacao.organizacaoAtualId());
+        BooleanExpression filtroOrganizacao = prontuario.organizacao.id.eq(contexto.getContextoDeAutenticacao().organizacaoAtualId());
         BooleanExpression filtroPaciente = pacienteId == null ? null : prontuario.paciente.id.eq(pacienteId);
         BooleanExpression filtroBusca = busca == null ? null : prontuario.paciente.nome.containsIgnoreCase(busca);
 
-        return queryFactory
+        return contexto.getQueryFactory()
                 .selectFrom(prontuario)
                 .join(prontuario.paciente).fetchJoin()
                 .join(prontuario.autor).fetchJoin()
@@ -106,7 +99,7 @@ public class ProntuarioService {
 
     private Paciente buscarPacienteOuFalhar(Long pacienteId) {
         return pacienteRepository
-                .findByIdAndOrganizacaoId(pacienteId, contextoDeAutenticacao.organizacaoAtualId())
+                .findByIdAndOrganizacaoId(pacienteId, contexto.getContextoDeAutenticacao().organizacaoAtualId())
                 .orElseThrow(() -> new NegocioException(HttpStatus.NOT_FOUND, resolveMessage("paciente.naoEncontrado", pacienteId)));
     }
 
@@ -115,7 +108,7 @@ public class ProntuarioService {
      * {@code ConsultaService.buscarProfissionalOuFalhar}.
      */
     private Usuario buscarAutorOuFalhar(Long autorId) {
-        Long organizacaoAtualId = contextoDeAutenticacao.organizacaoAtualId();
+        Long organizacaoAtualId = contexto.getContextoDeAutenticacao().organizacaoAtualId();
         return vinculoRepository.findByUsuarioIdAndAtivoTrueOrderByIdAsc(autorId).stream()
                 .filter(vinculo -> vinculo.getOrganizacao().getId().equals(organizacaoAtualId))
                 .map(Vinculo::getUsuario)
@@ -126,11 +119,11 @@ public class ProntuarioService {
 
     private Prontuario buscarProntuarioOuFalhar(Long id) {
         return prontuarioRepository
-                .findByIdAndOrganizacaoId(id, contextoDeAutenticacao.organizacaoAtualId())
+                .findByIdAndOrganizacaoId(id, contexto.getContextoDeAutenticacao().organizacaoAtualId())
                 .orElseThrow(() -> new NegocioException(HttpStatus.NOT_FOUND, resolveMessage("prontuario.naoEncontrado", id)));
     }
 
     private String resolveMessage(String key, Object... args) {
-        return messageSource.getMessage(key, args, MESSAGE_LOCALE);
+        return contexto.getMensagens().getMessage(key, args);
     }
 }

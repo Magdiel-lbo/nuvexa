@@ -1,10 +1,10 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import authRoutes from './auth.routes'
 import workspaceRoutes from './workspace.routes'
+import pacienteRoutes from './paciente.routes'
 import consultaRoutes from './consulta.routes'
 import prontuarioRoutes from './prontuario.routes'
 import gestaoRoutes from './gestao.routes'
-import relatoriosRoutes from './relatorios.routes'
 import nutricaoRoutes from '../nutricao/routes/nutricao.routes'
 import { useAuthStore } from '../core/auth/auth.store'
 import { useContextoStore } from '../core/contexto/contexto.store'
@@ -25,11 +25,11 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'Dashboard' },
   },
   ...nutricaoRoutes,
+  ...pacienteRoutes,
   ...consultaRoutes,
   ...prontuarioRoutes,
   ...workspaceRoutes,
   ...gestaoRoutes,
-  ...relatoriosRoutes,
   ...authRoutes,
 ]
 

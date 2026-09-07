@@ -12,12 +12,11 @@ import com.nuvexa.core.repository.VinculoRepository;
 import com.nuvexa.platform.exception.NegocioException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.context.MessageSource;
+import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Locale;
 import java.util.Optional;
 
 @Service
@@ -26,13 +25,11 @@ import java.util.Optional;
 @Log4j2
 public class PacienteProfissionalService {
 
-    private static final Locale MESSAGE_LOCALE = Locale.of("pt", "BR");
-
     private final PacienteProfissionalRepository pacienteProfissionalRepository;
     private final PacienteRepository pacienteRepository;
     private final VinculoRepository vinculoRepository;
     private final ContextoDeAutenticacao contextoDeAutenticacao;
-    private final MessageSource messageSource;
+    private final MessageSourceAccessor mensagens;
 
     /**
      * Vincula um profissional a um paciente, ambos da organização atual. Se já existir um
@@ -98,6 +95,6 @@ public class PacienteProfissionalService {
     }
 
     private String resolveMessage(String key, Object... args) {
-        return messageSource.getMessage(key, args, MESSAGE_LOCALE);
+        return mensagens.getMessage(key, args);
     }
 }

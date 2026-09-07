@@ -22,7 +22,7 @@ import com.nuvexa.platform.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.MessageSource;
+import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -39,7 +39,6 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.HexFormat;
-import java.util.Locale;
 import java.util.Optional;
 
 @Service
@@ -48,7 +47,6 @@ import java.util.Optional;
 @Log4j2
 public class AutenticacaoService {
 
-    private static final Locale MESSAGE_LOCALE = Locale.of("pt", "BR");
     private static final int RESET_TOKEN_BYTES = 32;
     private static final long RESET_TOKEN_VALIDITY_MINUTES = 30;
 
@@ -58,7 +56,7 @@ public class AutenticacaoService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
-    private final MessageSource messageSource;
+    private final MessageSourceAccessor mensagens;
     private final EmailService emailService;
     private final SecureRandom secureRandom = new SecureRandom();
 
@@ -189,6 +187,6 @@ public class AutenticacaoService {
     }
 
     private String resolveMessage(String key, Object... args) {
-        return messageSource.getMessage(key, args, MESSAGE_LOCALE);
+        return mensagens.getMessage(key, args);
     }
 }

@@ -46,7 +46,7 @@ import NuvexaEmptyState from '../../../components/common/NuvexaEmptyState.vue'
 import NuvexaLineChart from '../../../components/common/NuvexaLineChart.vue'
 import NuvexaSelect from '../../../components/common/NuvexaSelect.vue'
 import type { NuvexaLineChartPoint } from '../../../components/common/NuvexaLineChart.vue'
-import type { PacienteResponse } from '../../../nutricao/types/paciente'
+import type { PacienteResponse } from '../../../types/paciente'
 
 type Periodo = '30' | '180'
 

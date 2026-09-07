@@ -1,7 +1,7 @@
 <template>
   <v-form ref="form" v-model="formValido" :disabled="readonly" @submit.prevent="salvar">
     <v-row>
-      <v-col v-if="mostrarSelecaoPaciente" cols="12">
+      <v-col v-if="mostrarSelecaoPaciente" cols="6">
         <v-autocomplete
           v-model="model.pacienteId"
           :items="pacienteOptions"
@@ -12,7 +12,7 @@
         />
       </v-col>
 
-      <v-col cols="12">
+      <v-col cols="6">
         <v-select
           v-model="model.profissionalId"
           :items="profissionalOptions"

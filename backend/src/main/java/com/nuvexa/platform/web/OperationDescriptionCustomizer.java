@@ -140,14 +140,6 @@ public class OperationDescriptionCustomizer implements GlobalOperationComponents
         resolved.referencedSchemas.forEach(components::addSchemas);
     }
 
-    /**
-     * "HTTP_METHOD path" (ex.: "GET /api/v1/pacientes/{id}") — a identidade real da rota, não o
-     * nome do método Java, então não colide em caso de sobrecarga. @GetMapping/@PostMapping/etc.
-     * são @RequestMapping meta-anotado, então findMergedAnnotation resolve method()/value() para
-     * qualquer um deles de forma uniforme (a mesma mecânica que o próprio Spring MVC usa para
-     * registrar as rotas). Assume um único path e um único verbo por mapeamento — verdadeiro
-     * para todos os endpoints deste projeto hoje.
-     */
     private static String operationKey(HandlerMethod handlerMethod) {
         RequestMapping classMapping = AnnotatedElementUtils.findMergedAnnotation(handlerMethod.getBeanType(), RequestMapping.class);
         RequestMapping methodMapping = AnnotatedElementUtils.findMergedAnnotation(handlerMethod.getMethod(), RequestMapping.class);

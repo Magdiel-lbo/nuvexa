@@ -124,7 +124,7 @@ export default class NuvexaFilterCard extends Vue {
 .nuvexa-filter-card__footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 14px;
   flex-wrap: wrap;
 }

@@ -21,7 +21,7 @@
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-facing-decorator'
 import type { Consulta } from '../../../types/consulta'
-import type { PacienteResponse } from '../../../nutricao/types/paciente'
+import type { PacienteResponse } from '../../../types/paciente'
 
 /**
  * Janela fixa de 30 dias para todos os insights, independente do período selecionado

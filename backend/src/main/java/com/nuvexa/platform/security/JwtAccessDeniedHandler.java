@@ -5,7 +5,7 @@ import com.nuvexa.platform.exception.ApiErro;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.MessageSource;
+import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
@@ -14,23 +14,20 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.Locale;
 
 @Component
 @RequiredArgsConstructor
 public class JwtAccessDeniedHandler implements AccessDeniedHandler {
 
-    private static final Locale MESSAGE_LOCALE = Locale.of("pt", "BR");
-
     private final ObjectMapper objectMapper;
-    private final MessageSource messageSource;
+    private final MessageSourceAccessor mensagens;
 
     @Override
     public void handle(HttpServletRequest request, HttpServletResponse response, AccessDeniedException accessDeniedException) throws IOException {
         ApiErro error = new ApiErro(
                 LocalDateTime.now(),
                 HttpStatus.FORBIDDEN.value(),
-                messageSource.getMessage("erro.acessoNegado", null, MESSAGE_LOCALE),
+                mensagens.getMessage("erro.acessoNegado"),
                 request.getRequestURI());
 
         response.setStatus(HttpStatus.FORBIDDEN.value());

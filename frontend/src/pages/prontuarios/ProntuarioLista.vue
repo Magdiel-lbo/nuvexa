@@ -63,6 +63,12 @@
         closable-chips
         clearable
       />
+
+      <template #extra>
+        <NuvexaButton variant="secondary" icon="mdi-tray-arrow-down" :loading="exportando" @click="exportar">
+          {{ $t('acao.exportar') as string }}
+        </NuvexaButton>
+      </template>
     </NuvexaFilterCard>
 
     <NuvexaFilterChips
@@ -166,7 +172,7 @@
 import { Component, Vue } from 'vue-facing-decorator'
 import prontuarioService from '../../service/prontuario-service'
 import consultaService from '../../service/consulta-service'
-import type { Prontuario, StatusProntuario } from '../../types/prontuario'
+import type { Prontuario, ProntuarioRelatorioFiltro, StatusProntuario } from '../../types/prontuario'
 import type { EnumOpcao } from '../../util/enum-rotulos'
 import type { Profissional } from '../../types/consulta'
 import { extrairMensagemErro } from '../../util/api-util'
@@ -221,6 +227,7 @@ export default class ProntuarioLista extends Vue {
   enumsStatus: EnumOpcao[] = []
   rotulos: Record<string, string> = {}
   carregando = false
+  exportando = false
 
   draftBusca = ''
   draftStatus: string[] = []
@@ -481,6 +488,31 @@ export default class ProntuarioLista extends Vue {
       this.appStore.setToast({ mensagem: this.$t('sucesso.excluido') as string, erro: false })
     } catch (e) {
       this.appStore.setToast({ mensagem: extrairMensagemErro(e, this.$t('erro.excluirProntuario') as string), erro: true })
+    }
+  }
+
+  async exportar() {
+    this.exportando = true
+    try {
+      const filtro: ProntuarioRelatorioFiltro = {
+        busca: this.filtros.value('q') || undefined,
+        status: this.filtros.values('pr_status').join(',') || undefined,
+        secao: this.filtros.values('pr_secao').join(',') || undefined,
+        periodo: this.filtros.value('pr_periodo') || undefined,
+        autorId: this.filtros.values('pr_autor').join(',') || undefined,
+        anexo: this.filtros.values('pr_anexo').join(',') || undefined,
+      }
+      const blob = await prontuarioService.relatorioExcel(filtro)
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = 'prontuarios.xlsx'
+      link.click()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      this.appStore.setToast({ mensagem: extrairMensagemErro(e, this.$t('erro.exportarProntuarios') as string), erro: true })
+    } finally {
+      this.exportando = false
     }
   }
 }

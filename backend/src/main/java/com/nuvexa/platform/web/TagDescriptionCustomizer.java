@@ -11,12 +11,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-/**
- * Reconstrói openApi.tags a partir das tags realmente usadas nas operações (definidas por
- * OperationDescriptionCustomizer), com a descrição vinda de ApiDescriptions. Springdoc aplica
- * OpenApiCustomizer por último, depois de todas as operações prontas, então a lista de tags em
- * uso já está completa aqui.
- */
 @Component
 @RequiredArgsConstructor
 public class TagDescriptionCustomizer implements OpenApiCustomizer {

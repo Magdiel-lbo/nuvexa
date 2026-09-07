@@ -6,14 +6,13 @@ import com.nuvexa.core.model.Vinculo;
 import com.nuvexa.core.repository.VinculoRepository;
 import com.nuvexa.platform.exception.NegocioException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.MessageSource;
+import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.Locale;
 
 /**
  * Ponto único de leitura do contexto da requisição autenticada: quem está chamando, em qual
@@ -27,10 +26,8 @@ import java.util.Locale;
 @RequiredArgsConstructor
 public class ContextoDeAutenticacao {
 
-    private static final Locale MESSAGE_LOCALE = Locale.of("pt", "BR");
-
     private final VinculoRepository vinculoRepository;
-    private final MessageSource messageSource;
+    private final MessageSourceAccessor mensagens;
 
     public Usuario usuarioAtual() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -64,6 +61,6 @@ public class ContextoDeAutenticacao {
     }
 
     private String resolveMessage(String key) {
-        return messageSource.getMessage(key, null, MESSAGE_LOCALE);
+        return mensagens.getMessage(key);
     }
 }

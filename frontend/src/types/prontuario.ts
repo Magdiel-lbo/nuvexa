@@ -40,3 +40,12 @@ export interface ProntuarioUpdateRequest {
   conteudo?: string | null
   comAnexo?: boolean
 }
+
+export interface ProntuarioRelatorioFiltro {
+  busca?: string
+  status?: string
+  secao?: string
+  periodo?: string
+  autorId?: string
+  anexo?: string
+}

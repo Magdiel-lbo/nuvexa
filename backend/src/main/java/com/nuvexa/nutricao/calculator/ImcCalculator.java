@@ -1,20 +1,17 @@
 package com.nuvexa.nutricao.calculator;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.MessageSource;
+import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.Locale;
 
 @Component
 @RequiredArgsConstructor
 public class ImcCalculator {
 
-    private static final Locale MESSAGE_LOCALE = Locale.of("pt", "BR");
-
-    private final MessageSource messageSource;
+    private final MessageSourceAccessor mensagens;
 
     public BigDecimal calculate(BigDecimal pesoKg, BigDecimal alturaM) {
         BigDecimal alturaAoQuadrado = alturaM.multiply(alturaM);
@@ -36,6 +33,6 @@ public class ImcCalculator {
         } else {
             chave = "imc.classificacao.obesidadeGrau3";
         }
-        return messageSource.getMessage(chave, null, MESSAGE_LOCALE);
+        return mensagens.getMessage(chave);
     }
 }

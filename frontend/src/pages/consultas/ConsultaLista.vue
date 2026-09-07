@@ -57,7 +57,7 @@
 
       <template #extra>
         <NuvexaButton variant="secondary" icon="mdi-tray-arrow-down" :loading="exportando" @click="exportar">
-          {{ $t('dashboardConsultas.exportar') as string }}
+          {{ $t('acao.exportar') as string }}
         </NuvexaButton>
       </template>
     </NuvexaFilterCard>

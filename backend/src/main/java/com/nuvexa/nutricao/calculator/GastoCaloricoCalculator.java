@@ -7,9 +7,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Map;
 
-/**
- * Gasto calórico diário = TMB × fator do nível de atividade (fatores de Harris-Benedict/TDEE).
- */
 @Component
 public class GastoCaloricoCalculator {
 
