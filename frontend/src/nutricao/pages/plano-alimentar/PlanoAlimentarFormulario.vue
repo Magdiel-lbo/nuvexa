@@ -30,14 +30,14 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-facing-decorator'
-import PlanoAlimentarForm from '../components/PlanoAlimentarForm.vue'
-import type { PlanoAlimentarFormModel } from '../components/PlanoAlimentarForm.vue'
-import planoAlimentarService from '../services/plano-alimentar-service'
-import consultaService from '../../service/consulta-service'
-import pacienteService from '../../service/paciente-service'
-import type { PlanoAlimentar } from '../types/plano-alimentar'
-import { useAppStore } from '../../store/app.store'
-import { extrairMensagemErro } from '../../util/api-util'
+import PlanoAlimentarForm from '../../components/PlanoAlimentarForm.vue'
+import type { PlanoAlimentarFormModel } from '../../components/PlanoAlimentarForm.vue'
+import planoAlimentarService from '../../services/plano-alimentar-service'
+import consultaService from '../../../service/consulta-service'
+import pacienteService from '../../../service/paciente-service'
+import type { PlanoAlimentar } from '../../types/plano-alimentar'
+import { useAppStore } from '../../../store/app.store'
+import { extrairMensagemErro } from '../../../util/api-util'
 
 function formModelPadrao(): PlanoAlimentarFormModel {
   return {

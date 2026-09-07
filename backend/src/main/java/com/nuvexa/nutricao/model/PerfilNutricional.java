@@ -31,7 +31,8 @@ public class PerfilNutricional extends ModeloAbstrato {
     @Column(nullable = false, precision = 4, scale = 2)
     private BigDecimal altura;
 
-    @Column(nullable = false, precision = 5, scale = 2)
+    /** Obsoleto — fonte de verdade é Avaliacao.peso. Mantido só por segurança de rollback. */
+    @Column(precision = 5, scale = 2)
     private BigDecimal peso;
 
     @Enumerated(EnumType.STRING)

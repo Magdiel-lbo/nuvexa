@@ -1,34 +1,19 @@
-package com.nuvexa.nutricao.service;
+package com.nuvexa.core.service;
 
-import com.nuvexa.core.service.ContextoDeAutenticacao;
+import com.nuvexa.core.dto.request.PacienteCreateRequestDTO;
+import com.nuvexa.core.dto.request.PacienteUpdateRequestDTO;
+import com.nuvexa.core.dto.response.PacienteResponseDTO;
 import com.nuvexa.core.model.Organizacao;
+import com.nuvexa.core.model.Paciente;
+import com.nuvexa.core.model.Sexo;
 import com.nuvexa.core.model.StatusOrganizacao;
 import com.nuvexa.core.model.TipoOrganizacao;
 import com.nuvexa.core.repository.OrganizacaoRepository;
-import com.nuvexa.core.model.Paciente;
-import com.nuvexa.core.model.Sexo;
 import com.nuvexa.core.repository.PacienteRepository;
 import com.nuvexa.platform.config.MessageConfig;
 import com.nuvexa.platform.config.ModelMapperConfig;
 import com.nuvexa.platform.config.QuerydslConfig;
 import com.nuvexa.platform.exception.NegocioException;
-import com.nuvexa.nutricao.calculator.GastoCaloricoCalculator;
-import com.nuvexa.nutricao.calculator.ImcCalculator;
-import com.nuvexa.nutricao.calculator.TaxaMetabolicaCalculator;
-import com.nuvexa.nutricao.dto.request.PacienteCreateRequestDTO;
-import com.nuvexa.nutricao.dto.request.PacienteUpdateRequestDTO;
-import com.nuvexa.nutricao.dto.response.PacienteResponseDTO;
-import com.nuvexa.nutricao.model.NivelAtividade;
-import com.nuvexa.nutricao.model.Objetivo;
-import com.nuvexa.nutricao.model.PerfilNutricional;
-import com.nuvexa.nutricao.report.dto.filter.PacienteFiltro;
-import com.nuvexa.nutricao.report.dto.response.PacienteRelatorioLinhaDTO;
-import com.nuvexa.nutricao.report.service.PacienteRelatorioService;
-import com.nuvexa.nutricao.repository.PerfilNutricionalRepository;
-import com.nuvexa.relatorios.RelatorioResponseDTO;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,10 +23,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -50,27 +31,20 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
 /**
- * Isolamento multi-organização: garante que o escopo aplicado na query realmente impede um
- * usuário de ler, alterar, excluir ou exportar paciente de outra organização.
+ * Isolamento multi-organização de Paciente (core) — só dado genérico. O isolamento do relatório
+ * de Pacientes (que depende de PerfilNutricional/Avaliacao) fica em
+ * PacienteRelatorioServiceEscopoOrganizacionalIntegrationTest, na vertical nutricao.
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import({QuerydslConfig.class, MessageConfig.class, ModelMapperConfig.class,
-        ImcCalculator.class, TaxaMetabolicaCalculator.class, GastoCaloricoCalculator.class,
-        PacienteService.class, PacienteRelatorioService.class})
+@Import({QuerydslConfig.class, MessageConfig.class, ModelMapperConfig.class, OrganizacaoScopedContext.class, PacienteService.class})
 class PacienteEscopoOrganizacionalIntegrationTest {
 
     @Autowired
     private PacienteService pacienteService;
 
     @Autowired
-    private PacienteRelatorioService pacienteRelatorioService;
-
-    @Autowired
     private PacienteRepository pacienteRepository;
-
-    @Autowired
-    private PerfilNutricionalRepository perfilNutricionalRepository;
 
     @Autowired
     private OrganizacaoRepository organizacaoRepository;
@@ -102,49 +76,30 @@ class PacienteEscopoOrganizacionalIntegrationTest {
     }
 
     private Paciente novoPaciente(Organizacao organizacao, String nome) {
-        Paciente paciente = pacienteRepository.saveAndFlush(Paciente.builder()
+        return pacienteRepository.saveAndFlush(Paciente.builder()
                 .organizacao(organizacao)
                 .nome(nome)
                 .dataNascimento(LocalDate.of(1990, 5, 20))
                 .sexo(Sexo.FEMININO)
                 .build());
-
-        perfilNutricionalRepository.saveAndFlush(PerfilNutricional.builder()
-                .paciente(paciente)
-                .altura(new BigDecimal("1.65"))
-                .peso(new BigDecimal("62.50"))
-                .objetivo(Objetivo.EMAGRECIMENTO)
-                .nivelAtividade(NivelAtividade.MODERADAMENTE_ATIVO)
-                .build());
-
-        return paciente;
     }
 
     private PacienteCreateRequestDTO createRequest(String nome) {
-        PacienteCreateRequestDTO request = new PacienteCreateRequestDTO();
-        request.setNome(nome);
-        request.setDataNascimento(LocalDate.of(1990, 5, 20));
-        request.setSexo(Sexo.FEMININO);
-        request.setAltura(new BigDecimal("1.65"));
-        request.setPeso(new BigDecimal("62.50"));
-        request.setObjetivo(Objetivo.EMAGRECIMENTO);
-        request.setNivelAtividade(NivelAtividade.MODERADAMENTE_ATIVO);
-        return request;
+        return PacienteCreateRequestDTO.builder()
+                .nome(nome)
+                .dataNascimento(LocalDate.of(1990, 5, 20))
+                .sexo(Sexo.FEMININO)
+                .build();
     }
 
     private PacienteUpdateRequestDTO updateRequest(String nome) {
-        PacienteUpdateRequestDTO request = new PacienteUpdateRequestDTO();
-        request.setNome(nome);
-        request.setDataNascimento(LocalDate.of(1990, 5, 20));
-        request.setSexo(Sexo.FEMININO);
-        request.setAltura(new BigDecimal("1.70"));
-        request.setPeso(new BigDecimal("65.00"));
-        request.setObjetivo(Objetivo.MANUTENCAO_PESO);
-        request.setNivelAtividade(NivelAtividade.MUITO_ATIVO);
-        return request;
+        return PacienteUpdateRequestDTO.builder()
+                .nome(nome)
+                .dataNascimento(LocalDate.of(1990, 5, 20))
+                .sexo(Sexo.FEMININO)
+                .build();
     }
 
-    // 2. Usuário lista somente os pacientes da sua organização.
     @Test
     void deveListarApenasPacientesDaOrganizacaoAtual() {
         novoPaciente(minhaOrganizacao, "Ana da Minha Clinica");
@@ -158,7 +113,6 @@ class PacienteEscopoOrganizacionalIntegrationTest {
                 .doesNotContain("Bruno da Outra Clinica");
     }
 
-    // 3. Usuário cria paciente já dentro da sua organização.
     @Test
     void deveCriarPacienteNaOrganizacaoAtual() {
         PacienteResponseDTO criado = pacienteService.create(createRequest("Carla Nova"));
@@ -167,7 +121,6 @@ class PacienteEscopoOrganizacionalIntegrationTest {
         assertThat(persistido.getOrganizacao().getId()).isEqualTo(minhaOrganizacao.getId());
     }
 
-    // 4. Usuário edita paciente da própria organização, e o escopo não é alterado no caminho.
     @Test
     void deveEditarPacienteDaPropriaOrganizacaoPreservandoEscopo() {
         Paciente paciente = novoPaciente(minhaOrganizacao, "Diana Original");
@@ -179,7 +132,6 @@ class PacienteEscopoOrganizacionalIntegrationTest {
         assertThat(persistido.getOrganizacao().getId()).isEqualTo(minhaOrganizacao.getId());
     }
 
-    // 5. Usuário não acessa paciente de outra organização.
     @Test
     void naoDeveAcessarPacienteDeOutraOrganizacao() {
         Paciente alheio = novoPaciente(outraOrganizacao, "Eduardo Alheio");
@@ -189,7 +141,6 @@ class PacienteEscopoOrganizacionalIntegrationTest {
                 .satisfies(ex -> assertThat(((NegocioException) ex).getStatus()).isEqualTo(HttpStatus.NOT_FOUND));
     }
 
-    // 6. Usuário não altera paciente de outra organização.
     @Test
     void naoDeveAlterarPacienteDeOutraOrganizacao() {
         Paciente alheio = novoPaciente(outraOrganizacao, "Fabio Alheio");
@@ -202,56 +153,6 @@ class PacienteEscopoOrganizacionalIntegrationTest {
                 .isEqualTo("Fabio Alheio");
     }
 
-    // 7. Usuário não exclui paciente de outra organização.
-    @Test
-    void naoDeveExcluirPacienteDeOutraOrganizacao() {
-        Paciente alheio = novoPaciente(outraOrganizacao, "Gisele Alheia");
-
-        assertThatThrownBy(() -> pacienteService.delete(alheio.getId()))
-                .isInstanceOf(NegocioException.class)
-                .satisfies(ex -> assertThat(((NegocioException) ex).getStatus()).isEqualTo(HttpStatus.NOT_FOUND));
-
-        assertThat(perfilNutricionalRepository.findByPacienteId(alheio.getId())).isPresent();
-    }
-
-    // 8. Relatório não retorna pacientes de outra organização.
-    @Test
-    void relatorioNaoDeveRetornarPacientesDeOutraOrganizacao() {
-        novoPaciente(minhaOrganizacao, "Helena Minha");
-        novoPaciente(outraOrganizacao, "Igor Alheio");
-
-        RelatorioResponseDTO<PacienteRelatorioLinhaDTO> relatorio =
-                pacienteRelatorioService.generate(PacienteFiltro.of(null, null, null, null));
-
-        assertThat(relatorio.getLinhas())
-                .extracting(PacienteRelatorioLinhaDTO::getNome)
-                .containsExactly("Helena Minha")
-                .doesNotContain("Igor Alheio");
-    }
-
-    // 8b. A exportação em Excel usa a mesma query escopada de generate() — sem cobertura
-    // nenhuma antes disso, nem de caminho feliz nem de isolamento. Lê o .xlsx de volta com
-    // Apache POI (já é dependência do módulo de relatórios) para confirmar em cima do dado
-    // real, não só que o método não lança exceção.
-    @Test
-    void relatorioExcelNaoDeveRetornarPacientesDeOutraOrganizacao() {
-        novoPaciente(minhaOrganizacao, "Helena Minha");
-        novoPaciente(outraOrganizacao, "Igor Alheio");
-
-        byte[] excel = pacienteRelatorioService.generateExcel(PacienteFiltro.of(null, null, null, null));
-
-        try (XSSFWorkbook workbook = new XSSFWorkbook(new ByteArrayInputStream(excel))) {
-            Sheet sheet = workbook.getSheet("Pacientes");
-            assertThat(sheet.getPhysicalNumberOfRows()).isEqualTo(2); // 1 cabeçalho + 1 linha de dado
-
-            Row linhaDeDado = sheet.getRow(1);
-            assertThat(linhaDeDado.getCell(0).getStringCellValue()).isEqualTo("Helena Minha");
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    // 9. Usuário sem vínculo não acessa dado nenhum: o contexto barra antes da query.
     @Test
     void usuarioSemVinculoNaoDeveAcessarDados() {
         novoPaciente(minhaOrganizacao, "Joana Bloqueada");
@@ -263,7 +164,6 @@ class PacienteEscopoOrganizacionalIntegrationTest {
                 .satisfies(ex -> assertThat(((NegocioException) ex).getStatus()).isEqualTo(HttpStatus.FORBIDDEN));
     }
 
-    // Troca de organização não vaza dados entre uma chamada e outra.
     @Test
     void mesmaBaseDeveResponderDiferentePorOrganizacao() {
         novoPaciente(minhaOrganizacao, "Katia A");

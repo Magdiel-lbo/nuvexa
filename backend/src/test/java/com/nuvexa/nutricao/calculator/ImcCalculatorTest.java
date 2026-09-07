@@ -6,7 +6,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.context.MessageSource;
+import org.springframework.context.support.MessageSourceAccessor;
 
 import java.math.BigDecimal;
 
@@ -17,15 +17,15 @@ import static org.mockito.Mockito.when;
 class ImcCalculatorTest {
 
     @Mock
-    private MessageSource messageSource;
+    private MessageSourceAccessor mensagens;
 
     private ImcCalculator imcCalculator;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        when(messageSource.getMessage(any(String.class), any(), any())).thenAnswer(invocation -> invocation.getArgument(0));
-        imcCalculator = new ImcCalculator(messageSource);
+        when(mensagens.getMessage(any(String.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        imcCalculator = new ImcCalculator(mensagens);
     }
 
     @Test

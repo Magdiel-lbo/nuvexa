@@ -10,8 +10,10 @@ import com.nuvexa.nutricao.dto.request.PerfilNutricionalCreateRequestDTO;
 import com.nuvexa.nutricao.dto.request.PerfilNutricionalUpdateRequestDTO;
 import com.nuvexa.nutricao.dto.response.PerfilNutricionalEnumsResponseDTO;
 import com.nuvexa.nutricao.dto.response.PerfilNutricionalResponseDTO;
+import com.nuvexa.nutricao.model.Avaliacao;
 import com.nuvexa.nutricao.model.PerfilNutricional;
 import com.nuvexa.nutricao.model.QPerfilNutricional;
+import com.nuvexa.nutricao.repository.AvaliacaoRepository;
 import com.nuvexa.nutricao.repository.PerfilNutricionalRepository;
 import com.nuvexa.core.model.QPaciente;
 import com.nuvexa.platform.exception.NegocioException;
@@ -27,12 +29,17 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.Period;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Dado clínico de nutrição (altura/peso/objetivo/nível de atividade/IMC/TMB/gasto calórico) do
  * paciente — referencia {@link Paciente} (core) por FK 1:1, sem duplicar nenhum campo genérico.
  * Paciente em si (nome/data de nascimento/sexo) é responsabilidade de
  * {@code com.nuvexa.core.service.PacienteService}.
+ *
+ * <p>Peso não é estado deste perfil — é sempre lido da {@link Avaliacao} mais recente do paciente
+ * (ver {@link AvaliacaoService#buscarUltimaAvaliacaoComPeso}). A criação do perfil recebe um
+ * "peso inicial" que vira a primeira avaliação do paciente, não um campo persistido aqui.
  */
 @Service
 @RequiredArgsConstructor
@@ -42,6 +49,8 @@ public class PerfilNutricionalService {
 
     private final PerfilNutricionalRepository perfilNutricionalRepository;
     private final PacienteRepository pacienteRepository;
+    private final AvaliacaoRepository avaliacaoRepository;
+    private final AvaliacaoService avaliacaoService;
     private final ModelMapper modelMapper;
     private final ImcCalculator imcCalculator;
     private final TaxaMetabolicaCalculator taxaMetabolicaCalculator;
@@ -50,16 +59,23 @@ public class PerfilNutricionalService {
 
     public PerfilNutricionalResponseDTO create(Long pacienteId, PerfilNutricionalCreateRequestDTO request) {
         Paciente paciente = buscarPacienteOuFalhar(pacienteId);
-        validar(request.getAltura(), request.getPeso(), request.getCaloriasDiariasManuais());
+        validar(request.getAltura(), request.getCaloriasDiariasManuais());
+        validarPesoInicial(request.getPesoInicial());
 
         PerfilNutricional perfilNutricional = perfilNutricionalRepository.save(request.toPerfilNutricional(paciente));
+
+        Avaliacao avaliacaoInicial = AvaliacaoService.criarMedidaRapida(
+                contexto.getContextoDeAutenticacao().organizacaoAtual(), paciente,
+                contexto.getContextoDeAutenticacao().usuarioAtual(), LocalDate.now(), request.getPesoInicial());
+        avaliacaoRepository.save(avaliacaoInicial);
+
         log.info("Perfil nutricional criado para paciente com id={}", pacienteId);
         return toResponseComCalculos(perfilNutricional);
     }
 
     public PerfilNutricionalResponseDTO update(Long pacienteId, PerfilNutricionalUpdateRequestDTO request) {
         PerfilNutricional perfilNutricional = buscarPerfilOuFalhar(pacienteId);
-        validar(request.getAltura(), request.getPeso(), request.getCaloriasDiariasManuais());
+        validar(request.getAltura(), request.getCaloriasDiariasManuais());
 
         request.atualizar(perfilNutricional, modelMapper);
         PerfilNutricional saved = perfilNutricionalRepository.save(perfilNutricional);
@@ -111,15 +127,18 @@ public class PerfilNutricionalService {
         log.info("Perfil nutricional removido para paciente com id={} (Paciente preservado)", pacienteId);
     }
 
-    private void validar(BigDecimal altura, BigDecimal peso, BigDecimal caloriasDiariasManuais) {
+    private void validar(BigDecimal altura, BigDecimal caloriasDiariasManuais) {
         if (altura == null || altura.signum() <= 0) {
             throw new NegocioException(HttpStatus.BAD_REQUEST, resolveMessage("paciente.altura.invalida"));
         }
-        if (peso == null || peso.signum() <= 0) {
-            throw new NegocioException(HttpStatus.BAD_REQUEST, resolveMessage("paciente.peso.invalido"));
-        }
         if (caloriasDiariasManuais != null && caloriasDiariasManuais.signum() <= 0) {
             throw new NegocioException(HttpStatus.BAD_REQUEST, resolveMessage("paciente.caloriasDiariasManuais.invalida"));
+        }
+    }
+
+    private void validarPesoInicial(BigDecimal pesoInicial) {
+        if (pesoInicial == null || pesoInicial.signum() <= 0) {
+            throw new NegocioException(HttpStatus.BAD_REQUEST, resolveMessage("paciente.peso.invalido"));
         }
     }
 
@@ -145,14 +164,31 @@ public class PerfilNutricionalService {
 
     private PerfilNutricionalResponseDTO toResponseComCalculos(PerfilNutricional perfilNutricional) {
         Paciente paciente = perfilNutricional.getPaciente();
-
         int idade = Period.between(paciente.getDataNascimento(), LocalDate.now()).getYears();
-        BigDecimal imc = imcCalculator.calculate(perfilNutricional.getPeso(), perfilNutricional.getAltura());
-        BigDecimal taxaMetabolicaBasal = taxaMetabolicaCalculator.calculate(perfilNutricional.getPeso(), perfilNutricional.getAltura(), idade, paciente.getSexo());
-        BigDecimal gastoCaloricoDiario = perfilNutricional.getCaloriasDiariasManuais() != null
-                ? perfilNutricional.getCaloriasDiariasManuais()
-                : gastoCaloricoCalculator.calculate(taxaMetabolicaBasal, perfilNutricional.getNivelAtividade());
 
-        return PerfilNutricionalResponseDTO.from(perfilNutricional, imc, imcCalculator.classify(imc), taxaMetabolicaBasal, gastoCaloricoDiario);
+        Optional<Avaliacao> ultimaAvaliacao = avaliacaoService.buscarUltimaAvaliacaoComPeso(paciente.getId());
+        BigDecimal peso = ultimaAvaliacao.map(Avaliacao::getPeso).orElse(null);
+        Long avaliacaoAtualId = ultimaAvaliacao.map(Avaliacao::getId).orElse(null);
+
+        BigDecimal imc = null;
+        String classificacaoImc = null;
+        BigDecimal taxaMetabolicaBasal = null;
+        if (peso != null) {
+            imc = imcCalculator.calculate(peso, perfilNutricional.getAltura());
+            classificacaoImc = imcCalculator.classify(imc);
+            taxaMetabolicaBasal = taxaMetabolicaCalculator.calculate(peso, perfilNutricional.getAltura(), idade, paciente.getSexo());
+        }
+
+        BigDecimal gastoCaloricoDiario;
+        if (perfilNutricional.getCaloriasDiariasManuais() != null) {
+            gastoCaloricoDiario = perfilNutricional.getCaloriasDiariasManuais();
+        } else if (taxaMetabolicaBasal != null) {
+            gastoCaloricoDiario = gastoCaloricoCalculator.calculate(taxaMetabolicaBasal, perfilNutricional.getNivelAtividade());
+        } else {
+            gastoCaloricoDiario = null;
+        }
+
+        return PerfilNutricionalResponseDTO.from(
+                perfilNutricional, peso, avaliacaoAtualId, imc, classificacaoImc, taxaMetabolicaBasal, gastoCaloricoDiario);
     }
 }

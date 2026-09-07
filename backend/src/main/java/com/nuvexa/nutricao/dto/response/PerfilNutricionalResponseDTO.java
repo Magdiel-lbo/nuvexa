@@ -35,6 +35,7 @@ public class PerfilNutricionalResponseDTO {
     private Integer idade;
     private BigDecimal altura;
     private BigDecimal peso;
+    private Long avaliacaoAtualId;
     private Objetivo objetivo;
     private NivelAtividade nivelAtividade;
     private BigDecimal caloriasDiariasManuais;
@@ -47,15 +48,16 @@ public class PerfilNutricionalResponseDTO {
     private LocalDateTime atualizadoEm;
 
     public static PerfilNutricionalResponseDTO from(
-            PerfilNutricional perfilNutricional, BigDecimal imc, String classificacaoImc,
-            BigDecimal taxaMetabolicaBasal, BigDecimal gastoCaloricoDiario) {
+            PerfilNutricional perfilNutricional, BigDecimal peso, Long avaliacaoAtualId, BigDecimal imc,
+            String classificacaoImc, BigDecimal taxaMetabolicaBasal, BigDecimal gastoCaloricoDiario) {
         return PerfilNutricionalResponseDTO.builder()
                 .pacienteId(perfilNutricional.getPaciente().getId())
                 .pacienteNome(perfilNutricional.getPaciente().getNome())
                 .sexo(perfilNutricional.getPaciente().getSexo())
                 .idade(Period.between(perfilNutricional.getPaciente().getDataNascimento(), LocalDate.now()).getYears())
                 .altura(perfilNutricional.getAltura())
-                .peso(perfilNutricional.getPeso())
+                .peso(peso)
+                .avaliacaoAtualId(avaliacaoAtualId)
                 .objetivo(perfilNutricional.getObjetivo())
                 .nivelAtividade(perfilNutricional.getNivelAtividade())
                 .caloriasDiariasManuais(perfilNutricional.getCaloriasDiariasManuais())

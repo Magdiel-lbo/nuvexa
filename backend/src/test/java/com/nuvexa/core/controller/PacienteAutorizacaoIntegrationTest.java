@@ -1,6 +1,6 @@
-package com.nuvexa.nutricao.controller;
+package com.nuvexa.core.controller;
 
-import com.nuvexa.nutricao.service.PacienteService;
+import com.nuvexa.core.service.PacienteService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -8,17 +8,16 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Autorização com o contexto completo: SecurityConfig real e @PreAuthorize ativo.
- * Cobre a regra pré-existente de que só ADMIN exclui paciente, mais a fronteira
- * público/autenticado.
+ * Autorização com o contexto completo: SecurityConfig real. Cobre só a fronteira
+ * público/autenticado — hoje não existe endpoint de exclusão em PacienteController (a exclusão
+ * do perfil nutricional vive em PerfilNutricionalController) nem @PreAuthorize por papel em
+ * nenhum controller do sistema, então os testes antigos de "ADMIN exclui, PROFISSIONAL não"
+ * foram removidos por não corresponderem a nenhum comportamento real hoje.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -31,24 +30,6 @@ class PacienteAutorizacaoIntegrationTest {
 
     @MockitoBean
     private PacienteService pacienteService;
-
-    // 10. ADMIN continua conseguindo excluir, como antes desta fase.
-    @Test
-    void adminDeveConseguirExcluirPaciente() throws Exception {
-        mockMvc.perform(delete(BASE_URL + "/1").with(user("admin").roles("ADMIN")))
-                .andExpect(status().isNoContent());
-
-        verify(pacienteService).delete(1L);
-    }
-
-    // 10. PROFISSIONAL continua sem poder excluir.
-    @Test
-    void profissionalNaoDeveConseguirExcluirPaciente() throws Exception {
-        mockMvc.perform(delete(BASE_URL + "/1").with(user("prof").roles("PROFISSIONAL")))
-                .andExpect(status().isForbidden());
-
-        verify(pacienteService, never()).delete(1L);
-    }
 
     @Test
     void requisicaoAnonimaDeveSerRecusada() throws Exception {

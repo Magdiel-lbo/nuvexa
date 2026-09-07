@@ -1,16 +1,14 @@
-package com.nuvexa.nutricao.controller;
+package com.nuvexa.core.controller;
 
 import tools.jackson.databind.ObjectMapper;
-import com.nuvexa.platform.config.MessageConfig;
-import com.nuvexa.platform.security.JwtAuthenticationFilter;
-import com.nuvexa.nutricao.dto.request.PacienteCreateRequestDTO;
-import com.nuvexa.nutricao.dto.request.PacienteUpdateRequestDTO;
-import com.nuvexa.nutricao.dto.response.PacienteResponseDTO;
-import com.nuvexa.nutricao.model.NivelAtividade;
+import com.nuvexa.core.dto.request.PacienteCreateRequestDTO;
+import com.nuvexa.core.dto.request.PacienteUpdateRequestDTO;
+import com.nuvexa.core.dto.response.PacienteResponseDTO;
 import com.nuvexa.core.model.Sexo;
-import com.nuvexa.nutricao.model.Objetivo;
+import com.nuvexa.core.service.PacienteService;
+import com.nuvexa.platform.config.MessageConfig;
 import com.nuvexa.platform.exception.NegocioException;
-import com.nuvexa.nutricao.service.PacienteService;
+import com.nuvexa.platform.security.JwtAuthenticationFilter;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -23,14 +21,12 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -60,32 +56,25 @@ class PacienteControllerTest {
     private PacienteService pacienteService;
 
     private PacienteCreateRequestDTO validCreateRequest() {
-        PacienteCreateRequestDTO request = new PacienteCreateRequestDTO();
-        request.setNome("Maria Souza");
-        request.setDataNascimento(LocalDate.of(1990, 5, 20));
-        request.setSexo(Sexo.FEMININO);
-        request.setAltura(new BigDecimal("1.65"));
-        request.setPeso(new BigDecimal("62.50"));
-        request.setObjetivo(Objetivo.EMAGRECIMENTO);
-        request.setNivelAtividade(NivelAtividade.MODERADAMENTE_ATIVO);
-        return request;
+        return PacienteCreateRequestDTO.builder()
+                .nome("Maria Souza")
+                .dataNascimento(LocalDate.of(1990, 5, 20))
+                .sexo(Sexo.FEMININO)
+                .build();
     }
 
-    private PacienteResponseDTO responseFor(Long id, String name) {
-        PacienteResponseDTO response = new PacienteResponseDTO();
-        response.setId(id);
-        response.setNome(name);
-        response.setDataNascimento(LocalDate.of(1990, 5, 20));
-        response.setSexo(Sexo.FEMININO);
-        response.setAltura(new BigDecimal("1.65"));
-        response.setPeso(new BigDecimal("62.50"));
-        response.setObjetivo(Objetivo.EMAGRECIMENTO);
-        response.setNivelAtividade(NivelAtividade.MODERADAMENTE_ATIVO);
-        return response;
+    private PacienteResponseDTO responseFor(Long id, String nome) {
+        return PacienteResponseDTO.builder()
+                .id(id)
+                .nome(nome)
+                .dataNascimento(LocalDate.of(1990, 5, 20))
+                .sexo(Sexo.FEMININO)
+                .idade(35)
+                .build();
     }
 
     @Test
-    void shouldCreatePatientAndReturn201() throws Exception {
+    void deveCriarPacienteERetornar201() throws Exception {
         when(pacienteService.create(any())).thenReturn(responseFor(1L, "Maria Souza"));
 
         mockMvc.perform(post(BASE_URL)
@@ -97,7 +86,7 @@ class PacienteControllerTest {
     }
 
     @Test
-    void shouldReturn400WithPortugueseMessageWhenNameIsMissing() throws Exception {
+    void deveRetornar400ComMensagemEmPortuguesQuandoNomeAusente() throws Exception {
         PacienteCreateRequestDTO request = validCreateRequest();
         request.setNome(null);
 
@@ -111,31 +100,27 @@ class PacienteControllerTest {
     }
 
     @Test
-    void shouldReturn400WhenServiceRejectsBusinessRule() throws Exception {
+    void deveRetornar400QuandoServiceRejeitaRegraDeNegocio() throws Exception {
         when(pacienteService.create(any()))
-                .thenThrow(new NegocioException(HttpStatus.BAD_REQUEST, "Peso deve ser maior que zero"));
+                .thenThrow(new NegocioException(HttpStatus.BAD_REQUEST, "Data de nascimento não pode ser futura"));
 
         mockMvc.perform(post(BASE_URL)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(validCreateRequest())))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.mensagem").value("Peso deve ser maior que zero"));
+                .andExpect(jsonPath("$.mensagem").value("Data de nascimento não pode ser futura"));
     }
 
     private PacienteUpdateRequestDTO validUpdateRequest() {
-        PacienteUpdateRequestDTO request = new PacienteUpdateRequestDTO();
-        request.setNome("Maria Souza");
-        request.setDataNascimento(LocalDate.of(1990, 5, 20));
-        request.setSexo(Sexo.FEMININO);
-        request.setAltura(new BigDecimal("1.65"));
-        request.setPeso(new BigDecimal("62.50"));
-        request.setObjetivo(Objetivo.EMAGRECIMENTO);
-        request.setNivelAtividade(NivelAtividade.MODERADAMENTE_ATIVO);
-        return request;
+        return PacienteUpdateRequestDTO.builder()
+                .nome("Maria Souza")
+                .dataNascimento(LocalDate.of(1990, 5, 20))
+                .sexo(Sexo.FEMININO)
+                .build();
     }
 
     @Test
-    void shouldFindPatientByIdAndReturn200() throws Exception {
+    void deveBuscarPacientePorIdERetornar200() throws Exception {
         when(pacienteService.findById(1L)).thenReturn(responseFor(1L, "Maria Souza"));
 
         mockMvc.perform(get(BASE_URL + "/1"))
@@ -145,7 +130,7 @@ class PacienteControllerTest {
     }
 
     @Test
-    void shouldUpdatePatientAndReturn200() throws Exception {
+    void deveAtualizarPacienteERetornar200() throws Exception {
         when(pacienteService.update(eq(1L), any())).thenReturn(responseFor(1L, "Maria Atualizada"));
 
         mockMvc.perform(put(BASE_URL + "/1")
@@ -156,14 +141,14 @@ class PacienteControllerTest {
     }
 
     @Test
-    void shouldReturn400WhenIdIsNotNumeric() throws Exception {
+    void deveRetornar400QuandoIdNaoNumerico() throws Exception {
         mockMvc.perform(get(BASE_URL + "/abc"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400));
     }
 
     @Test
-    void shouldReturn404WhenPatientNotFound() throws Exception {
+    void deveRetornar404QuandoPacienteNaoEncontrado() throws Exception {
         when(pacienteService.findById(99L))
                 .thenThrow(new NegocioException(HttpStatus.NOT_FOUND, "Paciente não encontrado: 99"));
 
@@ -174,17 +159,11 @@ class PacienteControllerTest {
     }
 
     @Test
-    void shouldListPatients() throws Exception {
+    void deveListarPacientes() throws Exception {
         when(pacienteService.findAll(eq("Maria"))).thenReturn(List.of(responseFor(1L, "Maria Souza")));
 
         mockMvc.perform(get(BASE_URL).param("busca", "Maria"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].nome").value("Maria Souza"));
-    }
-
-    @Test
-    void shouldDeletePatientAndReturn204() throws Exception {
-        mockMvc.perform(delete(BASE_URL + "/1"))
-                .andExpect(status().isNoContent());
     }
 }

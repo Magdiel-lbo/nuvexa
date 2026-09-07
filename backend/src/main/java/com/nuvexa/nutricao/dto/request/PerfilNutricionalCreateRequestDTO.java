@@ -23,8 +23,12 @@ public class PerfilNutricionalCreateRequestDTO {
     @NotNull(message = "{paciente.altura.obrigatoria}")
     private BigDecimal altura;
 
+    /**
+     * Peso inicial do paciente — não é gravado como estado do perfil, vira a primeira
+     * {@link com.nuvexa.nutricao.model.Avaliacao} do paciente (ver {@code PerfilNutricionalService.create}).
+     */
     @NotNull(message = "{paciente.peso.obrigatorio}")
-    private BigDecimal peso;
+    private BigDecimal pesoInicial;
 
     @NotNull(message = "{paciente.objetivo.obrigatorio}")
     private Objetivo objetivo;
@@ -40,7 +44,6 @@ public class PerfilNutricionalCreateRequestDTO {
         return PerfilNutricional.builder()
                 .paciente(paciente)
                 .altura(altura)
-                .peso(peso)
                 .objetivo(objetivo)
                 .nivelAtividade(nivelAtividade)
                 .caloriasDiariasManuais(caloriasDiariasManuais)

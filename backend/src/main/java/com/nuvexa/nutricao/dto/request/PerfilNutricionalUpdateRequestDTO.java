@@ -23,9 +23,6 @@ public class PerfilNutricionalUpdateRequestDTO {
     @NotNull(message = "{paciente.altura.obrigatoria}")
     private BigDecimal altura;
 
-    @NotNull(message = "{paciente.peso.obrigatorio}")
-    private BigDecimal peso;
-
     @NotNull(message = "{paciente.objetivo.obrigatorio}")
     private Objetivo objetivo;
 

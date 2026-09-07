@@ -35,12 +35,12 @@
         />
       </v-col>
 
-      <v-col cols="12" md="6">
+      <v-col v-if="criacao" cols="12" md="6">
         <v-text-field
           v-model.number="model.peso"
           type="number"
           step="0.01"
-          :label="$t('paciente.peso')"
+          :label="$t('paciente.pesoInicial')"
           :rules="[rules.obrigatorio]"
         />
       </v-col>
@@ -121,6 +121,9 @@ export default class PacienteForm extends Vue {
 
   @Prop({ default: false })
   readonly!: boolean
+
+  @Prop({ default: false })
+  criacao!: boolean
 
   formValido = true
   opcoesSexo: EnumOpcao[] = []

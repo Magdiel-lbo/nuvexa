@@ -20,7 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.context.MessageSource;
+import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.http.HttpStatus;
 
 import java.time.LocalDate;
@@ -48,7 +48,7 @@ class PacienteProfissionalServiceTest {
     private VinculoRepository vinculoRepository;
 
     @Mock
-    private MessageSource messageSource;
+    private MessageSourceAccessor mensagens;
 
     @Mock
     private ContextoDeAutenticacao contextoDeAutenticacao;
@@ -63,7 +63,7 @@ class PacienteProfissionalServiceTest {
         organizacaoAtual = organizacao(ORGANIZACAO_ATUAL_ID, "Clínica Atual");
         when(contextoDeAutenticacao.organizacaoAtual()).thenReturn(organizacaoAtual);
         when(contextoDeAutenticacao.organizacaoAtualId()).thenReturn(ORGANIZACAO_ATUAL_ID);
-        when(messageSource.getMessage(any(String.class), any(), any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(mensagens.getMessage(any(String.class), any(Object[].class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(pacienteProfissionalRepository.save(any(PacienteProfissional.class))).thenAnswer(invocation -> {
             PacienteProfissional vinculo = invocation.getArgument(0);
             if (vinculo.getId() == null) {
@@ -72,7 +72,7 @@ class PacienteProfissionalServiceTest {
             return vinculo;
         });
         pacienteProfissionalService = new PacienteProfissionalService(
-                pacienteProfissionalRepository, pacienteRepository, vinculoRepository, contextoDeAutenticacao, messageSource);
+                pacienteProfissionalRepository, pacienteRepository, vinculoRepository, contextoDeAutenticacao, mensagens);
     }
 
     private Organizacao organizacao(Long id, String nome) {

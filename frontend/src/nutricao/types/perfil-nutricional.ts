@@ -11,29 +11,36 @@ export interface PerfilNutricionalResponse {
   sexo: Sexo
   idade: number
   altura: number
-  peso: number
+  peso: number | null
+  avaliacaoAtualId: number | null
   objetivo: Objetivo
   nivelAtividade: NivelAtividade
   caloriasDiariasManuais: number | null
   observacoes: string | null
-  imc: number
-  classificacaoImc: string
-  taxaMetabolicaBasal: number
-  gastoCaloricoDiario: number
+  imc: number | null
+  classificacaoImc: string | null
+  taxaMetabolicaBasal: number | null
+  gastoCaloricoDiario: number | null
   criadoEm: string
   atualizadoEm: string
 }
 
 export interface PerfilNutricionalCreateRequest {
   altura: number
-  peso: number
+  pesoInicial: number
   objetivo: Objetivo
   nivelAtividade: NivelAtividade
   caloriasDiariasManuais?: number | null
   observacoes?: string | null
 }
 
-export type PerfilNutricionalUpdateRequest = PerfilNutricionalCreateRequest
+export interface PerfilNutricionalUpdateRequest {
+  altura: number
+  objetivo: Objetivo
+  nivelAtividade: NivelAtividade
+  caloriasDiariasManuais?: number | null
+  observacoes?: string | null
+}
 
 export interface PerfilNutricionalEnumsResponse {
   objetivos: EnumOpcao[]

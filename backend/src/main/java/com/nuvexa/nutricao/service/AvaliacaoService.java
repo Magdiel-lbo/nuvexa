@@ -1,5 +1,6 @@
 package com.nuvexa.nutricao.service;
 
+import com.nuvexa.core.model.Organizacao;
 import com.nuvexa.core.model.Paciente;
 import com.nuvexa.core.model.Usuario;
 import com.nuvexa.core.model.Vinculo;
@@ -12,6 +13,8 @@ import com.nuvexa.nutricao.dto.response.AvaliacaoEnumsResponseDTO;
 import com.nuvexa.nutricao.dto.response.AvaliacaoResponseDTO;
 import com.nuvexa.nutricao.model.Avaliacao;
 import com.nuvexa.nutricao.model.QAvaliacao;
+import com.nuvexa.nutricao.model.StatusAvaliacao;
+import com.nuvexa.nutricao.model.TipoAvaliacao;
 import com.nuvexa.nutricao.repository.AvaliacaoRepository;
 import com.nuvexa.platform.exception.NegocioException;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -23,10 +26,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -44,6 +50,7 @@ public class AvaliacaoService {
     public AvaliacaoResponseDTO create(AvaliacaoCreateRequestDTO request) {
         Paciente paciente = buscarPacienteOuFalhar(request.getPacienteId());
         Usuario avaliador = buscarAvaliadorOuFalhar(request.getAvaliadorId());
+        validarDataNaoFutura(request.getData(), request.getPeso());
 
         Avaliacao avaliacao = avaliacaoRepository.save(
                 request.toAvaliacao(contexto.getContextoDeAutenticacao().organizacaoAtual(), paciente, avaliador));
@@ -54,6 +61,7 @@ public class AvaliacaoService {
     public AvaliacaoResponseDTO update(Long id, AvaliacaoUpdateRequestDTO request) {
         Avaliacao avaliacao = buscarAvaliacaoOuFalhar(id);
         Usuario avaliador = buscarAvaliadorOuFalhar(request.getAvaliadorId());
+        validarDataNaoFutura(request.getData(), request.getPeso());
         request.atualizar(avaliacao, avaliador, modelMapper);
 
         Avaliacao saved = avaliacaoRepository.save(avaliacao);
@@ -78,6 +86,72 @@ public class AvaliacaoService {
         Avaliacao avaliacao = buscarAvaliacaoOuFalhar(id);
         avaliacaoRepository.delete(avaliacao);
         log.info("Avaliação removida com id={}", id);
+    }
+
+    /**
+     * Fábrica da avaliação antropométrica rápida criada implicitamente (perfil nutricional na
+     * criação, e futuramente Consulta ao ir para REALIZADA) — não salva, quem chama decide o
+     * repository e a transação. Estático porque não depende de nenhum colaborador do service,
+     * mesmo padrão de {@link #calcularVariacoesPorPaciente}.
+     */
+    public static Avaliacao criarMedidaRapida(
+            Organizacao organizacao, Paciente paciente, Usuario avaliador, LocalDate data, BigDecimal peso) {
+        return Avaliacao.builder()
+                .organizacao(organizacao)
+                .paciente(paciente)
+                .avaliador(avaliador)
+                .data(data)
+                .tipo(TipoAvaliacao.ANTROPOMETRIA)
+                .status(StatusAvaliacao.CONCLUIDA)
+                .peso(peso)
+                .percentualGordura(null)
+                .build();
+    }
+
+    /**
+     * Peso "atual" do paciente = avaliação mais recente com peso preenchido (exclui AGENDADA, que
+     * ainda não tem medida). Desempate por id quando duas avaliações caem na mesma data — id maior
+     * é a inserida por último. Filtra data futura como defesa em profundidade: a validação de
+     * escrita em {@link #create}/{@link #update} já impede uma avaliação CONCLUIDA com peso ser
+     * datada no futuro, então este filtro não deveria excluir nada em operação normal.
+     */
+    public Optional<Avaliacao> buscarUltimaAvaliacaoComPeso(Long pacienteId) {
+        QAvaliacao a = QAvaliacao.avaliacao;
+        Avaliacao maisRecente = contexto.getQueryFactory()
+                .selectFrom(a)
+                .where(a.organizacao.id.eq(contexto.getContextoDeAutenticacao().organizacaoAtualId())
+                        .and(a.paciente.id.eq(pacienteId))
+                        .and(a.peso.isNotNull())
+                        .and(a.data.loe(LocalDate.now())))
+                .orderBy(a.data.desc(), a.id.desc())
+                .fetchFirst();
+        return Optional.ofNullable(maisRecente);
+    }
+
+    /**
+     * Mesmo critério de {@link #buscarUltimaAvaliacaoComPeso}, mas em lote — usado pelo relatório
+     * de pacientes para evitar N+1 (uma query por paciente). Só o peso é necessário nesse contexto,
+     * não o id da avaliação.
+     */
+    public Map<Long, BigDecimal> buscarPesosMaisRecentesPorPaciente(List<Long> pacienteIds) {
+        if (pacienteIds.isEmpty()) {
+            return Map.of();
+        }
+        QAvaliacao a = QAvaliacao.avaliacao;
+        List<Avaliacao> todas = contexto.getQueryFactory()
+                .selectFrom(a)
+                .where(a.organizacao.id.eq(contexto.getContextoDeAutenticacao().organizacaoAtualId())
+                        .and(a.paciente.id.in(pacienteIds))
+                        .and(a.peso.isNotNull())
+                        .and(a.data.loe(LocalDate.now())))
+                .orderBy(a.data.desc(), a.id.desc())
+                .fetch();
+
+        Map<Long, BigDecimal> pesoPorPaciente = new LinkedHashMap<>();
+        for (Avaliacao item : todas) {
+            pesoPorPaciente.putIfAbsent(item.getPaciente().getId(), item.getPeso());
+        }
+        return pesoPorPaciente;
     }
 
     private List<Avaliacao> buscarAvaliacoes(Long pacienteId, String busca) {
@@ -150,6 +224,12 @@ public class AvaliacaoService {
 
     private String normalizarBusca(String busca) {
         return (busca == null || busca.isBlank()) ? null : busca.trim();
+    }
+
+    private void validarDataNaoFutura(LocalDate data, BigDecimal peso) {
+        if (peso != null && data != null && data.isAfter(LocalDate.now())) {
+            throw new NegocioException(HttpStatus.BAD_REQUEST, resolveMessage("avaliacao.data.futura"));
+        }
     }
 
     private Paciente buscarPacienteOuFalhar(Long pacienteId) {

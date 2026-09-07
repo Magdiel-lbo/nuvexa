@@ -9,6 +9,7 @@ export default {
     sexo: 'Sexo',
     altura: 'Altura (m)',
     peso: 'Peso (kg)',
+    pesoInicial: 'Peso inicial (kg)',
     objetivo: 'Objetivo',
     nivelAtividade: 'Nível de atividade',
     gastoCaloricoManual: 'Gasto calórico manual (opcional)',
@@ -64,6 +65,8 @@ export default {
       historicoConsultas: 'Histórico de consultas',
       nenhumaConsultaTitulo: 'Nenhuma consulta registrada',
       nenhumaConsultaDescricao: 'Este paciente ainda não teve consultas registradas.',
+      semAvaliacao: 'Sem avaliação registrada',
+      pesoAtual: 'Peso atual',
     },
   },
   periodoFiltro: {
@@ -95,6 +98,7 @@ export default {
     voltar: 'Voltar',
     limpar: 'Limpar',
     exportar: 'Exportar',
+    corrigir: 'Corrigir',
     titulo: 'Ações',
   },
   validacao: {

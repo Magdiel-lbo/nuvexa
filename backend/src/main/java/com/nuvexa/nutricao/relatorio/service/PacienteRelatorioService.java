@@ -12,6 +12,7 @@ import com.nuvexa.nutricao.model.PerfilNutricional;
 import com.nuvexa.nutricao.model.QPerfilNutricional;
 import com.nuvexa.nutricao.relatorio.dto.filter.PacienteFiltro;
 import com.nuvexa.nutricao.relatorio.dto.response.PacienteRelatorioLinhaDTO;
+import com.nuvexa.nutricao.service.AvaliacaoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +21,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.Period;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +30,7 @@ public class PacienteRelatorioService {
     private final ImcCalculator imcCalculator;
     private final TaxaMetabolicaCalculator taxaMetabolicaCalculator;
     private final GastoCaloricoCalculator gastoCaloricoCalculator;
+    private final AvaliacaoService avaliacaoService;
     private final OrganizacaoScopedContext contexto;
 
     @Transactional(readOnly = true)
@@ -45,7 +48,13 @@ public class PacienteRelatorioService {
     }
 
     private List<PacienteRelatorioLinhaDTO> linhas(PacienteFiltro filtro) {
-        return buscarPerfis(filtro).stream().map(this::toRow).toList();
+        List<PerfilNutricional> perfis = buscarPerfis(filtro);
+        List<Long> pacienteIds = perfis.stream().map(perfil -> perfil.getPaciente().getId()).toList();
+        Map<Long, BigDecimal> pesosPorPaciente = avaliacaoService.buscarPesosMaisRecentesPorPaciente(pacienteIds);
+
+        return perfis.stream()
+                .map(perfil -> toRow(perfil, pesosPorPaciente.get(perfil.getPaciente().getId())))
+                .toList();
     }
 
     private List<PerfilNutricional> buscarPerfis(PacienteFiltro filtro) {
@@ -60,15 +69,28 @@ public class PacienteRelatorioService {
                 .fetch();
     }
 
-    private PacienteRelatorioLinhaDTO toRow(PerfilNutricional perfilNutricional) {
+    private PacienteRelatorioLinhaDTO toRow(PerfilNutricional perfilNutricional, BigDecimal peso) {
         int idade = Period.between(perfilNutricional.getPaciente().getDataNascimento(), LocalDate.now()).getYears();
-        BigDecimal imc = imcCalculator.calculate(perfilNutricional.getPeso(), perfilNutricional.getAltura());
-        BigDecimal taxaMetabolicaBasal = taxaMetabolicaCalculator.calculate(
-                perfilNutricional.getPeso(), perfilNutricional.getAltura(), idade, perfilNutricional.getPaciente().getSexo());
-        BigDecimal gastoCaloricoDiario = perfilNutricional.getCaloriasDiariasManuais() != null
-                ? perfilNutricional.getCaloriasDiariasManuais()
-                : gastoCaloricoCalculator.calculate(taxaMetabolicaBasal, perfilNutricional.getNivelAtividade());
 
-        return PacienteRelatorioLinhaDTO.from(perfilNutricional, idade, imc, imcCalculator.classify(imc), gastoCaloricoDiario);
+        BigDecimal imc = null;
+        String classificacaoImc = null;
+        BigDecimal taxaMetabolicaBasal = null;
+        if (peso != null) {
+            imc = imcCalculator.calculate(peso, perfilNutricional.getAltura());
+            classificacaoImc = imcCalculator.classify(imc);
+            taxaMetabolicaBasal = taxaMetabolicaCalculator.calculate(
+                    peso, perfilNutricional.getAltura(), idade, perfilNutricional.getPaciente().getSexo());
+        }
+
+        BigDecimal gastoCaloricoDiario;
+        if (perfilNutricional.getCaloriasDiariasManuais() != null) {
+            gastoCaloricoDiario = perfilNutricional.getCaloriasDiariasManuais();
+        } else if (taxaMetabolicaBasal != null) {
+            gastoCaloricoDiario = gastoCaloricoCalculator.calculate(taxaMetabolicaBasal, perfilNutricional.getNivelAtividade());
+        } else {
+            gastoCaloricoDiario = null;
+        }
+
+        return PacienteRelatorioLinhaDTO.from(perfilNutricional, idade, imc, classificacaoImc, gastoCaloricoDiario);
     }
 }

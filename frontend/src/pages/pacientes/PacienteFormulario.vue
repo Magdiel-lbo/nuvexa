@@ -20,6 +20,7 @@
             :submit-label="(isEdicao ? $t('acao.salvar') : $t('acao.criar')) as string"
             :loading="salvando"
             :readonly="isView"
+            :criacao="isCriacao"
             @submit="salvar"
             @cancel="voltar"
           />
@@ -31,27 +32,43 @@
           <v-card variant="flat" color="surface-variant" class="paciente-formulario__metric-card">
             <v-card-title>{{ $t('paciente.imc') }}</v-card-title>
             <v-card-text>
-              <span class="paciente-formulario__metric-value">{{ perfil.imc.toFixed(1) }}</span>
-              <span class="paciente-formulario__metric-hint">{{ perfil.classificacaoImc }}</span>
+              <template v-if="perfil.imc !== null">
+                <span class="paciente-formulario__metric-value">{{ perfil.imc.toFixed(1) }}</span>
+                <span class="paciente-formulario__metric-hint">{{ perfil.classificacaoImc }}</span>
+              </template>
+              <span v-else class="paciente-formulario__metric-hint">{{ $t('paciente.detalhe.semAvaliacao') }}</span>
             </v-card-text>
           </v-card>
 
           <v-card variant="flat" color="surface-variant" class="paciente-formulario__metric-card">
             <v-card-title>{{ $t('paciente.detalhe.taxaMetabolicaBasal') }}</v-card-title>
             <v-card-text>
-              <span class="paciente-formulario__metric-value">{{ Math.round(perfil.taxaMetabolicaBasal) }}</span>
-              <span class="paciente-formulario__metric-hint">kcal</span>
+              <template v-if="perfil.taxaMetabolicaBasal !== null">
+                <span class="paciente-formulario__metric-value">{{ Math.round(perfil.taxaMetabolicaBasal) }}</span>
+                <span class="paciente-formulario__metric-hint">kcal</span>
+              </template>
+              <span v-else class="paciente-formulario__metric-hint">{{ $t('paciente.detalhe.semAvaliacao') }}</span>
             </v-card-text>
           </v-card>
 
           <v-card variant="flat" color="surface-variant" class="paciente-formulario__metric-card">
             <v-card-title>{{ $t('paciente.detalhe.gastoCaloricoTotal') }}</v-card-title>
             <v-card-text>
-              <span class="paciente-formulario__metric-value">{{ Math.round(perfil.gastoCaloricoDiario) }}</span>
-              <span class="paciente-formulario__metric-hint">kcal</span>
+              <template v-if="perfil.gastoCaloricoDiario !== null">
+                <span class="paciente-formulario__metric-value">{{ Math.round(perfil.gastoCaloricoDiario) }}</span>
+                <span class="paciente-formulario__metric-hint">kcal</span>
+              </template>
+              <span v-else class="paciente-formulario__metric-hint">{{ $t('paciente.detalhe.semAvaliacao') }}</span>
             </v-card-text>
           </v-card>
         </div>
+
+        <p v-if="perfil.peso !== null && perfil.avaliacaoAtualId" class="paciente-formulario__peso-atual">
+          {{ $t('paciente.detalhe.pesoAtual') }}: <strong>{{ perfil.peso }} kg</strong>
+          <v-btn variant="text" density="compact" color="primary" @click="corrigirPeso">
+            {{ $t('acao.corrigir') }}
+          </v-btn>
+        </p>
 
         <PacienteConsultaHistorico :paciente-id="paciente.id" />
       </template>
@@ -168,9 +185,8 @@ export default class PacienteFormulario extends Vue {
   async salvar() {
     this.salvando = true
     try {
-      const perfilPayload = {
+      const perfilPayloadBase = {
         altura: this.form.altura,
-        peso: this.form.peso,
         objetivo: this.form.objetivo,
         nivelAtividade: this.form.nivelAtividade,
         caloriasDiariasManuais: this.form.caloriasDiariasManuais || null,
@@ -179,12 +195,14 @@ export default class PacienteFormulario extends Vue {
 
       if (this.isCriacao) {
         const paciente = await pacienteService.criar({ nome: this.form.nome, dataNascimento: this.form.dataNascimento, sexo: this.form.sexo })
-        await perfilNutricionalService.criar(paciente.id, perfilPayload)
+        await perfilNutricionalService.criar(paciente.id, { ...perfilPayloadBase, pesoInicial: this.form.peso })
       } else {
         const pacienteId = this.pacienteId as number
         await Promise.all([
           pacienteService.atualizar(pacienteId, { nome: this.form.nome, dataNascimento: this.form.dataNascimento, sexo: this.form.sexo }),
-          this.perfil ? perfilNutricionalService.atualizar(pacienteId, perfilPayload) : perfilNutricionalService.criar(pacienteId, perfilPayload),
+          this.perfil
+            ? perfilNutricionalService.atualizar(pacienteId, perfilPayloadBase)
+            : perfilNutricionalService.criar(pacienteId, { ...perfilPayloadBase, pesoInicial: this.form.peso }),
         ])
       }
       this.appStore.setToast({ mensagem: this.$t('sucesso.salvo') as string, erro: false })
@@ -193,6 +211,12 @@ export default class PacienteFormulario extends Vue {
       this.appStore.setToast({ mensagem: extrairMensagemErro(e, this.$t('erro.salvarPaciente') as string), erro: true })
     } finally {
       this.salvando = false
+    }
+  }
+
+  corrigirPeso() {
+    if (this.perfil?.avaliacaoAtualId) {
+      this.$router.push({ name: 'avaliacao-editar', params: { id: this.perfil.avaliacaoAtualId } })
     }
   }
 
@@ -247,6 +271,11 @@ export default class PacienteFormulario extends Vue {
 }
 
 .paciente-formulario__metric-hint {
+  color: rgb(var(--v-theme-on-surface-variant));
+}
+
+.paciente-formulario__peso-atual {
+  margin-top: 16px;
   color: rgb(var(--v-theme-on-surface-variant));
 }
 </style>

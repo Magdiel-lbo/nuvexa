@@ -30,14 +30,14 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-facing-decorator'
-import AvaliacaoForm from '../components/AvaliacaoForm.vue'
-import type { AvaliacaoFormModel } from '../components/AvaliacaoForm.vue'
-import avaliacaoService from '../services/avaliacao-service'
-import consultaService from '../../service/consulta-service'
-import pacienteService from '../../service/paciente-service'
-import type { Avaliacao } from '../types/avaliacao'
-import { useAppStore } from '../../store/app.store'
-import { extrairMensagemErro } from '../../util/api-util'
+import AvaliacaoForm from '../../components/AvaliacaoForm.vue'
+import type { AvaliacaoFormModel } from '../../components/AvaliacaoForm.vue'
+import avaliacaoService from '../../services/avaliacao-service'
+import consultaService from '../../../service/consulta-service'
+import pacienteService from '../../../service/paciente-service'
+import type { Avaliacao } from '../../types/avaliacao'
+import { useAppStore } from '../../../store/app.store'
+import { extrairMensagemErro } from '../../../util/api-util'
 
 function formModelPadrao(): AvaliacaoFormModel {
   return {
