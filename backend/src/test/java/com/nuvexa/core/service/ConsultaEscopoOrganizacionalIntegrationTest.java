@@ -219,8 +219,15 @@ class ConsultaEscopoOrganizacionalIntegrationTest {
         Consulta consulta = novaConsulta(minhaOrganizacao, meuPaciente, meuProfissional);
 
         ConsultaResponseDTO atualizada = consultaService.update(consulta.getId(), updateRequest(outroProfissionalMesmaOrg.getId()));
+        // flush explícito é o que expõe o bug do ModelMapper de "identifier was altered": sem
+        // isso o teste passa mesmo com o bug, porque o dirty-check só roda no flush/commit real
+        // (que uma requisição HTTP sempre faz, mas o rollback automático do @DataJpaTest pode
+        // nunca disparar).
+        consultaRepository.flush();
 
         assertThat(atualizada.getProfissionalId()).isEqualTo(outroProfissionalMesmaOrg.getId());
+        assertThat(consultaRepository.findById(consulta.getId()).orElseThrow().getProfissional().getId())
+                .isEqualTo(outroProfissionalMesmaOrg.getId());
     }
 
     @Test
