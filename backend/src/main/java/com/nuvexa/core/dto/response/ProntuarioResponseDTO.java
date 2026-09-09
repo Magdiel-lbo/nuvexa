@@ -38,6 +38,12 @@ public class ProntuarioResponseDTO {
 
     private boolean comAnexo;
 
+    private Long assinadoPorId;
+
+    private String assinadoPorNome;
+
+    private LocalDateTime assinadoEm;
+
     private LocalDateTime criadoEm;
 
     private LocalDateTime atualizadoEm;
@@ -54,6 +60,9 @@ public class ProntuarioResponseDTO {
                 .status(prontuario.getStatus())
                 .conteudo(prontuario.getConteudo())
                 .comAnexo(prontuario.isComAnexo())
+                .assinadoPorId(prontuario.getAssinadoPor() != null ? prontuario.getAssinadoPor().getId() : null)
+                .assinadoPorNome(prontuario.getAssinadoPor() != null ? prontuario.getAssinadoPor().getNome() : null)
+                .assinadoEm(prontuario.getAssinadoEm())
                 .criadoEm(prontuario.getCriadoEm())
                 .atualizadoEm(prontuario.getAtualizadoEm())
                 .build();

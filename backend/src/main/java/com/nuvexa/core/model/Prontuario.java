@@ -14,6 +14,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
+import java.time.LocalDateTime;
+
 /**
  * Fica em {@code core}, não em {@code nutricao}: registro clínico (anamnese/evolução/exames) não
  * é conceito exclusivo do domínio de nutrição — mesmo raciocínio que já mantém {@link Paciente}
@@ -54,4 +56,11 @@ public class Prontuario extends ModeloAbstrato {
 
     @Column(name = "com_anexo", nullable = false)
     private boolean comAnexo;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assinado_por_id")
+    private Usuario assinadoPor;
+
+    @Column(name = "assinado_em")
+    private LocalDateTime assinadoEm;
 }

@@ -1,6 +1,6 @@
 import type { AxiosInstance } from 'axios'
 import http from '../core/http/client'
-import type { Consulta, ConsultaCreateRequest, ConsultaRelatorioFiltro, ConsultaUpdateRequest, Profissional } from '../types/consulta'
+import type { Consulta, ConsultaCreateRequest, ConsultaRelatorioFiltro, ConsultaStatus, ConsultaUpdateRequest, Profissional } from '../types/consulta'
 
 class ConsultaService {
   private http: AxiosInstance
@@ -45,15 +45,20 @@ class ConsultaService {
 
   // Recebe a consulta inteira porque o PUT do backend substitui o registro por completo — não
   // existe PATCH parcial. Preserva todos os outros campos, só troca o status.
-  async cancelar(consulta: Consulta): Promise<Consulta> {
+  async atualizarStatus(consulta: Consulta, status: ConsultaStatus): Promise<Consulta> {
     return this.atualizar(consulta.id, {
       profissionalId: consulta.profissionalId,
       dataHora: consulta.dataHora,
       duracaoMinutos: consulta.duracaoMinutos,
       tipo: consulta.tipo,
-      status: 'CANCELADA',
+      status,
       observacoes: consulta.observacoes,
+      motivo: consulta.motivo,
     })
+  }
+
+  async cancelar(consulta: Consulta): Promise<Consulta> {
+    return this.atualizarStatus(consulta, 'CANCELADA')
   }
 
   async excluir(id: number): Promise<void> {

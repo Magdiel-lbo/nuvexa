@@ -12,5 +12,29 @@ services:
     volumes:
       - nuvexa-db-data:/var/lib/postgresql/data
 
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: nuvexa
+      MINIO_ROOT_PASSWORD: nuvexa123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - nuvexa-minio-data:/data
+
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://minio:9000 nuvexa nuvexa123; do sleep 1; done;
+      mc mb --ignore-existing local/nuvexa-anexos;
+      exit 0;
+      "
+
 volumes:
   nuvexa-db-data:
+  nuvexa-minio-data:

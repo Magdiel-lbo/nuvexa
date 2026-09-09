@@ -18,6 +18,9 @@ export interface Consulta {
   tipo: ConsultaTipo
   status: ConsultaStatus
   observacoes: string | null
+  motivo: string | null
+  criadoEm: string
+  atualizadoEm: string
 }
 
 export interface ConsultaCreateRequest {
@@ -28,6 +31,7 @@ export interface ConsultaCreateRequest {
   tipo: ConsultaTipo
   status: ConsultaStatus
   observacoes: string | null
+  motivo: string | null
 }
 
 export interface ConsultaUpdateRequest {
@@ -37,6 +41,7 @@ export interface ConsultaUpdateRequest {
   tipo: ConsultaTipo
   status: ConsultaStatus
   observacoes: string | null
+  motivo: string | null
 }
 
 export interface ConsultaRelatorioFiltro {

@@ -12,6 +12,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
@@ -52,6 +53,16 @@ public class GlobalExceptionHandlerController {
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ApiErro> handleNoResourceFound(HttpServletRequest request) {
         return buildResponse(HttpStatus.NOT_FOUND, mensagens.getMessage("erro.naoEncontrado"), request);
+    }
+
+    /**
+     * Requisição já rejeitada pelo resolvedor de multipart do Spring (antes de chegar no
+     * service) por exceder {@code spring.servlet.multipart.max-file-size}/{@code
+     * max-request-size} — sem isso cairia no handler genérico de 500.
+     */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiErro> handleMaxUploadSizeExceeded(HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST, mensagens.getMessage("prontuarioAnexo.arquivo.tamanhoExcedido"), request);
     }
 
     /**

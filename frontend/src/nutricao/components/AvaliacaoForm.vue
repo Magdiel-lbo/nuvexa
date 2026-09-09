@@ -2,25 +2,11 @@
   <v-form ref="form" v-model="formValido" :disabled="readonly" @submit.prevent="salvar">
     <v-row>
       <v-col v-if="mostrarSelecaoPaciente" cols="6">
-        <v-autocomplete
-          v-model="model.pacienteId"
-          :items="pacienteOptions"
-          item-title="label"
-          item-value="value"
-          :label="$t('avaliacao.paciente')"
-          :rules="[rules.obrigatorio]"
-        />
+        <NuvexaPacienteSelect v-model="model.pacienteId" :label="$t('avaliacao.paciente') as string" />
       </v-col>
 
       <v-col cols="6">
-        <v-select
-          v-model="model.avaliadorId"
-          :items="profissionalOptions"
-          item-title="label"
-          item-value="value"
-          :label="$t('avaliacao.avaliador')"
-          :rules="[rules.obrigatorio]"
-        />
+        <NuvexaProfissionalSelect v-model="model.avaliadorId" :label="$t('avaliacao.avaliador') as string" />
       </v-col>
 
       <v-col cols="12" md="6">
@@ -69,6 +55,8 @@
 <script lang="ts">
 import { Component, Prop, VModel, Emit, Vue } from 'vue-facing-decorator'
 import avaliacaoService from '../services/avaliacao-service'
+import NuvexaProfissionalSelect from '../../components/common/NuvexaProfissionalSelect.vue'
+import NuvexaPacienteSelect from '../../components/common/NuvexaPacienteSelect.vue'
 import type { EnumOpcao } from '../../util/enum-rotulos'
 import type { StatusAvaliacao, TipoAvaliacao } from '../types/avaliacao'
 
@@ -82,7 +70,7 @@ export interface AvaliacaoFormModel {
   percentualGordura: number | null
 }
 
-@Component({ name: 'AvaliacaoForm' })
+@Component({ name: 'AvaliacaoForm', components: { NuvexaProfissionalSelect, NuvexaPacienteSelect } })
 export default class AvaliacaoForm extends Vue {
   @VModel({ required: true })
   model!: AvaliacaoFormModel
@@ -98,12 +86,6 @@ export default class AvaliacaoForm extends Vue {
 
   @Prop({ default: false })
   mostrarSelecaoPaciente!: boolean
-
-  @Prop({ default: () => [] })
-  pacienteOptions!: { value: number; label: string }[]
-
-  @Prop({ default: () => [] })
-  profissionalOptions!: { value: number; label: string }[]
 
   formValido = true
   opcoesTipo: EnumOpcao[] = []

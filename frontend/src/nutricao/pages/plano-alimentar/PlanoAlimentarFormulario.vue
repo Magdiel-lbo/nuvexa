@@ -18,8 +18,6 @@
           :loading="salvando"
           :readonly="isView"
           :mostrar-selecao-paciente="isCriacao"
-          :paciente-options="pacienteOptions"
-          :profissional-options="profissionalOptions"
           @submit="onSubmit"
           @cancel="voltar"
         />
@@ -33,8 +31,6 @@ import { Component, Vue } from 'vue-facing-decorator'
 import PlanoAlimentarForm from '../../components/PlanoAlimentarForm.vue'
 import type { PlanoAlimentarFormModel } from '../../components/PlanoAlimentarForm.vue'
 import planoAlimentarService from '../../services/plano-alimentar-service'
-import consultaService from '../../../service/consulta-service'
-import pacienteService from '../../../service/paciente-service'
 import type { PlanoAlimentar } from '../../types/plano-alimentar'
 import { useAppStore } from '../../../store/app.store'
 import { extrairMensagemErro } from '../../../util/api-util'
@@ -60,8 +56,6 @@ function formModelPadrao(): PlanoAlimentarFormModel {
 export default class PlanoAlimentarFormulario extends Vue {
   plano: PlanoAlimentar | null = null
   form: PlanoAlimentarFormModel | null = null
-  pacienteOptions: { value: number; label: string }[] = []
-  profissionalOptions: { value: number; label: string }[] = []
   carregando = false
   salvando = false
 
@@ -90,11 +84,12 @@ export default class PlanoAlimentarFormulario extends Vue {
   async created() {
     this.carregando = true
     try {
-      await this.carregarProfissionais()
-
       if (this.isCriacao) {
-        await this.carregarPacientes()
         this.form = formModelPadrao()
+        const pacienteId = Number(this.$route.query.pacienteId)
+        if (pacienteId) {
+          this.form.pacienteId = pacienteId
+        }
         return
       }
 
@@ -115,24 +110,6 @@ export default class PlanoAlimentarFormulario extends Vue {
       }
     } finally {
       this.carregando = false
-    }
-  }
-
-  async carregarPacientes() {
-    try {
-      const pacientes = await pacienteService.listar()
-      this.pacienteOptions = pacientes.map((paciente) => ({ value: paciente.id, label: paciente.nome }))
-    } catch (e) {
-      this.appStore.setToast({ mensagem: extrairMensagemErro(e, this.$t('erro.carregarPacientes') as string), erro: true })
-    }
-  }
-
-  async carregarProfissionais() {
-    try {
-      const profissionais = await consultaService.listarProfissionais()
-      this.profissionalOptions = profissionais.map((profissional) => ({ value: profissional.id, label: profissional.nome }))
-    } catch (e) {
-      this.appStore.setToast({ mensagem: extrairMensagemErro(e, this.$t('erro.carregarProfissionais') as string), erro: true })
     }
   }
 

@@ -46,6 +46,8 @@ public class ConsultaUpdateRequestDTO {
 
     private String observacoes;
 
+    private String motivo;
+
     public void atualizar(Consulta consulta, Usuario profissional, ModelMapper modelMapper) {
         modelMapper.map(this, consulta);
         consulta.setProfissional(profissional);

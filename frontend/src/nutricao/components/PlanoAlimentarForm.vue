@@ -1,26 +1,12 @@
 <template>
   <v-form ref="form" v-model="formValido" :disabled="readonly" @submit.prevent="salvar">
     <v-row>
-      <v-col v-if="mostrarSelecaoPaciente" cols="12">
-        <v-autocomplete
-          v-model="model.pacienteId"
-          :items="pacienteOptions"
-          item-title="label"
-          item-value="value"
-          :label="$t('planoAlimentar.paciente')"
-          :rules="[rules.obrigatorio]"
-        />
+      <v-col v-if="mostrarSelecaoPaciente" cols="6">
+        <NuvexaPacienteSelect v-model="model.pacienteId" :label="$t('planoAlimentar.paciente') as string" />
       </v-col>
 
-      <v-col cols="12">
-        <v-select
-          v-model="model.autorId"
-          :items="profissionalOptions"
-          item-title="label"
-          item-value="value"
-          :label="$t('planoAlimentar.autor')"
-          :rules="[rules.obrigatorio]"
-        />
+      <v-col cols="6">
+        <NuvexaProfissionalSelect v-model="model.autorId" :label="$t('planoAlimentar.autor') as string" />
       </v-col>
 
       <v-col cols="12" md="6">
@@ -66,6 +52,8 @@
 <script lang="ts">
 import { Component, Prop, VModel, Emit, Vue } from 'vue-facing-decorator'
 import planoAlimentarService from '../services/plano-alimentar-service'
+import NuvexaProfissionalSelect from '../../components/common/NuvexaProfissionalSelect.vue'
+import NuvexaPacienteSelect from '../../components/common/NuvexaPacienteSelect.vue'
 import type { EnumOpcao } from '../../util/enum-rotulos'
 import type { StatusPlanoAlimentar } from '../types/plano-alimentar'
 
@@ -79,7 +67,7 @@ export interface PlanoAlimentarFormModel {
   status: StatusPlanoAlimentar
 }
 
-@Component({ name: 'PlanoAlimentarForm' })
+@Component({ name: 'PlanoAlimentarForm', components: { NuvexaProfissionalSelect, NuvexaPacienteSelect } })
 export default class PlanoAlimentarForm extends Vue {
   @VModel({ required: true })
   model!: PlanoAlimentarFormModel
@@ -95,12 +83,6 @@ export default class PlanoAlimentarForm extends Vue {
 
   @Prop({ default: false })
   mostrarSelecaoPaciente!: boolean
-
-  @Prop({ default: () => [] })
-  pacienteOptions!: { value: number; label: string }[]
-
-  @Prop({ default: () => [] })
-  profissionalOptions!: { value: number; label: string }[]
 
   formValido = true
   opcoesStatus: EnumOpcao[] = []

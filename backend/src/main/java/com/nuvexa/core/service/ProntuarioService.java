@@ -7,11 +7,16 @@ import com.nuvexa.core.dto.response.ProntuarioResponseDTO;
 import com.nuvexa.core.model.Paciente;
 import com.nuvexa.core.model.Prontuario;
 import com.nuvexa.core.model.QProntuario;
+import com.nuvexa.core.model.StatusProntuario;
 import com.nuvexa.core.model.Usuario;
 import com.nuvexa.core.model.Vinculo;
 import com.nuvexa.core.repository.PacienteRepository;
 import com.nuvexa.core.repository.ProntuarioRepository;
 import com.nuvexa.core.repository.VinculoRepository;
+import com.nuvexa.platform.auditoria.AuditoriaService;
+import com.nuvexa.platform.auditoria.EntidadeAuditavel;
+import com.nuvexa.platform.auditoria.EventoAuditoriaResponseDTO;
+import com.nuvexa.platform.auditoria.TipoEventoAuditoria;
 import com.nuvexa.platform.exception.NegocioException;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +26,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -34,25 +40,77 @@ public class ProntuarioService {
     private final VinculoRepository vinculoRepository;
     private final ModelMapper modelMapper;
     private final OrganizacaoScopedContext contexto;
+    private final AuditoriaService auditoriaService;
 
     public ProntuarioResponseDTO create(ProntuarioCreateRequestDTO request) {
+        if (request.getStatus() == StatusProntuario.ASSINADO) {
+            throw new NegocioException(HttpStatus.BAD_REQUEST, resolveMessage("prontuario.assinatura.usarAcaoDedicada"));
+        }
         Paciente paciente = buscarPacienteOuFalhar(request.getPacienteId());
         Usuario autor = buscarAutorOuFalhar(request.getAutorId());
 
         Prontuario prontuario = prontuarioRepository.save(
                 request.toProntuario(contexto.getContextoDeAutenticacao().organizacaoAtual(), paciente, autor));
+
+        Usuario usuarioAtual = contexto.getContextoDeAutenticacao().usuarioAtual();
+        auditoriaService.registrar(EntidadeAuditavel.PRONTUARIO, prontuario.getId(), TipoEventoAuditoria.CRIACAO,
+                contexto.getContextoDeAutenticacao().organizacaoAtualId(), usuarioAtual.getId(), usuarioAtual.getNome(),
+                null, descrever(prontuario));
+
         log.info("Prontuário criado com id={}", prontuario.getId());
         return ProntuarioResponseDTO.from(prontuario);
     }
 
     public ProntuarioResponseDTO update(Long id, ProntuarioUpdateRequestDTO request) {
         Prontuario prontuario = buscarProntuarioOuFalhar(id);
+        garantirEditavel(prontuario);
+        if (request.getStatus() == StatusProntuario.ASSINADO) {
+            throw new NegocioException(HttpStatus.BAD_REQUEST, resolveMessage("prontuario.assinatura.usarAcaoDedicada"));
+        }
+        String antes = descrever(prontuario);
         Usuario autor = buscarAutorOuFalhar(request.getAutorId());
         request.atualizar(prontuario, autor, modelMapper);
 
         Prontuario saved = prontuarioRepository.save(prontuario);
+
+        Usuario usuarioAtual = contexto.getContextoDeAutenticacao().usuarioAtual();
+        auditoriaService.registrar(EntidadeAuditavel.PRONTUARIO, saved.getId(), TipoEventoAuditoria.EDICAO,
+                contexto.getContextoDeAutenticacao().organizacaoAtualId(), usuarioAtual.getId(), usuarioAtual.getNome(),
+                antes, descrever(saved));
+
         log.info("Prontuário atualizado com id={}", id);
         return ProntuarioResponseDTO.from(saved);
+    }
+
+    public ProntuarioResponseDTO assinar(Long id) {
+        Prontuario prontuario = buscarProntuarioOuFalhar(id);
+        garantirEditavel(prontuario);
+        if (prontuario.getConteudo() == null || prontuario.getConteudo().isBlank()) {
+            throw new NegocioException(HttpStatus.BAD_REQUEST, resolveMessage("prontuario.assinatura.conteudoObrigatorio"));
+        }
+        String antes = descrever(prontuario);
+
+        Usuario usuarioAtual = contexto.getContextoDeAutenticacao().usuarioAtual();
+        prontuario.setStatus(StatusProntuario.ASSINADO);
+        prontuario.setAssinadoPor(usuarioAtual);
+        prontuario.setAssinadoEm(LocalDateTime.now());
+
+        Prontuario saved = prontuarioRepository.save(prontuario);
+
+        auditoriaService.registrar(EntidadeAuditavel.PRONTUARIO, saved.getId(), TipoEventoAuditoria.ASSINATURA,
+                contexto.getContextoDeAutenticacao().organizacaoAtualId(), usuarioAtual.getId(), usuarioAtual.getNome(),
+                antes, descrever(saved));
+
+        log.info("Prontuário assinado com id={} por usuarioId={}", id, usuarioAtual.getId());
+        return ProntuarioResponseDTO.from(saved);
+    }
+
+    public List<EventoAuditoriaResponseDTO> listarAuditoria(Long id) {
+        buscarProntuarioOuFalhar(id);
+        return auditoriaService.listar(EntidadeAuditavel.PRONTUARIO, id, contexto.getContextoDeAutenticacao().organizacaoAtualId())
+                .stream()
+                .map(EventoAuditoriaResponseDTO::from)
+                .toList();
     }
 
     public ProntuarioResponseDTO findById(Long id) {
@@ -71,8 +129,34 @@ public class ProntuarioService {
 
     public void delete(Long id) {
         Prontuario prontuario = buscarProntuarioOuFalhar(id);
+        garantirEditavel(prontuario);
+        String antes = descrever(prontuario);
+        Long prontuarioId = prontuario.getId();
+
         prontuarioRepository.delete(prontuario);
+
+        Usuario usuarioAtual = contexto.getContextoDeAutenticacao().usuarioAtual();
+        auditoriaService.registrar(EntidadeAuditavel.PRONTUARIO, prontuarioId, TipoEventoAuditoria.EXCLUSAO,
+                contexto.getContextoDeAutenticacao().organizacaoAtualId(), usuarioAtual.getId(), usuarioAtual.getNome(),
+                antes, null);
+
         log.info("Prontuário removido com id={}", id);
+    }
+
+    private void garantirEditavel(Prontuario prontuario) {
+        if (prontuario.getStatus() == StatusProntuario.ASSINADO) {
+            throw new NegocioException(HttpStatus.BAD_REQUEST, resolveMessage("prontuario.assinado.imutavel"));
+        }
+    }
+
+    /**
+     * Snapshot simples dos campos relevantes para o evento de auditoria — não é versionamento
+     * completo, só o suficiente para inspecionar o que mudou entre antes/depois.
+     */
+    private String descrever(Prontuario prontuario) {
+        return "secao=%s, status=%s, autorId=%d, comAnexo=%s, conteudo=%s".formatted(
+                prontuario.getSecao(), prontuario.getStatus(), prontuario.getAutor().getId(),
+                prontuario.isComAnexo(), prontuario.getConteudo());
     }
 
     private List<Prontuario> buscarProntuarios(Long pacienteId, String busca) {

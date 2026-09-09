@@ -49,7 +49,7 @@ export default createVuetify({
           'surface-variant': '#eef2f1',
           'on-surface': '#101820',
           'on-background': '#101820',
-          'on-surface-variant': '#5b6b66',
+          'on-surface-variant': '#4b5661',
           outline: '#d9e0de',
           primary: '#0f9d75',
           'primary-darken-1': '#0b7a5c',

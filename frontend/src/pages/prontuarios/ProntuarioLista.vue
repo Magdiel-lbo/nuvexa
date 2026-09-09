@@ -129,12 +129,12 @@
                 <v-btn v-bind="props" icon="mdi-view-grid-outline" variant="text" density="comfortable" size="small" @click="onView(item)" />
               </template>
             </v-tooltip>
-            <v-tooltip :text="$t('acao.editar')" location="top">
+            <v-tooltip v-if="item.status !== 'ASSINADO'" :text="$t('acao.editar')" location="top">
               <template #activator="{ props }">
                 <v-btn v-bind="props" icon="mdi-pencil-outline" variant="text" density="comfortable" size="small" @click="onEdit(item)" />
               </template>
             </v-tooltip>
-            <v-menu>
+            <v-menu v-if="item.status !== 'ASSINADO'">
               <template #activator="{ props }">
                 <v-btn v-bind="props" icon="mdi-dots-vertical" variant="text" density="comfortable" size="small" :aria-label="$t('dashboardPacientes.acoes.maisOpcoes')" />
               </template>

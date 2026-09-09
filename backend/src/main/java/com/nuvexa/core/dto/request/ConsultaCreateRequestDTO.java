@@ -41,6 +41,8 @@ public class ConsultaCreateRequestDTO {
 
     private String observacoes;
 
+    private String motivo;
+
     public Consulta toConsulta(Organizacao organizacao, Paciente paciente, Usuario profissional) {
         return Consulta.builder()
                 .organizacao(organizacao)
@@ -51,6 +53,7 @@ public class ConsultaCreateRequestDTO {
                 .tipo(tipo)
                 .status(status)
                 .observacoes(observacoes)
+                .motivo(motivo)
                 .build();
     }
 }

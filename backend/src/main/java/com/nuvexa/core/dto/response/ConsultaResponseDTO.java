@@ -38,6 +38,12 @@ public class ConsultaResponseDTO {
 
     private String observacoes;
 
+    private String motivo;
+
+    private LocalDateTime criadoEm;
+
+    private LocalDateTime atualizadoEm;
+
     public static ConsultaResponseDTO from(Consulta consulta) {
         return ConsultaResponseDTO.builder()
                 .id(consulta.getId())
@@ -50,6 +56,9 @@ public class ConsultaResponseDTO {
                 .tipo(consulta.getTipo())
                 .status(consulta.getStatus())
                 .observacoes(consulta.getObservacoes())
+                .motivo(consulta.getMotivo())
+                .criadoEm(consulta.getCriadoEm())
+                .atualizadoEm(consulta.getAtualizadoEm())
                 .build();
     }
 }

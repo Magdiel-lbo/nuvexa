@@ -2,25 +2,11 @@
   <v-form ref="form" v-model="formValido" :disabled="readonly" @submit.prevent="salvar">
     <v-row>
       <v-col v-if="mostrarSelecaoPaciente" cols="6">
-        <v-autocomplete
-          v-model="model.pacienteId"
-          :items="pacienteOptions"
-          item-title="label"
-          item-value="value"
-          :label="$t('dashboardConsultas.tabela.paciente')"
-          :rules="[rules.obrigatorio]"
-        />
+        <NuvexaPacienteSelect v-model="model.pacienteId" :label="$t('dashboardConsultas.tabela.paciente') as string" />
       </v-col>
 
       <v-col cols="6">
-        <v-select
-          v-model="model.profissionalId"
-          :items="profissionalOptions"
-          item-title="label"
-          item-value="value"
-          :label="$t('consulta.profissional')"
-          :rules="[rules.obrigatorio]"
-        />
+        <NuvexaProfissionalSelect v-model="model.profissionalId" :label="$t('consulta.profissional') as string" />
       </v-col>
 
       <v-col cols="12" md="6">
@@ -64,6 +50,10 @@
       </v-col>
 
       <v-col cols="12">
+        <v-textarea v-model="model.motivo" :label="$t('consulta.motivo')" rows="2" />
+      </v-col>
+
+      <v-col cols="12">
         <v-textarea v-model="model.observacoes" :label="$t('consulta.observacoes')" rows="3" />
       </v-col>
     </v-row>
@@ -77,6 +67,8 @@
 
 <script lang="ts">
 import { Component, Prop, VModel, Emit, Vue } from 'vue-facing-decorator'
+import NuvexaProfissionalSelect from '../../../components/common/NuvexaProfissionalSelect.vue'
+import NuvexaPacienteSelect from '../../../components/common/NuvexaPacienteSelect.vue'
 import type { ConsultaStatus, ConsultaTipo } from '../../../types/consulta'
 
 export interface ConsultaFormModel {
@@ -87,9 +79,10 @@ export interface ConsultaFormModel {
   tipo: ConsultaTipo
   status: ConsultaStatus
   observacoes: string | null
+  motivo: string | null
 }
 
-@Component({ name: 'ConsultaForm' })
+@Component({ name: 'ConsultaForm', components: { NuvexaProfissionalSelect, NuvexaPacienteSelect } })
 export default class ConsultaForm extends Vue {
   @VModel({ required: true })
   model!: ConsultaFormModel
@@ -105,12 +98,6 @@ export default class ConsultaForm extends Vue {
 
   @Prop({ default: false })
   mostrarSelecaoPaciente!: boolean
-
-  @Prop({ default: () => [] })
-  pacienteOptions!: { value: number; label: string }[]
-
-  @Prop({ default: () => [] })
-  profissionalOptions!: { value: number; label: string }[]
 
   formValido = true
 

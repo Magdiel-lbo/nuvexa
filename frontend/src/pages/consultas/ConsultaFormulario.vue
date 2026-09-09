@@ -1,30 +1,48 @@
 <template>
   <div class="consulta-formulario">
-    <div class="consulta-formulario__header">
-      <v-btn icon="mdi-arrow-left" variant="text" :aria-label="$t('acao.voltar')" @click="voltar" />
-      <div>
-        <h1 class="consulta-formulario__title">{{ titulo }}</h1>
-        <p v-if="consulta" class="consulta-formulario__subtitle">{{ consulta.pacienteNome }}</p>
+    <template v-if="isView">
+      <p v-if="carregando">...</p>
+      <ConsultaDetalhe
+        v-else-if="consulta"
+        :consulta="consulta"
+        :perfil="perfil"
+        :ultima-consulta-data="ultimaConsultaData"
+        :rotulos-enum="rotulosEnum"
+        :excluindo="excluindo"
+        :atualizando-status="atualizandoStatus"
+        @voltar="voltar"
+        @editar="irParaEdicao"
+        @abrir-prontuario="irParaProntuario"
+        @mudar-status="mudarStatus"
+        @excluir="excluirConsulta"
+        @agendar-retorno="agendarRetorno"
+      />
+    </template>
+
+    <template v-else>
+      <div class="consulta-formulario__header">
+        <v-btn icon="mdi-arrow-left" variant="text" :aria-label="$t('acao.voltar')" @click="voltar" />
+        <div>
+          <h1 class="consulta-formulario__title">{{ titulo }}</h1>
+          <p v-if="consulta" class="consulta-formulario__subtitle">{{ consulta.pacienteNome }}</p>
+        </div>
       </div>
-    </div>
 
-    <p v-if="carregando">...</p>
+      <p v-if="carregando">...</p>
 
-    <v-card v-else-if="form" variant="flat" color="surface-variant" class="consulta-formulario__card">
-      <v-card-text class="pt-4">
-        <ConsultaForm
-          v-model="form"
-          :submit-label="(isCriacao ? $t('acao.criar') : $t('acao.salvar')) as string"
-          :loading="salvando"
-          :readonly="isView"
-          :mostrar-selecao-paciente="isCriacao"
-          :paciente-options="pacienteOptions"
-          :profissional-options="profissionalOptions"
-          @submit="onSubmit"
-          @cancel="voltar"
-        />
-      </v-card-text>
-    </v-card>
+      <v-card v-else-if="form" variant="flat" color="surface-variant" class="consulta-formulario__card">
+        <v-card-text class="pt-4">
+          <ConsultaForm
+            v-model="form"
+            :submit-label="(isCriacao ? $t('acao.criar') : $t('acao.salvar')) as string"
+            :loading="salvando"
+            :mostrar-selecao-paciente="isCriacao"
+            @submit="onSubmit"
+            @cancel="voltar"
+          />
+        </v-card-text>
+      </v-card>
+    </template>
   </div>
 </template>
 
@@ -32,9 +50,12 @@
 import { Component, Vue } from 'vue-facing-decorator'
 import ConsultaForm from './components/ConsultaForm.vue'
 import type { ConsultaFormModel } from './components/ConsultaForm.vue'
+import ConsultaDetalhe from './components/ConsultaDetalhe.vue'
 import consultaService from '../../service/consulta-service'
-import pacienteService from '../../service/paciente-service'
-import type { Consulta } from '../../types/consulta'
+import perfilNutricionalService from '../../nutricao/services/perfil-nutricional-service'
+import { carregarRotulosEnum } from '../../nutricao/utils/enum-rotulos'
+import type { Consulta, ConsultaStatus } from '../../types/consulta'
+import type { PerfilNutricionalResponse } from '../../nutricao/types/perfil-nutricional'
 import { useAppStore } from '../../store/app.store'
 import { extrairMensagemErro } from '../../util/api-util'
 
@@ -55,6 +76,7 @@ function formModelPadrao(): ConsultaFormModel {
     tipo: 'PRIMEIRA_CONSULTA',
     status: 'AGENDADA',
     observacoes: null,
+    motivo: null,
   }
 }
 
@@ -63,14 +85,17 @@ function formModelPadrao(): ConsultaFormModel {
  * PacienteFormulario.vue (modo decidido pela rota: /consultas/novo,
  * /consultas/:id/editar, /consultas/:id).
  */
-@Component({ name: 'ConsultaFormulario', components: { ConsultaForm } })
+@Component({ name: 'ConsultaFormulario', components: { ConsultaForm, ConsultaDetalhe } })
 export default class ConsultaFormulario extends Vue {
   consulta: Consulta | null = null
   form: ConsultaFormModel | null = null
-  pacienteOptions: { value: number; label: string }[] = []
-  profissionalOptions: { value: number; label: string }[] = []
+  perfil: PerfilNutricionalResponse | null = null
+  rotulosEnum: Record<string, string> = {}
+  ultimaConsultaData: string | null = null
   carregando = false
   salvando = false
+  excluindo = false
+  atualizandoStatus = false
 
   get appStore() {
     return useAppStore()
@@ -97,11 +122,12 @@ export default class ConsultaFormulario extends Vue {
   async created() {
     this.carregando = true
     try {
-      await this.carregarProfissionais()
-
       if (this.isCriacao) {
-        await this.carregarPacientes()
         this.form = formModelPadrao()
+        const pacienteId = Number(this.$route.query.pacienteId)
+        if (pacienteId) {
+          this.form.pacienteId = pacienteId
+        }
         return
       }
 
@@ -119,28 +145,28 @@ export default class ConsultaFormulario extends Vue {
         tipo: consulta.tipo,
         status: consulta.status,
         observacoes: consulta.observacoes,
+        motivo: consulta.motivo,
+      }
+      if (this.isView) {
+        await this.carregarDetalhe(consulta)
       }
     } finally {
       this.carregando = false
     }
   }
 
-  async carregarPacientes() {
-    try {
-      const pacientes = await pacienteService.listar()
-      this.pacienteOptions = pacientes.map((paciente) => ({ value: paciente.id, label: paciente.nome }))
-    } catch (e) {
-      this.appStore.setToast({ mensagem: extrairMensagemErro(e, this.$t('erro.carregarPacientes') as string), erro: true })
-    }
-  }
-
-  async carregarProfissionais() {
-    try {
-      const profissionais = await consultaService.listarProfissionais()
-      this.profissionalOptions = profissionais.map((profissional) => ({ value: profissional.id, label: profissional.nome }))
-    } catch (e) {
-      this.appStore.setToast({ mensagem: extrairMensagemErro(e, this.$t('erro.carregarProfissionais') as string), erro: true })
-    }
+  async carregarDetalhe(consulta: Consulta) {
+    const [perfil, rotulosEnum, outrasConsultas] = await Promise.all([
+      perfilNutricionalService.buscarPorPaciente(consulta.pacienteId),
+      carregarRotulosEnum(),
+      consultaService.buscarPorPaciente(consulta.pacienteId).catch(() => []),
+    ])
+    this.perfil = perfil ?? null
+    this.rotulosEnum = rotulosEnum
+    const anteriores = outrasConsultas
+      .filter((item) => item.id !== consulta.id && new Date(item.dataHora) < new Date(consulta.dataHora))
+      .sort((a, b) => new Date(b.dataHora).getTime() - new Date(a.dataHora).getTime())
+    this.ultimaConsultaData = anteriores[0]?.dataHora ?? null
   }
 
   async onSubmit() {
@@ -176,6 +202,7 @@ export default class ConsultaFormulario extends Vue {
       tipo: form.tipo,
       status: form.status,
       observacoes: form.observacoes,
+      motivo: form.motivo,
     })
   }
 
@@ -191,7 +218,61 @@ export default class ConsultaFormulario extends Vue {
       tipo: form.tipo,
       status: form.status,
       observacoes: form.observacoes,
+      motivo: form.motivo,
     })
+  }
+
+  irParaEdicao() {
+    this.$router.push(`/consultas/${this.consultaId}/editar`)
+  }
+
+  irParaProntuario() {
+    const consulta = this.consulta
+    if (!consulta) {
+      return
+    }
+    this.$router.push({ path: '/prontuarios', query: { q: consulta.pacienteNome } })
+  }
+
+  agendarRetorno() {
+    const consulta = this.consulta
+    if (!consulta) {
+      return
+    }
+    this.$router.push({ path: '/consultas/novo', query: { pacienteId: String(consulta.pacienteId) } })
+  }
+
+  async mudarStatus(status: ConsultaStatus) {
+    const consulta = this.consulta
+    if (!consulta) {
+      return
+    }
+    this.atualizandoStatus = true
+    try {
+      this.consulta = await consultaService.atualizarStatus(consulta, status)
+      this.appStore.setToast({ mensagem: this.$t('sucesso.statusConsultaAtualizado') as string, erro: false })
+    } catch (e) {
+      this.appStore.setToast({ mensagem: extrairMensagemErro(e, this.$t('erro.salvarConsulta') as string), erro: true })
+    } finally {
+      this.atualizandoStatus = false
+    }
+  }
+
+  async excluirConsulta() {
+    const consulta = this.consulta
+    if (!consulta) {
+      return
+    }
+    this.excluindo = true
+    try {
+      await consultaService.excluir(consulta.id)
+      this.appStore.setToast({ mensagem: this.$t('sucesso.consultaExcluida') as string, erro: false })
+      this.voltar()
+    } catch (e) {
+      this.appStore.setToast({ mensagem: extrairMensagemErro(e, this.$t('erro.excluirConsulta') as string), erro: true })
+    } finally {
+      this.excluindo = false
+    }
   }
 
   voltar() {

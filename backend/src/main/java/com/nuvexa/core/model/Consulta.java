@@ -63,4 +63,7 @@ public class Consulta extends ModeloAbstrato {
 
     @Column(columnDefinition = "TEXT")
     private String observacoes;
+
+    @Column(columnDefinition = "TEXT")
+    private String motivo;
 }

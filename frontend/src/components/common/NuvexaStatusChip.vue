@@ -1,5 +1,5 @@
 <template>
-  <v-chip :color="color" variant="tonal" size="small" class="nuvexa-status-chip">{{ label }}</v-chip>
+  <v-chip :color="color" :variant="variant" size="small" class="nuvexa-status-chip">{{ label }}</v-chip>
 </template>
 
 <script lang="ts">
@@ -12,6 +12,9 @@ export default class NuvexaStatusChip extends Vue {
 
   @Prop({ default: 'on-surface-variant' })
   color!: string
+
+  @Prop({ default: 'tonal' })
+  variant!: string
 }
 </script>
 

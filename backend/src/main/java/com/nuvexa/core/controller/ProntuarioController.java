@@ -5,12 +5,14 @@ import com.nuvexa.core.dto.request.ProntuarioUpdateRequestDTO;
 import com.nuvexa.core.dto.response.ProntuarioEnumsResponseDTO;
 import com.nuvexa.core.dto.response.ProntuarioResponseDTO;
 import com.nuvexa.core.service.ProntuarioService;
+import com.nuvexa.platform.auditoria.EventoAuditoriaResponseDTO;
 import com.nuvexa.platform.web.BaseController;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -64,5 +66,17 @@ public class ProntuarioController extends BaseController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {
         prontuarioService.delete(id);
+    }
+
+    @PatchMapping("/{id}/assinar")
+    @ResponseStatus(HttpStatus.OK)
+    public ProntuarioResponseDTO assinar(@PathVariable Long id) {
+        return prontuarioService.assinar(id);
+    }
+
+    @GetMapping("/{id}/auditoria")
+    @ResponseStatus(HttpStatus.OK)
+    public List<EventoAuditoriaResponseDTO> listarAuditoria(@PathVariable Long id) {
+        return prontuarioService.listarAuditoria(id);
     }
 }
