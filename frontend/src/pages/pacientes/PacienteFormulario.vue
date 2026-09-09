@@ -1,77 +1,59 @@
 <template>
   <div class="paciente-formulario">
-    <div class="paciente-formulario__header">
-      <v-btn icon="mdi-arrow-left" variant="text" :aria-label="$t('acao.voltar')" @click="voltar" />
-      <div>
-        <h1 class="paciente-formulario__title">{{ titulo }}</h1>
-        <p v-if="paciente" class="paciente-formulario__subtitle">
-          {{ rotulos[paciente.sexo] ?? paciente.sexo }} · {{ paciente.idade }} {{ $t('paciente.detalhe.anos') }}
-        </p>
-      </div>
-    </div>
-
-    <p v-if="loading">...</p>
+    <template v-if="isView">
+      <p v-if="carregando">...</p>
+      <PacienteDetalhe
+        v-else-if="paciente"
+        :paciente="paciente"
+        :perfil="perfil"
+        :avaliacao-recente="avaliacaoRecente"
+        :avaliacoes="avaliacoes"
+        :consultas="consultas"
+        :planos="planos"
+        :prontuarios="prontuarios"
+        :rotulos-enum="rotulos"
+        :rotulos-avaliacao="rotulosAvaliacao"
+        :rotulos-prontuario="rotulosProntuario"
+        :rotulos-plano-alimentar="rotulosPlanoAlimentar"
+        @voltar="voltar"
+        @abrir-prontuario="irParaProntuario"
+        @nova-consulta="irParaNovaConsulta"
+        @abrir-consulta="irParaConsulta"
+        @nova-avaliacao="irParaNovaAvaliacao"
+        @abrir-avaliacao="irParaAvaliacao"
+        @ver-avaliacoes="irParaAvaliacoes"
+        @novo-plano="irParaNovoPlano"
+        @abrir-plano="irParaPlano"
+        @novo-registro="irParaNovoRegistro"
+        @abrir-registro="irParaRegistro"
+      />
+    </template>
 
     <template v-else>
-      <v-card variant="flat" color="surface-variant" class="paciente-formulario__card">
+      <div class="paciente-formulario__header">
+        <v-btn icon="mdi-arrow-left" variant="text" :aria-label="$t('acao.voltar')" @click="voltar" />
+        <div>
+          <h1 class="paciente-formulario__title">{{ titulo }}</h1>
+          <p v-if="paciente" class="paciente-formulario__subtitle">
+            {{ rotulos[paciente.sexo] ?? paciente.sexo }} · {{ paciente.idade }} {{ $t('paciente.detalhe.anos') }}
+          </p>
+        </div>
+      </div>
+
+      <p v-if="carregando">...</p>
+
+      <v-card v-else variant="flat" color="surface-variant" class="paciente-formulario__card">
         <v-card-text class="pt-4">
           <PacienteForm
             v-model="form"
             :submit-label="(isEdicao ? $t('acao.salvar') : $t('acao.criar')) as string"
             :loading="salvando"
-            :readonly="isView"
             :criacao="isCriacao"
             @submit="salvar"
             @cancel="voltar"
           />
         </v-card-text>
       </v-card>
-
-      <template v-if="paciente && perfil">
-        <div class="paciente-formulario__metrics">
-          <v-card variant="flat" color="surface-variant" class="paciente-formulario__metric-card">
-            <v-card-title>{{ $t('paciente.imc') }}</v-card-title>
-            <v-card-text>
-              <template v-if="perfil.imc !== null">
-                <span class="paciente-formulario__metric-value">{{ perfil.imc.toFixed(1) }}</span>
-                <span class="paciente-formulario__metric-hint">{{ perfil.classificacaoImc }}</span>
-              </template>
-              <span v-else class="paciente-formulario__metric-hint">{{ $t('paciente.detalhe.semAvaliacao') }}</span>
-            </v-card-text>
-          </v-card>
-
-          <v-card variant="flat" color="surface-variant" class="paciente-formulario__metric-card">
-            <v-card-title>{{ $t('paciente.detalhe.taxaMetabolicaBasal') }}</v-card-title>
-            <v-card-text>
-              <template v-if="perfil.taxaMetabolicaBasal !== null">
-                <span class="paciente-formulario__metric-value">{{ Math.round(perfil.taxaMetabolicaBasal) }}</span>
-                <span class="paciente-formulario__metric-hint">kcal</span>
-              </template>
-              <span v-else class="paciente-formulario__metric-hint">{{ $t('paciente.detalhe.semAvaliacao') }}</span>
-            </v-card-text>
-          </v-card>
-
-          <v-card variant="flat" color="surface-variant" class="paciente-formulario__metric-card">
-            <v-card-title>{{ $t('paciente.detalhe.gastoCaloricoTotal') }}</v-card-title>
-            <v-card-text>
-              <template v-if="perfil.gastoCaloricoDiario !== null">
-                <span class="paciente-formulario__metric-value">{{ Math.round(perfil.gastoCaloricoDiario) }}</span>
-                <span class="paciente-formulario__metric-hint">kcal</span>
-              </template>
-              <span v-else class="paciente-formulario__metric-hint">{{ $t('paciente.detalhe.semAvaliacao') }}</span>
-            </v-card-text>
-          </v-card>
-        </div>
-
-        <p v-if="perfil.peso !== null && perfil.avaliacaoAtualId" class="paciente-formulario__peso-atual">
-          {{ $t('paciente.detalhe.pesoAtual') }}: <strong>{{ perfil.peso }} kg</strong>
-          <v-btn variant="text" density="compact" color="primary" @click="corrigirPeso">
-            {{ $t('acao.corrigir') }}
-          </v-btn>
-        </p>
-
-        <PacienteConsultaHistorico :paciente-id="paciente.id" />
-      </template>
     </template>
   </div>
 </template>
@@ -80,14 +62,25 @@
 import { Component, Vue } from 'vue-facing-decorator'
 import PacienteForm from './components/PacienteForm.vue'
 import type { PacienteFormModel } from './components/PacienteForm.vue'
-import PacienteConsultaHistorico from './components/PacienteConsultaHistorico.vue'
+import PacienteDetalhe from './components/PacienteDetalhe.vue'
 import pacienteService from '../../service/paciente-service'
 import perfilNutricionalService from '../../nutricao/services/perfil-nutricional-service'
+import consultaService from '../../service/consulta-service'
+import avaliacaoService from '../../nutricao/services/avaliacao-service'
+import planoAlimentarService from '../../nutricao/services/plano-alimentar-service'
+import prontuarioService from '../../service/prontuario-service'
 import { extrairMensagemErro } from '../../util/api-util'
 import { useAppStore } from '../../store/app.store'
 import { carregarRotulosEnum } from '../../nutricao/utils/enum-rotulos'
+import { carregarRotulosAvaliacao } from '../../nutricao/utils/avaliacao-rotulos'
+import { carregarRotulosProntuario } from '../../util/prontuario-rotulos'
+import { carregarRotulosPlanoAlimentar } from '../../nutricao/utils/plano-alimentar-rotulos'
 import type { PacienteResponse } from '../../types/paciente'
 import type { PerfilNutricionalResponse } from '../../nutricao/types/perfil-nutricional'
+import type { Avaliacao } from '../../nutricao/types/avaliacao'
+import type { Consulta } from '../../types/consulta'
+import type { PlanoAlimentar } from '../../nutricao/types/plano-alimentar'
+import type { Prontuario } from '../../types/prontuario'
 
 function formModelPadrao(): PacienteFormModel {
   return {
@@ -113,13 +106,21 @@ function formModelPadrao(): PacienteFormModel {
  * perfil nutricional. Se o perfil tiver sido removido (ver "Excluir" na listagem, que só apaga o
  * perfil, preservando o Paciente), `perfil` vem `null` e salvar() cria um novo em vez de atualizar.
  */
-@Component({ name: 'PacienteFormulario', components: { PacienteForm, PacienteConsultaHistorico } })
+@Component({ name: 'PacienteFormulario', components: { PacienteForm, PacienteDetalhe } })
 export default class PacienteFormulario extends Vue {
   paciente: PacienteResponse | null = null
   perfil: PerfilNutricionalResponse | null = null
+  avaliacaoRecente: Avaliacao | null = null
+  avaliacoes: Avaliacao[] = []
+  consultas: Consulta[] = []
+  planos: PlanoAlimentar[] = []
+  prontuarios: Prontuario[] = []
   form: PacienteFormModel = formModelPadrao()
   rotulos: Record<string, string> = {}
-  loading = false
+  rotulosAvaliacao: Record<string, string> = {}
+  rotulosProntuario: Record<string, string> = {}
+  rotulosPlanoAlimentar: Record<string, string> = {}
+  carregando = false
   salvando = false
 
   get appStore() {
@@ -154,7 +155,7 @@ export default class PacienteFormulario extends Vue {
       return
     }
 
-    this.loading = true
+    this.carregando = true
     try {
       this.rotulos = await carregarRotulosEnum()
       const [paciente, perfil] = await Promise.all([
@@ -174,12 +175,35 @@ export default class PacienteFormulario extends Vue {
         caloriasDiariasManuais: perfil?.caloriasDiariasManuais ?? null,
         observacoes: perfil?.observacoes ?? null,
       }
+      if (this.isView) {
+        await this.carregarDetalhe(paciente.id, perfil ?? null)
+      }
     } catch (e) {
       this.appStore.setToast({ mensagem: extrairMensagemErro(e, this.$t('erro.carregarPaciente') as string), erro: true })
       this.voltar()
     } finally {
-      this.loading = false
+      this.carregando = false
     }
+  }
+
+  async carregarDetalhe(pacienteId: number, perfil: PerfilNutricionalResponse | null) {
+    const [avaliacoes, consultas, planos, prontuarios, rotulosAvaliacao, rotulosProntuario, rotulosPlanoAlimentar] = await Promise.all([
+      avaliacaoService.buscarPorPaciente(pacienteId).catch(() => []),
+      consultaService.buscarPorPaciente(pacienteId).catch(() => []),
+      planoAlimentarService.buscarPorPaciente(pacienteId).catch(() => []),
+      prontuarioService.buscarPorPaciente(pacienteId).catch(() => []),
+      carregarRotulosAvaliacao(),
+      carregarRotulosProntuario(),
+      carregarRotulosPlanoAlimentar(),
+    ])
+    this.avaliacoes = avaliacoes
+    this.consultas = consultas
+    this.planos = planos
+    this.prontuarios = prontuarios
+    this.rotulosAvaliacao = rotulosAvaliacao
+    this.rotulosProntuario = rotulosProntuario
+    this.rotulosPlanoAlimentar = rotulosPlanoAlimentar
+    this.avaliacaoRecente = perfil?.avaliacaoAtualId ? ((await avaliacaoService.buscarPorId(perfil.avaliacaoAtualId)) ?? null) : null
   }
 
   async salvar() {
@@ -214,14 +238,56 @@ export default class PacienteFormulario extends Vue {
     }
   }
 
-  corrigirPeso() {
-    if (this.perfil?.avaliacaoAtualId) {
-      this.$router.push({ name: 'avaliacao-editar', params: { id: this.perfil.avaliacaoAtualId } })
-    }
-  }
-
   voltar() {
     this.$router.push('/pacientes')
+  }
+
+  irParaProntuario() {
+    const paciente = this.paciente
+    if (!paciente) {
+      return
+    }
+    this.$router.push({ path: '/prontuarios', query: { q: paciente.nome } })
+  }
+
+  irParaNovaConsulta() {
+    this.$router.push({ path: '/consultas/novo', query: { pacienteId: String(this.pacienteId) } })
+  }
+
+  irParaConsulta(id: number) {
+    this.$router.push(`/consultas/${id}`)
+  }
+
+  irParaNovaAvaliacao() {
+    this.$router.push({ path: '/avaliacoes/novo', query: { pacienteId: String(this.pacienteId) } })
+  }
+
+  irParaAvaliacao(id: number) {
+    this.$router.push(`/avaliacoes/${id}`)
+  }
+
+  irParaAvaliacoes() {
+    const paciente = this.paciente
+    if (!paciente) {
+      return
+    }
+    this.$router.push({ path: '/avaliacoes', query: { q: paciente.nome } })
+  }
+
+  irParaNovoPlano() {
+    this.$router.push({ path: '/nutricao/novo', query: { pacienteId: String(this.pacienteId) } })
+  }
+
+  irParaPlano(id: number) {
+    this.$router.push(`/nutricao/${id}`)
+  }
+
+  irParaNovoRegistro() {
+    this.$router.push({ path: '/prontuarios/novo', query: { pacienteId: String(this.pacienteId) } })
+  }
+
+  irParaRegistro(id: number) {
+    this.$router.push(`/prontuarios/${id}`)
   }
 }
 </script>
@@ -247,35 +313,5 @@ export default class PacienteFormulario extends Vue {
 
 .paciente-formulario__card {
   border-radius: 12px;
-}
-
-.paciente-formulario__metrics {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
-  margin-top: 16px;
-
-  @media (max-width: 960px) {
-    grid-template-columns: 1fr;
-  }
-}
-
-.paciente-formulario__metric-card {
-  border-radius: 12px;
-}
-
-.paciente-formulario__metric-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin-right: 6px;
-}
-
-.paciente-formulario__metric-hint {
-  color: rgb(var(--v-theme-on-surface-variant));
-}
-
-.paciente-formulario__peso-atual {
-  margin-top: 16px;
-  color: rgb(var(--v-theme-on-surface-variant));
 }
 </style>
