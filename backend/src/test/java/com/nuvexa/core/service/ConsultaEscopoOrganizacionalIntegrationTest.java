@@ -49,7 +49,7 @@ import static org.mockito.Mockito.when;
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import({QuerydslConfig.class, MessageConfig.class, ModelMapperConfig.class, OrganizacaoScopedContext.class, ConsultaService.class})
+@Import({QuerydslConfig.class, MessageConfig.class, ModelMapperConfig.class, OrganizacaoScopedContext.class, ConsultaService.class, ValidadorOrganizacional.class})
 class ConsultaEscopoOrganizacionalIntegrationTest {
 
     @Autowired
@@ -131,14 +131,20 @@ class ConsultaEscopoOrganizacionalIntegrationTest {
     }
 
     private Consulta novaConsulta(Organizacao organizacao, Paciente paciente, Usuario profissional) {
+        return novaConsulta(organizacao, paciente, profissional,
+                LocalDateTime.of(2026, 10, 9, 14, 30), 30, StatusConsulta.AGENDADA);
+    }
+
+    private Consulta novaConsulta(Organizacao organizacao, Paciente paciente, Usuario profissional,
+            LocalDateTime dataHora, Integer duracaoMinutos, StatusConsulta status) {
         return consultaRepository.saveAndFlush(Consulta.builder()
                 .organizacao(organizacao)
                 .paciente(paciente)
                 .profissional(profissional)
-                .dataHora(LocalDateTime.of(2026, 10, 9, 14, 30))
-                .duracaoMinutos(30)
+                .dataHora(dataHora)
+                .duracaoMinutos(duracaoMinutos)
                 .tipo(TipoConsulta.RETORNO)
-                .status(StatusConsulta.AGENDADA)
+                .status(status)
                 .build());
     }
 
@@ -313,5 +319,147 @@ class ConsultaEscopoOrganizacionalIntegrationTest {
 
         assertThat(resultado).hasSize(1);
         assertThat(resultado.getFirst().getId()).isEqualTo(meuProfissional.getId());
+    }
+
+    @Test
+    void deveCriarConsultaComHorarioAdjacenteSemConflito() {
+        novaConsulta(minhaOrganizacao, meuPaciente, meuProfissional,
+                LocalDateTime.of(2026, 11, 2, 9, 0), 30, StatusConsulta.AGENDADA);
+
+        ConsultaCreateRequestDTO request = createRequest(meuPaciente.getId(), meuProfissional.getId());
+        request.setDataHora(LocalDateTime.of(2026, 11, 2, 9, 30));
+        request.setDuracaoMinutos(30);
+
+        ConsultaResponseDTO criada = consultaService.create(request);
+
+        assertThat(criada).isNotNull();
+    }
+
+    @Test
+    void naoDeveCriarConsultaComConflitoDeProfissional() {
+        novaConsulta(minhaOrganizacao, meuPaciente, meuProfissional,
+                LocalDateTime.of(2026, 11, 2, 9, 0), 30, StatusConsulta.AGENDADA);
+        Paciente outroPaciente = novoPaciente(minhaOrganizacao, "Carla da Minha Clinica");
+
+        ConsultaCreateRequestDTO request = createRequest(outroPaciente.getId(), meuProfissional.getId());
+        request.setDataHora(LocalDateTime.of(2026, 11, 2, 9, 15));
+        request.setDuracaoMinutos(30);
+
+        assertThatThrownBy(() -> consultaService.create(request))
+                .isInstanceOf(NegocioException.class)
+                .satisfies(ex -> assertThat(((NegocioException) ex).getStatus()).isEqualTo(HttpStatus.BAD_REQUEST));
+    }
+
+    @Test
+    void naoDeveCriarConsultaComConflitoDePaciente() {
+        novaConsulta(minhaOrganizacao, meuPaciente, meuProfissional,
+                LocalDateTime.of(2026, 11, 2, 9, 0), 30, StatusConsulta.AGENDADA);
+        Usuario outroProfissional = novoProfissionalVinculado(minhaOrganizacao, "Marcos Nutri");
+
+        ConsultaCreateRequestDTO request = createRequest(meuPaciente.getId(), outroProfissional.getId());
+        request.setDataHora(LocalDateTime.of(2026, 11, 2, 9, 15));
+        request.setDuracaoMinutos(30);
+
+        assertThatThrownBy(() -> consultaService.create(request))
+                .isInstanceOf(NegocioException.class)
+                .satisfies(ex -> assertThat(((NegocioException) ex).getStatus()).isEqualTo(HttpStatus.BAD_REQUEST));
+    }
+
+    @Test
+    void consultaCanceladaNaoContaComoConflito() {
+        novaConsulta(minhaOrganizacao, meuPaciente, meuProfissional,
+                LocalDateTime.of(2026, 11, 2, 9, 0), 30, StatusConsulta.CANCELADA);
+
+        ConsultaCreateRequestDTO request = createRequest(meuPaciente.getId(), meuProfissional.getId());
+        request.setDataHora(LocalDateTime.of(2026, 11, 2, 9, 0));
+        request.setDuracaoMinutos(30);
+
+        ConsultaResponseDTO criada = consultaService.create(request);
+
+        assertThat(criada).isNotNull();
+    }
+
+    @Test
+    void consultaComStatusFaltouContaComoConflito() {
+        novaConsulta(minhaOrganizacao, meuPaciente, meuProfissional,
+                LocalDateTime.of(2026, 11, 2, 9, 0), 30, StatusConsulta.FALTOU);
+
+        ConsultaCreateRequestDTO request = createRequest(meuPaciente.getId(), meuProfissional.getId());
+        request.setDataHora(LocalDateTime.of(2026, 11, 2, 9, 0));
+        request.setDuracaoMinutos(30);
+
+        assertThatThrownBy(() -> consultaService.create(request))
+                .isInstanceOf(NegocioException.class)
+                .satisfies(ex -> assertThat(((NegocioException) ex).getStatus()).isEqualTo(HttpStatus.BAD_REQUEST));
+    }
+
+    @Test
+    void deveEditarConsultaMantendoMesmoHorarioSemConflitarComSiMesma() {
+        Consulta consulta = novaConsulta(minhaOrganizacao, meuPaciente, meuProfissional,
+                LocalDateTime.of(2026, 11, 2, 9, 0), 30, StatusConsulta.AGENDADA);
+
+        ConsultaUpdateRequestDTO request = updateRequest(meuProfissional.getId());
+        request.setDataHora(LocalDateTime.of(2026, 11, 2, 9, 0));
+        request.setDuracaoMinutos(30);
+
+        ConsultaResponseDTO atualizada = consultaService.update(consulta.getId(), request);
+
+        assertThat(atualizada).isNotNull();
+    }
+
+    @Test
+    void naoDeveEditarConsultaParaHorarioQueColideComOutra() {
+        novaConsulta(minhaOrganizacao, meuPaciente, meuProfissional,
+                LocalDateTime.of(2026, 11, 2, 9, 0), 30, StatusConsulta.AGENDADA);
+        Consulta outraConsulta = novaConsulta(minhaOrganizacao, meuPaciente, meuProfissional,
+                LocalDateTime.of(2026, 11, 3, 9, 0), 30, StatusConsulta.AGENDADA);
+
+        ConsultaUpdateRequestDTO request = updateRequest(meuProfissional.getId());
+        request.setDataHora(LocalDateTime.of(2026, 11, 2, 9, 15));
+        request.setDuracaoMinutos(30);
+
+        assertThatThrownBy(() -> consultaService.update(outraConsulta.getId(), request))
+                .isInstanceOf(NegocioException.class)
+                .satisfies(ex -> assertThat(((NegocioException) ex).getStatus()).isEqualTo(HttpStatus.BAD_REQUEST));
+    }
+
+    @Test
+    void naoDevePermitirEditarConsultaRealizada() {
+        Consulta consulta = novaConsulta(minhaOrganizacao, meuPaciente, meuProfissional,
+                LocalDateTime.of(2026, 11, 2, 9, 0), 30, StatusConsulta.REALIZADA);
+
+        assertThatThrownBy(() -> consultaService.update(consulta.getId(), updateRequest(meuProfissional.getId())))
+                .isInstanceOf(NegocioException.class)
+                .satisfies(ex -> assertThat(((NegocioException) ex).getStatus()).isEqualTo(HttpStatus.BAD_REQUEST));
+    }
+
+    @Test
+    void naoDevePermitirEditarConsultaCancelada() {
+        Consulta consulta = novaConsulta(minhaOrganizacao, meuPaciente, meuProfissional,
+                LocalDateTime.of(2026, 11, 2, 9, 0), 30, StatusConsulta.CANCELADA);
+
+        assertThatThrownBy(() -> consultaService.update(consulta.getId(), updateRequest(meuProfissional.getId())))
+                .isInstanceOf(NegocioException.class)
+                .satisfies(ex -> assertThat(((NegocioException) ex).getStatus()).isEqualTo(HttpStatus.BAD_REQUEST));
+    }
+
+    @Test
+    void naoDevePermitirEditarConsultaComFalta() {
+        Consulta consulta = novaConsulta(minhaOrganizacao, meuPaciente, meuProfissional,
+                LocalDateTime.of(2026, 11, 2, 9, 0), 30, StatusConsulta.FALTOU);
+
+        assertThatThrownBy(() -> consultaService.update(consulta.getId(), updateRequest(meuProfissional.getId())))
+                .isInstanceOf(NegocioException.class)
+                .satisfies(ex -> assertThat(((NegocioException) ex).getStatus()).isEqualTo(HttpStatus.BAD_REQUEST));
+    }
+
+    @Test
+    void devePermitirEditarConsultaConfirmada() {
+        Consulta consulta = novaConsulta(minhaOrganizacao, meuPaciente, meuProfissional,
+                LocalDateTime.of(2026, 11, 2, 9, 0), 30, StatusConsulta.CONFIRMADA);
+
+        ConsultaResponseDTO atualizada = consultaService.update(consulta.getId(), updateRequest(meuProfissional.getId()));
+
+        assertThat(atualizada).isNotNull();
     }
 }

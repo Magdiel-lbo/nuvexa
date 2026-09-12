@@ -15,4 +15,6 @@ public interface ProntuarioAnexoRepository extends JpaRepository<ProntuarioAnexo
      * prontuário E à mesma organização informados — nunca só pelo próprio id.
      */
     Optional<ProntuarioAnexo> findByIdAndProntuarioIdAndOrganizacaoId(Long id, Long prontuarioId, Long organizacaoId);
+
+    boolean existsByProntuarioId(Long prontuarioId);
 }

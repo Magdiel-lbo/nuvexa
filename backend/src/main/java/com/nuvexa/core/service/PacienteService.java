@@ -33,6 +33,7 @@ public class PacienteService {
     private final PacienteRepository pacienteRepository;
     private final ModelMapper modelMapper;
     private final OrganizacaoScopedContext contexto;
+    private final ValidadorOrganizacional validadorOrganizacional;
 
     public PacienteResponseDTO create(PacienteCreateRequestDTO request) {
         validar(request.getDataNascimento());
@@ -93,8 +94,7 @@ public class PacienteService {
      * (e não 403) de propósito: um 403 confirmaria ao chamador que aquele id existe.
      */
     private Paciente buscarPacienteOuFalhar(Long id) {
-        return pacienteRepository
-                .findByIdAndOrganizacaoId(id, contexto.getContextoDeAutenticacao().organizacaoAtualId())
+        return validadorOrganizacional.pacienteDaOrganizacao(id, contexto.getContextoDeAutenticacao().organizacaoAtualId())
                 .orElseThrow(() -> new NegocioException(HttpStatus.NOT_FOUND, resolveMessage("paciente.naoEncontrado", id)));
     }
 

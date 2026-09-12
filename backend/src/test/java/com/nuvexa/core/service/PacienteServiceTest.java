@@ -38,6 +38,7 @@ class PacienteServiceTest {
     private OrganizacaoScopedContext contexto;
     private ContextoDeAutenticacao contextoDeAutenticacao;
     private MessageSourceAccessor mensagens;
+    private ValidadorOrganizacional validadorOrganizacional;
 
     private Organizacao organizacaoAtual;
     private PacienteService pacienteService;
@@ -49,6 +50,7 @@ class PacienteServiceTest {
         contexto = mock(OrganizacaoScopedContext.class);
         contextoDeAutenticacao = mock(ContextoDeAutenticacao.class);
         mensagens = mock(MessageSourceAccessor.class);
+        validadorOrganizacional = mock(ValidadorOrganizacional.class);
 
         organizacaoAtual = Organizacao.builder()
                 .nome("Clínica Atual")
@@ -71,7 +73,7 @@ class PacienteServiceTest {
             return paciente;
         });
 
-        pacienteService = new PacienteService(pacienteRepository, new ModelMapper(), contexto);
+        pacienteService = new PacienteService(pacienteRepository, new ModelMapper(), contexto, validadorOrganizacional);
     }
 
     private PacienteCreateRequestDTO createRequest() {
@@ -110,7 +112,7 @@ class PacienteServiceTest {
                 .sexo(Sexo.MASCULINO)
                 .build();
         existente.setId(1L);
-        when(pacienteRepository.findByIdAndOrganizacaoId(1L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(existente));
+        when(validadorOrganizacional.pacienteDaOrganizacao(1L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(existente));
 
         PacienteUpdateRequestDTO request = PacienteUpdateRequestDTO.builder()
                 .nome("Nome Novo")
@@ -125,7 +127,7 @@ class PacienteServiceTest {
 
     @Test
     void deveFalharAoAtualizarPacienteInexistente() {
-        when(pacienteRepository.findByIdAndOrganizacaoId(99L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.empty());
+        when(validadorOrganizacional.pacienteDaOrganizacao(99L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.empty());
 
         PacienteUpdateRequestDTO request = PacienteUpdateRequestDTO.builder()
                 .nome("Alguém")
@@ -140,7 +142,7 @@ class PacienteServiceTest {
 
     @Test
     void deveFalharAoBuscarPacienteInexistente() {
-        when(pacienteRepository.findByIdAndOrganizacaoId(99L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.empty());
+        when(validadorOrganizacional.pacienteDaOrganizacao(99L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> pacienteService.findById(99L))
                 .isInstanceOf(NegocioException.class)

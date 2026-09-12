@@ -7,8 +7,6 @@ import com.nuvexa.core.model.PacienteProfissional;
 import com.nuvexa.core.model.Usuario;
 import com.nuvexa.core.model.Vinculo;
 import com.nuvexa.core.repository.PacienteProfissionalRepository;
-import com.nuvexa.core.repository.PacienteRepository;
-import com.nuvexa.core.repository.VinculoRepository;
 import com.nuvexa.platform.exception.NegocioException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -26,10 +24,9 @@ import java.util.Optional;
 public class PacienteProfissionalService {
 
     private final PacienteProfissionalRepository pacienteProfissionalRepository;
-    private final PacienteRepository pacienteRepository;
-    private final VinculoRepository vinculoRepository;
     private final ContextoDeAutenticacao contextoDeAutenticacao;
     private final MessageSourceAccessor mensagens;
+    private final ValidadorOrganizacional validadorOrganizacional;
 
     /**
      * Vincula um profissional a um paciente, ambos da organização atual. Se já existir um
@@ -76,7 +73,7 @@ public class PacienteProfissionalService {
      * outra organização vira 404, não 403 (um 403 confirmaria que aquele id existe).
      */
     private Paciente buscarPacienteOuFalhar(Long pacienteId, Long organizacaoAtualId) {
-        return pacienteRepository.findByIdAndOrganizacaoId(pacienteId, organizacaoAtualId)
+        return validadorOrganizacional.pacienteDaOrganizacao(pacienteId, organizacaoAtualId)
                 .orElseThrow(() -> new NegocioException(HttpStatus.NOT_FOUND, resolveMessage("paciente.naoEncontrado", pacienteId)));
     }
 
@@ -86,10 +83,7 @@ public class PacienteProfissionalService {
      * plataforma (ADMIN/PROFISSIONAL) com papel organizacional (PapelOrganizacional).
      */
     private Usuario buscarProfissionalOuFalhar(Long profissionalId, Long organizacaoAtualId) {
-        return vinculoRepository.findByUsuarioIdAndAtivoTrueOrderByIdAsc(profissionalId).stream()
-                .filter(vinculo -> vinculo.getOrganizacao().getId().equals(organizacaoAtualId))
-                .map(Vinculo::getUsuario)
-                .findFirst()
+        return validadorOrganizacional.usuarioAtivoNaOrganizacao(profissionalId, organizacaoAtualId)
                 .orElseThrow(() -> new NegocioException(HttpStatus.BAD_REQUEST,
                         resolveMessage("pacienteProfissional.profissional.invalido", profissionalId)));
     }

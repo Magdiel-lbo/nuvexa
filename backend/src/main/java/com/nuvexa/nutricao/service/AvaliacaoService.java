@@ -3,10 +3,8 @@ package com.nuvexa.nutricao.service;
 import com.nuvexa.core.model.Organizacao;
 import com.nuvexa.core.model.Paciente;
 import com.nuvexa.core.model.Usuario;
-import com.nuvexa.core.model.Vinculo;
-import com.nuvexa.core.repository.PacienteRepository;
-import com.nuvexa.core.repository.VinculoRepository;
 import com.nuvexa.core.service.OrganizacaoScopedContext;
+import com.nuvexa.core.service.ValidadorOrganizacional;
 import com.nuvexa.nutricao.dto.request.AvaliacaoCreateRequestDTO;
 import com.nuvexa.nutricao.dto.request.AvaliacaoUpdateRequestDTO;
 import com.nuvexa.nutricao.dto.response.AvaliacaoEnumsResponseDTO;
@@ -16,6 +14,9 @@ import com.nuvexa.nutricao.model.QAvaliacao;
 import com.nuvexa.nutricao.model.StatusAvaliacao;
 import com.nuvexa.nutricao.model.TipoAvaliacao;
 import com.nuvexa.nutricao.repository.AvaliacaoRepository;
+import com.nuvexa.platform.auditoria.AuditoriaService;
+import com.nuvexa.platform.auditoria.EntidadeAuditavel;
+import com.nuvexa.platform.auditoria.TipoEventoAuditoria;
 import com.nuvexa.platform.exception.NegocioException;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import lombok.RequiredArgsConstructor;
@@ -42,10 +43,10 @@ import java.util.stream.Collectors;
 public class AvaliacaoService {
 
     private final AvaliacaoRepository avaliacaoRepository;
-    private final PacienteRepository pacienteRepository;
-    private final VinculoRepository vinculoRepository;
     private final ModelMapper modelMapper;
     private final OrganizacaoScopedContext contexto;
+    private final AuditoriaService auditoriaService;
+    private final ValidadorOrganizacional validadorOrganizacional;
 
     public AvaliacaoResponseDTO create(AvaliacaoCreateRequestDTO request) {
         Paciente paciente = buscarPacienteOuFalhar(request.getPacienteId());
@@ -54,17 +55,25 @@ public class AvaliacaoService {
 
         Avaliacao avaliacao = avaliacaoRepository.save(
                 request.toAvaliacao(contexto.getContextoDeAutenticacao().organizacaoAtual(), paciente, avaliador));
+
+        registrarAuditoria(avaliacao.getId(), TipoEventoAuditoria.CRIACAO, null, descrever(avaliacao));
+
         log.info("Avaliação criada com id={}", avaliacao.getId());
         return AvaliacaoResponseDTO.from(avaliacao, calcularVariacao(avaliacao));
     }
 
     public AvaliacaoResponseDTO update(Long id, AvaliacaoUpdateRequestDTO request) {
         Avaliacao avaliacao = buscarAvaliacaoOuFalhar(id);
+        garantirEditavel(avaliacao);
+        String antes = descrever(avaliacao);
         Usuario avaliador = buscarAvaliadorOuFalhar(request.getAvaliadorId());
         validarDataNaoFutura(request.getData(), request.getPeso());
         request.atualizar(avaliacao, avaliador, modelMapper);
 
         Avaliacao saved = avaliacaoRepository.save(avaliacao);
+
+        registrarAuditoria(saved.getId(), TipoEventoAuditoria.EDICAO, antes, descrever(saved));
+
         log.info("Avaliação atualizada com id={}", id);
         return AvaliacaoResponseDTO.from(saved, calcularVariacao(saved));
     }
@@ -84,7 +93,13 @@ public class AvaliacaoService {
 
     public void delete(Long id) {
         Avaliacao avaliacao = buscarAvaliacaoOuFalhar(id);
+        String antes = descrever(avaliacao);
+        Long avaliacaoId = avaliacao.getId();
+
         avaliacaoRepository.delete(avaliacao);
+
+        registrarAuditoria(avaliacaoId, TipoEventoAuditoria.EXCLUSAO, antes, null);
+
         log.info("Avaliação removida com id={}", id);
     }
 
@@ -232,9 +247,40 @@ public class AvaliacaoService {
         }
     }
 
+    /**
+     * Avaliação concluída é histórico clínico — mesma garantia de imutabilidade de
+     * {@code ProntuarioService.garantirEditavel}, para não permitir reescrever peso/medidas já
+     * fechadas sem deixar rastro.
+     */
+    private void garantirEditavel(Avaliacao avaliacao) {
+        if (avaliacao.getStatus() == StatusAvaliacao.CONCLUIDA) {
+            throw new NegocioException(HttpStatus.BAD_REQUEST, resolveMessage("avaliacao.concluida.imutavel"));
+        }
+    }
+
+    /**
+     * Snapshot simples dos campos relevantes para o evento de auditoria — mesmo padrão de
+     * {@code ProntuarioService.descrever}.
+     */
+    private String descrever(Avaliacao avaliacao) {
+        return "data=%s, peso=%s, percentualGordura=%s, status=%s, tipo=%s, avaliadorId=%d".formatted(
+                avaliacao.getData(), avaliacao.getPeso(), avaliacao.getPercentualGordura(),
+                avaliacao.getStatus(), avaliacao.getTipo(), avaliacao.getAvaliador().getId());
+    }
+
+    /**
+     * Mesmo helper de {@code ProntuarioService.registrarAuditoria} — empacota a resolução de
+     * usuário/organização atuais antes de chamar {@link AuditoriaService#registrar}.
+     */
+    private void registrarAuditoria(Long avaliacaoId, TipoEventoAuditoria tipoEvento, String antes, String depois) {
+        Usuario usuarioAtual = contexto.getContextoDeAutenticacao().usuarioAtual();
+        auditoriaService.registrar(EntidadeAuditavel.AVALIACAO, avaliacaoId, tipoEvento,
+                contexto.getContextoDeAutenticacao().organizacaoAtualId(), usuarioAtual.getId(), usuarioAtual.getNome(),
+                antes, depois);
+    }
+
     private Paciente buscarPacienteOuFalhar(Long pacienteId) {
-        return pacienteRepository
-                .findByIdAndOrganizacaoId(pacienteId, contexto.getContextoDeAutenticacao().organizacaoAtualId())
+        return validadorOrganizacional.pacienteDaOrganizacao(pacienteId, contexto.getContextoDeAutenticacao().organizacaoAtualId())
                 .orElseThrow(() -> new NegocioException(HttpStatus.NOT_FOUND, resolveMessage("paciente.naoEncontrado", pacienteId)));
     }
 
@@ -243,11 +289,7 @@ public class AvaliacaoService {
      * {@code ProntuarioService.buscarAutorOuFalhar}.
      */
     private Usuario buscarAvaliadorOuFalhar(Long avaliadorId) {
-        Long organizacaoAtualId = contexto.getContextoDeAutenticacao().organizacaoAtualId();
-        return vinculoRepository.findByUsuarioIdAndAtivoTrueOrderByIdAsc(avaliadorId).stream()
-                .filter(vinculo -> vinculo.getOrganizacao().getId().equals(organizacaoAtualId))
-                .map(Vinculo::getUsuario)
-                .findFirst()
+        return validadorOrganizacional.usuarioAtivoNaOrganizacao(avaliadorId, contexto.getContextoDeAutenticacao().organizacaoAtualId())
                 .orElseThrow(() -> new NegocioException(HttpStatus.BAD_REQUEST,
                         resolveMessage("avaliacao.avaliador.invalido", avaliadorId)));
     }

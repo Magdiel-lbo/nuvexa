@@ -20,6 +20,7 @@ import lombok.Setter;
 @Builder
 public class ProntuarioCreateRequestDTO {
 
+    @NotNull(message = "{prontuario.pacienteId.obrigatorio}")
     private Long pacienteId;
 
     @NotNull(message = "{prontuario.autorId.obrigatorio}")

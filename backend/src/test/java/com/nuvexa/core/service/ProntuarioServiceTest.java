@@ -4,7 +4,6 @@ import com.nuvexa.core.dto.request.ProntuarioCreateRequestDTO;
 import com.nuvexa.core.dto.request.ProntuarioUpdateRequestDTO;
 import com.nuvexa.core.dto.response.ProntuarioResponseDTO;
 import com.nuvexa.core.model.Organizacao;
-import com.nuvexa.core.model.PapelOrganizacional;
 import com.nuvexa.core.model.Paciente;
 import com.nuvexa.core.model.Perfil;
 import com.nuvexa.core.model.Prontuario;
@@ -14,10 +13,9 @@ import com.nuvexa.core.model.StatusOrganizacao;
 import com.nuvexa.core.model.StatusProntuario;
 import com.nuvexa.core.model.TipoOrganizacao;
 import com.nuvexa.core.model.Usuario;
-import com.nuvexa.core.model.Vinculo;
-import com.nuvexa.core.repository.PacienteRepository;
+import com.nuvexa.core.repository.ProntuarioAdendoRepository;
+import com.nuvexa.core.repository.ProntuarioAnexoRepository;
 import com.nuvexa.core.repository.ProntuarioRepository;
-import com.nuvexa.core.repository.VinculoRepository;
 import com.nuvexa.platform.auditoria.AuditoriaService;
 import com.nuvexa.platform.auditoria.EntidadeAuditavel;
 import com.nuvexa.platform.auditoria.TipoEventoAuditoria;
@@ -32,7 +30,6 @@ import org.springframework.http.HttpStatus;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -56,8 +53,9 @@ class ProntuarioServiceTest {
     private static final Long ORGANIZACAO_ATUAL_ID = 7L;
 
     private ProntuarioRepository prontuarioRepository;
-    private PacienteRepository pacienteRepository;
-    private VinculoRepository vinculoRepository;
+    private ProntuarioAdendoRepository prontuarioAdendoRepository;
+    private ProntuarioAnexoRepository prontuarioAnexoRepository;
+    private ValidadorOrganizacional validadorOrganizacional;
     private ModelMapper modelMapper;
     private OrganizacaoScopedContext contexto;
     private ContextoDeAutenticacao contextoDeAutenticacao;
@@ -71,8 +69,9 @@ class ProntuarioServiceTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         prontuarioRepository = mock(ProntuarioRepository.class);
-        pacienteRepository = mock(PacienteRepository.class);
-        vinculoRepository = mock(VinculoRepository.class);
+        prontuarioAdendoRepository = mock(ProntuarioAdendoRepository.class);
+        prontuarioAnexoRepository = mock(ProntuarioAnexoRepository.class);
+        validadorOrganizacional = mock(ValidadorOrganizacional.class);
         modelMapper = mock(ModelMapper.class);
         contexto = mock(OrganizacaoScopedContext.class);
         contextoDeAutenticacao = mock(ContextoDeAutenticacao.class);
@@ -88,7 +87,8 @@ class ProntuarioServiceTest {
         when(contextoDeAutenticacao.usuarioAtual()).thenReturn(usuario(99L, "Usuário Logado"));
         when(mensagens.getMessage(any(String.class), any(Object[].class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        service = new ProntuarioService(prontuarioRepository, pacienteRepository, vinculoRepository, modelMapper, contexto, auditoriaService);
+        service = new ProntuarioService(prontuarioRepository, prontuarioAdendoRepository, prontuarioAnexoRepository,
+                modelMapper, contexto, auditoriaService, validadorOrganizacional);
     }
 
     private Organizacao organizacao(Long id, String nome) {
@@ -112,10 +112,6 @@ class ProntuarioServiceTest {
         Usuario usuario = Usuario.builder().nome(nome).email("x" + id + "@nuvexa.com").senha("hash").perfil(Perfil.PROFISSIONAL).ativo(true).build();
         usuario.setId(id);
         return usuario;
-    }
-
-    private Vinculo vinculo(Usuario usuario, Organizacao organizacao, boolean ativo) {
-        return Vinculo.builder().usuario(usuario).organizacao(organizacao).papel(PapelOrganizacional.MEMBRO).ativo(ativo).build();
     }
 
     private Prontuario prontuario(Long id, StatusProntuario status, Usuario autor, String conteudo) {
@@ -147,7 +143,7 @@ class ProntuarioServiceTest {
         Usuario autor = usuario(2L, "Joana Nutri");
         Prontuario existente = prontuario(10L, StatusProntuario.RASCUNHO, autor, "texto inicial");
         when(prontuarioRepository.findByIdAndOrganizacaoId(10L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(existente));
-        when(vinculoRepository.findByUsuarioIdAndAtivoTrueOrderByIdAsc(2L)).thenReturn(List.of(vinculo(autor, organizacaoAtual, true)));
+        when(validadorOrganizacional.usuarioAtivoNaOrganizacao(2L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(autor));
         when(prontuarioRepository.save(any(Prontuario.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         ProntuarioResponseDTO resultado = service.update(10L, updateRequest(2L, StatusProntuario.RASCUNHO, "texto editado"));
@@ -161,7 +157,7 @@ class ProntuarioServiceTest {
         Usuario autor = usuario(2L, "Joana Nutri");
         Prontuario existente = prontuario(10L, StatusProntuario.PENDENTE, autor, "texto inicial");
         when(prontuarioRepository.findByIdAndOrganizacaoId(10L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(existente));
-        when(vinculoRepository.findByUsuarioIdAndAtivoTrueOrderByIdAsc(2L)).thenReturn(List.of(vinculo(autor, organizacaoAtual, true)));
+        when(validadorOrganizacional.usuarioAtivoNaOrganizacao(2L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(autor));
         when(prontuarioRepository.save(any(Prontuario.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         ProntuarioResponseDTO resultado = service.update(10L, updateRequest(2L, StatusProntuario.PENDENTE, "texto editado"));
@@ -254,7 +250,7 @@ class ProntuarioServiceTest {
 
         assertThatThrownBy(() -> service.update(10L, updateRequest(4L, StatusProntuario.ASSINADO, "texto")))
                 .isInstanceOf(NegocioException.class);
-        verify(vinculoRepository, never()).findByUsuarioIdAndAtivoTrueOrderByIdAsc(4L);
+        verify(validadorOrganizacional, never()).usuarioAtivoNaOrganizacao(eq(4L), any());
         verify(prontuarioRepository, never()).save(any());
     }
 
@@ -262,8 +258,8 @@ class ProntuarioServiceTest {
     void deveCriarProntuarioERegistrarEventoCriacao() {
         Paciente paciente = paciente(1L);
         Usuario autor = usuario(2L, "Joana Nutri");
-        when(pacienteRepository.findByIdAndOrganizacaoId(1L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(paciente));
-        when(vinculoRepository.findByUsuarioIdAndAtivoTrueOrderByIdAsc(2L)).thenReturn(List.of(vinculo(autor, organizacaoAtual, true)));
+        when(validadorOrganizacional.pacienteDaOrganizacao(1L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(paciente));
+        when(validadorOrganizacional.usuarioAtivoNaOrganizacao(2L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(autor));
         when(prontuarioRepository.save(any(Prontuario.class))).thenAnswer(invocation -> {
             Prontuario salvo = invocation.getArgument(0);
             salvo.setId(10L);
@@ -292,7 +288,7 @@ class ProntuarioServiceTest {
         Usuario novoAutor = usuario(5L, "Carlos Nutri");
         Prontuario existente = prontuario(10L, StatusProntuario.RASCUNHO, autorOriginal, "texto inicial");
         when(prontuarioRepository.findByIdAndOrganizacaoId(10L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(existente));
-        when(vinculoRepository.findByUsuarioIdAndAtivoTrueOrderByIdAsc(5L)).thenReturn(List.of(vinculo(novoAutor, organizacaoAtual, true)));
+        when(validadorOrganizacional.usuarioAtivoNaOrganizacao(5L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(novoAutor));
         when(prontuarioRepository.save(any(Prontuario.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         service.update(10L, updateRequest(5L, StatusProntuario.RASCUNHO, "texto inicial"));
@@ -363,5 +359,45 @@ class ProntuarioServiceTest {
 
         assertThatThrownBy(() -> service.assinar(10L)).isInstanceOf(NegocioException.class);
         verify(prontuarioRepository, never()).save(any());
+    }
+
+    @Test
+    void devePermitirExcluirProntuarioSemAdendoNemAnexo() {
+        Usuario autor = usuario(2L, "Joana Nutri");
+        Prontuario existente = prontuario(10L, StatusProntuario.RASCUNHO, autor, "texto a excluir");
+        when(prontuarioRepository.findByIdAndOrganizacaoId(10L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(existente));
+        when(prontuarioAdendoRepository.existsByProntuarioId(10L)).thenReturn(false);
+        when(prontuarioAnexoRepository.existsByProntuarioId(10L)).thenReturn(false);
+
+        service.delete(10L);
+
+        verify(prontuarioRepository).delete(existente);
+    }
+
+    @Test
+    void naoDevePermitirExcluirProntuarioComAdendo() {
+        Usuario autor = usuario(2L, "Joana Nutri");
+        Prontuario existente = prontuario(10L, StatusProntuario.RASCUNHO, autor, "texto");
+        when(prontuarioRepository.findByIdAndOrganizacaoId(10L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(existente));
+        when(prontuarioAdendoRepository.existsByProntuarioId(10L)).thenReturn(true);
+
+        assertThatThrownBy(() -> service.delete(10L))
+                .isInstanceOf(NegocioException.class)
+                .satisfies(ex -> assertThat(((NegocioException) ex).getStatus()).isEqualTo(HttpStatus.BAD_REQUEST));
+        verify(prontuarioRepository, never()).delete(any());
+    }
+
+    @Test
+    void naoDevePermitirExcluirProntuarioComAnexo() {
+        Usuario autor = usuario(2L, "Joana Nutri");
+        Prontuario existente = prontuario(10L, StatusProntuario.RASCUNHO, autor, "texto");
+        when(prontuarioRepository.findByIdAndOrganizacaoId(10L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(existente));
+        when(prontuarioAdendoRepository.existsByProntuarioId(10L)).thenReturn(false);
+        when(prontuarioAnexoRepository.existsByProntuarioId(10L)).thenReturn(true);
+
+        assertThatThrownBy(() -> service.delete(10L))
+                .isInstanceOf(NegocioException.class)
+                .satisfies(ex -> assertThat(((NegocioException) ex).getStatus()).isEqualTo(HttpStatus.BAD_REQUEST));
+        verify(prontuarioRepository, never()).delete(any());
     }
 }

@@ -37,7 +37,7 @@ import static org.mockito.Mockito.when;
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import({QuerydslConfig.class, MessageConfig.class, ModelMapperConfig.class, OrganizacaoScopedContext.class, PacienteService.class})
+@Import({QuerydslConfig.class, MessageConfig.class, ModelMapperConfig.class, OrganizacaoScopedContext.class, PacienteService.class, ValidadorOrganizacional.class})
 class PacienteEscopoOrganizacionalIntegrationTest {
 
     @Autowired

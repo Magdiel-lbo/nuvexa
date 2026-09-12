@@ -23,6 +23,7 @@ import java.time.LocalDate;
 @Builder
 public class PlanoAlimentarCreateRequestDTO {
 
+    @NotNull(message = "{planoAlimentar.pacienteId.obrigatorio}")
     private Long pacienteId;
 
     @NotNull(message = "{planoAlimentar.autorId.obrigatorio}")

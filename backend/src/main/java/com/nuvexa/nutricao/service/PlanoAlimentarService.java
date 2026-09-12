@@ -2,16 +2,15 @@ package com.nuvexa.nutricao.service;
 
 import com.nuvexa.core.model.Paciente;
 import com.nuvexa.core.model.Usuario;
-import com.nuvexa.core.model.Vinculo;
-import com.nuvexa.core.repository.PacienteRepository;
-import com.nuvexa.core.repository.VinculoRepository;
 import com.nuvexa.core.service.OrganizacaoScopedContext;
+import com.nuvexa.core.service.ValidadorOrganizacional;
 import com.nuvexa.nutricao.dto.request.PlanoAlimentarCreateRequestDTO;
 import com.nuvexa.nutricao.dto.request.PlanoAlimentarUpdateRequestDTO;
 import com.nuvexa.nutricao.dto.response.PlanoAlimentarEnumsResponseDTO;
 import com.nuvexa.nutricao.dto.response.PlanoAlimentarResponseDTO;
 import com.nuvexa.nutricao.model.PlanoAlimentar;
 import com.nuvexa.nutricao.model.QPlanoAlimentar;
+import com.nuvexa.nutricao.model.StatusPlanoAlimentar;
 import com.nuvexa.nutricao.repository.PlanoAlimentarRepository;
 import com.nuvexa.platform.exception.NegocioException;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -31,10 +30,9 @@ import java.util.List;
 public class PlanoAlimentarService {
 
     private final PlanoAlimentarRepository planoAlimentarRepository;
-    private final PacienteRepository pacienteRepository;
-    private final VinculoRepository vinculoRepository;
     private final ModelMapper modelMapper;
     private final OrganizacaoScopedContext contexto;
+    private final ValidadorOrganizacional validadorOrganizacional;
 
     public PlanoAlimentarResponseDTO create(PlanoAlimentarCreateRequestDTO request) {
         Paciente paciente = buscarPacienteOuFalhar(request.getPacienteId());
@@ -48,6 +46,8 @@ public class PlanoAlimentarService {
 
     public PlanoAlimentarResponseDTO update(Long id, PlanoAlimentarUpdateRequestDTO request) {
         PlanoAlimentar planoAlimentar = buscarPlanoAlimentarOuFalhar(id);
+        garantirEditavel(planoAlimentar);
+        garantirTransicaoValida(planoAlimentar.getStatus(), request.getStatus());
         Usuario autor = buscarAutorOuFalhar(request.getAutorId());
         request.atualizar(planoAlimentar, autor, modelMapper);
 
@@ -98,9 +98,29 @@ public class PlanoAlimentarService {
         return (busca == null || busca.isBlank()) ? null : busca.trim();
     }
 
+    /**
+     * ENCERRADO é status terminal — sem transição de saída. Bloqueia o update inteiro nesse
+     * caso, mesmo padrão de {@code ProntuarioService.garantirEditavel}.
+     */
+    private void garantirEditavel(PlanoAlimentar planoAlimentar) {
+        if (planoAlimentar.getStatus() == StatusPlanoAlimentar.ENCERRADO) {
+            throw new NegocioException(HttpStatus.BAD_REQUEST, resolveMessage("planoAlimentar.encerrado.imutavel"));
+        }
+    }
+
+    /**
+     * Única transição proibida fora do caso terminal (ENCERRADO, já barrado por
+     * {@link #garantirEditavel}): voltar de ATIVO para RASCUNHO. As demais combinações entre
+     * RASCUNHO/ATIVO/ENCERRADO são livres.
+     */
+    private void garantirTransicaoValida(StatusPlanoAlimentar atual, StatusPlanoAlimentar novo) {
+        if (atual == StatusPlanoAlimentar.ATIVO && novo == StatusPlanoAlimentar.RASCUNHO) {
+            throw new NegocioException(HttpStatus.BAD_REQUEST, resolveMessage("planoAlimentar.transicao.invalida"));
+        }
+    }
+
     private Paciente buscarPacienteOuFalhar(Long pacienteId) {
-        return pacienteRepository
-                .findByIdAndOrganizacaoId(pacienteId, contexto.getContextoDeAutenticacao().organizacaoAtualId())
+        return validadorOrganizacional.pacienteDaOrganizacao(pacienteId, contexto.getContextoDeAutenticacao().organizacaoAtualId())
                 .orElseThrow(() -> new NegocioException(HttpStatus.NOT_FOUND, resolveMessage("paciente.naoEncontrado", pacienteId)));
     }
 
@@ -109,11 +129,7 @@ public class PlanoAlimentarService {
      * {@code ProntuarioService.buscarAutorOuFalhar}.
      */
     private Usuario buscarAutorOuFalhar(Long autorId) {
-        Long organizacaoAtualId = contexto.getContextoDeAutenticacao().organizacaoAtualId();
-        return vinculoRepository.findByUsuarioIdAndAtivoTrueOrderByIdAsc(autorId).stream()
-                .filter(vinculo -> vinculo.getOrganizacao().getId().equals(organizacaoAtualId))
-                .map(Vinculo::getUsuario)
-                .findFirst()
+        return validadorOrganizacional.usuarioAtivoNaOrganizacao(autorId, contexto.getContextoDeAutenticacao().organizacaoAtualId())
                 .orElseThrow(() -> new NegocioException(HttpStatus.BAD_REQUEST,
                         resolveMessage("planoAlimentar.autor.invalido", autorId)));
     }

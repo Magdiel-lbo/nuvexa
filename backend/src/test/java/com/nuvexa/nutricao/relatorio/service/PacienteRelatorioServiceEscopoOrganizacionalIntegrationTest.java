@@ -15,6 +15,7 @@ import com.nuvexa.core.repository.UsuarioRepository;
 import com.nuvexa.core.repository.VinculoRepository;
 import com.nuvexa.core.service.ContextoDeAutenticacao;
 import com.nuvexa.core.service.OrganizacaoScopedContext;
+import com.nuvexa.core.service.ValidadorOrganizacional;
 import com.nuvexa.nutricao.calculator.GastoCaloricoCalculator;
 import com.nuvexa.nutricao.calculator.ImcCalculator;
 import com.nuvexa.nutricao.calculator.TaxaMetabolicaCalculator;
@@ -29,6 +30,7 @@ import com.nuvexa.nutricao.relatorio.dto.response.PacienteRelatorioLinhaDTO;
 import com.nuvexa.nutricao.repository.AvaliacaoRepository;
 import com.nuvexa.nutricao.repository.PerfilNutricionalRepository;
 import com.nuvexa.nutricao.service.AvaliacaoService;
+import com.nuvexa.platform.auditoria.AuditoriaService;
 import com.nuvexa.platform.config.MessageConfig;
 import com.nuvexa.platform.config.ModelMapperConfig;
 import com.nuvexa.platform.config.QuerydslConfig;
@@ -63,7 +65,7 @@ import static org.mockito.Mockito.when;
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import({QuerydslConfig.class, MessageConfig.class, ModelMapperConfig.class,
         ImcCalculator.class, TaxaMetabolicaCalculator.class, GastoCaloricoCalculator.class,
-        OrganizacaoScopedContext.class, AvaliacaoService.class, PacienteRelatorioService.class})
+        OrganizacaoScopedContext.class, ValidadorOrganizacional.class, AuditoriaService.class, AvaliacaoService.class, PacienteRelatorioService.class})
 class PacienteRelatorioServiceEscopoOrganizacionalIntegrationTest {
 
     @Autowired

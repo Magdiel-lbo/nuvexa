@@ -9,10 +9,9 @@ import com.nuvexa.core.model.Prontuario;
 import com.nuvexa.core.model.QProntuario;
 import com.nuvexa.core.model.StatusProntuario;
 import com.nuvexa.core.model.Usuario;
-import com.nuvexa.core.model.Vinculo;
-import com.nuvexa.core.repository.PacienteRepository;
+import com.nuvexa.core.repository.ProntuarioAdendoRepository;
+import com.nuvexa.core.repository.ProntuarioAnexoRepository;
 import com.nuvexa.core.repository.ProntuarioRepository;
-import com.nuvexa.core.repository.VinculoRepository;
 import com.nuvexa.platform.auditoria.AuditoriaService;
 import com.nuvexa.platform.auditoria.EntidadeAuditavel;
 import com.nuvexa.platform.auditoria.EventoAuditoriaResponseDTO;
@@ -36,11 +35,12 @@ import java.util.List;
 public class ProntuarioService {
 
     private final ProntuarioRepository prontuarioRepository;
-    private final PacienteRepository pacienteRepository;
-    private final VinculoRepository vinculoRepository;
+    private final ProntuarioAdendoRepository prontuarioAdendoRepository;
+    private final ProntuarioAnexoRepository prontuarioAnexoRepository;
     private final ModelMapper modelMapper;
     private final OrganizacaoScopedContext contexto;
     private final AuditoriaService auditoriaService;
+    private final ValidadorOrganizacional validadorOrganizacional;
 
     public ProntuarioResponseDTO create(ProntuarioCreateRequestDTO request) {
         if (request.getStatus() == StatusProntuario.ASSINADO) {
@@ -52,10 +52,7 @@ public class ProntuarioService {
         Prontuario prontuario = prontuarioRepository.save(
                 request.toProntuario(contexto.getContextoDeAutenticacao().organizacaoAtual(), paciente, autor));
 
-        Usuario usuarioAtual = contexto.getContextoDeAutenticacao().usuarioAtual();
-        auditoriaService.registrar(EntidadeAuditavel.PRONTUARIO, prontuario.getId(), TipoEventoAuditoria.CRIACAO,
-                contexto.getContextoDeAutenticacao().organizacaoAtualId(), usuarioAtual.getId(), usuarioAtual.getNome(),
-                null, descrever(prontuario));
+        registrarAuditoria(prontuario.getId(), TipoEventoAuditoria.CRIACAO, null, descrever(prontuario));
 
         log.info("Prontuário criado com id={}", prontuario.getId());
         return ProntuarioResponseDTO.from(prontuario);
@@ -73,10 +70,7 @@ public class ProntuarioService {
 
         Prontuario saved = prontuarioRepository.save(prontuario);
 
-        Usuario usuarioAtual = contexto.getContextoDeAutenticacao().usuarioAtual();
-        auditoriaService.registrar(EntidadeAuditavel.PRONTUARIO, saved.getId(), TipoEventoAuditoria.EDICAO,
-                contexto.getContextoDeAutenticacao().organizacaoAtualId(), usuarioAtual.getId(), usuarioAtual.getNome(),
-                antes, descrever(saved));
+        registrarAuditoria(saved.getId(), TipoEventoAuditoria.EDICAO, antes, descrever(saved));
 
         log.info("Prontuário atualizado com id={}", id);
         return ProntuarioResponseDTO.from(saved);
@@ -97,9 +91,7 @@ public class ProntuarioService {
 
         Prontuario saved = prontuarioRepository.save(prontuario);
 
-        auditoriaService.registrar(EntidadeAuditavel.PRONTUARIO, saved.getId(), TipoEventoAuditoria.ASSINATURA,
-                contexto.getContextoDeAutenticacao().organizacaoAtualId(), usuarioAtual.getId(), usuarioAtual.getNome(),
-                antes, descrever(saved));
+        registrarAuditoria(saved.getId(), TipoEventoAuditoria.ASSINATURA, antes, descrever(saved));
 
         log.info("Prontuário assinado com id={} por usuarioId={}", id, usuarioAtual.getId());
         return ProntuarioResponseDTO.from(saved);
@@ -130,22 +122,43 @@ public class ProntuarioService {
     public void delete(Long id) {
         Prontuario prontuario = buscarProntuarioOuFalhar(id);
         garantirEditavel(prontuario);
+        garantirSemFilhos(prontuario);
         String antes = descrever(prontuario);
         Long prontuarioId = prontuario.getId();
 
         prontuarioRepository.delete(prontuario);
 
-        Usuario usuarioAtual = contexto.getContextoDeAutenticacao().usuarioAtual();
-        auditoriaService.registrar(EntidadeAuditavel.PRONTUARIO, prontuarioId, TipoEventoAuditoria.EXCLUSAO,
-                contexto.getContextoDeAutenticacao().organizacaoAtualId(), usuarioAtual.getId(), usuarioAtual.getNome(),
-                antes, null);
+        registrarAuditoria(prontuarioId, TipoEventoAuditoria.EXCLUSAO, antes, null);
 
         log.info("Prontuário removido com id={}", id);
+    }
+
+    /**
+     * Empacota a resolução de usuário/organização atuais que os 4 sites de auditoria deste
+     * service repetiam antes de chamar {@link AuditoriaService#registrar}.
+     */
+    private void registrarAuditoria(Long prontuarioId, TipoEventoAuditoria tipoEvento, String antes, String depois) {
+        Usuario usuarioAtual = contexto.getContextoDeAutenticacao().usuarioAtual();
+        auditoriaService.registrar(EntidadeAuditavel.PRONTUARIO, prontuarioId, tipoEvento,
+                contexto.getContextoDeAutenticacao().organizacaoAtualId(), usuarioAtual.getId(), usuarioAtual.getNome(),
+                antes, depois);
     }
 
     private void garantirEditavel(Prontuario prontuario) {
         if (prontuario.getStatus() == StatusProntuario.ASSINADO) {
             throw new NegocioException(HttpStatus.BAD_REQUEST, resolveMessage("prontuario.assinado.imutavel"));
+        }
+    }
+
+    /**
+     * ProntuarioAdendo/ProntuarioAnexo não têm cascade JPA nem ON DELETE no banco de propósito
+     * (nenhuma outra entidade do domínio faz cascata automática) — excluir o pai com filhos
+     * violaria a FK. Bloqueia aqui com mensagem clara em vez de deixar estourar a constraint.
+     */
+    private void garantirSemFilhos(Prontuario prontuario) {
+        if (prontuarioAdendoRepository.existsByProntuarioId(prontuario.getId())
+                || prontuarioAnexoRepository.existsByProntuarioId(prontuario.getId())) {
+            throw new NegocioException(HttpStatus.BAD_REQUEST, resolveMessage("prontuario.comFilhos.naoExcluivel"));
         }
     }
 
@@ -182,8 +195,7 @@ public class ProntuarioService {
     }
 
     private Paciente buscarPacienteOuFalhar(Long pacienteId) {
-        return pacienteRepository
-                .findByIdAndOrganizacaoId(pacienteId, contexto.getContextoDeAutenticacao().organizacaoAtualId())
+        return validadorOrganizacional.pacienteDaOrganizacao(pacienteId, contexto.getContextoDeAutenticacao().organizacaoAtualId())
                 .orElseThrow(() -> new NegocioException(HttpStatus.NOT_FOUND, resolveMessage("paciente.naoEncontrado", pacienteId)));
     }
 
@@ -192,11 +204,7 @@ public class ProntuarioService {
      * {@code ConsultaService.buscarProfissionalOuFalhar}.
      */
     private Usuario buscarAutorOuFalhar(Long autorId) {
-        Long organizacaoAtualId = contexto.getContextoDeAutenticacao().organizacaoAtualId();
-        return vinculoRepository.findByUsuarioIdAndAtivoTrueOrderByIdAsc(autorId).stream()
-                .filter(vinculo -> vinculo.getOrganizacao().getId().equals(organizacaoAtualId))
-                .map(Vinculo::getUsuario)
-                .findFirst()
+        return validadorOrganizacional.usuarioAtivoNaOrganizacao(autorId, contexto.getContextoDeAutenticacao().organizacaoAtualId())
                 .orElseThrow(() -> new NegocioException(HttpStatus.BAD_REQUEST,
                         resolveMessage("prontuario.autor.invalido", autorId)));
     }

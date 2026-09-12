@@ -7,5 +7,6 @@ package com.nuvexa.platform.auditoria;
  */
 public enum EntidadeAuditavel {
     PRONTUARIO,
-    PRONTUARIO_ADENDO
+    PRONTUARIO_ADENDO,
+    AVALIACAO
 }

@@ -8,4 +8,6 @@ import java.util.List;
 public interface ProntuarioAdendoRepository extends JpaRepository<ProntuarioAdendo, Long> {
 
     List<ProntuarioAdendo> findByProntuarioIdAndOrganizacaoIdOrderByCriadoEmAsc(Long prontuarioId, Long organizacaoId);
+
+    boolean existsByProntuarioId(Long prontuarioId);
 }

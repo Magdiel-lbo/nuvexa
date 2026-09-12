@@ -5,16 +5,12 @@ import com.nuvexa.core.dto.response.PacienteProfissionalResponseDTO;
 import com.nuvexa.core.model.Organizacao;
 import com.nuvexa.core.model.Paciente;
 import com.nuvexa.core.model.PacienteProfissional;
-import com.nuvexa.core.model.PapelOrganizacional;
 import com.nuvexa.core.model.Perfil;
 import com.nuvexa.core.model.Sexo;
 import com.nuvexa.core.model.StatusOrganizacao;
 import com.nuvexa.core.model.TipoOrganizacao;
 import com.nuvexa.core.model.Usuario;
-import com.nuvexa.core.model.Vinculo;
 import com.nuvexa.core.repository.PacienteProfissionalRepository;
-import com.nuvexa.core.repository.PacienteRepository;
-import com.nuvexa.core.repository.VinculoRepository;
 import com.nuvexa.platform.exception.NegocioException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,7 +20,6 @@ import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.http.HttpStatus;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -42,10 +37,7 @@ class PacienteProfissionalServiceTest {
     private PacienteProfissionalRepository pacienteProfissionalRepository;
 
     @Mock
-    private PacienteRepository pacienteRepository;
-
-    @Mock
-    private VinculoRepository vinculoRepository;
+    private ValidadorOrganizacional validadorOrganizacional;
 
     @Mock
     private MessageSourceAccessor mensagens;
@@ -72,7 +64,7 @@ class PacienteProfissionalServiceTest {
             return vinculo;
         });
         pacienteProfissionalService = new PacienteProfissionalService(
-                pacienteProfissionalRepository, pacienteRepository, vinculoRepository, contextoDeAutenticacao, mensagens);
+                pacienteProfissionalRepository, contextoDeAutenticacao, mensagens, validadorOrganizacional);
     }
 
     private Organizacao organizacao(Long id, String nome) {
@@ -108,15 +100,6 @@ class PacienteProfissionalServiceTest {
         return usuario;
     }
 
-    private Vinculo vinculo(Usuario usuario, Organizacao organizacao, boolean ativo) {
-        return Vinculo.builder()
-                .usuario(usuario)
-                .organizacao(organizacao)
-                .papel(PapelOrganizacional.MEMBRO)
-                .ativo(ativo)
-                .build();
-    }
-
     private PacienteProfissionalCreateRequestDTO request(Long pacienteId, Long profissionalId) {
         return PacienteProfissionalCreateRequestDTO.builder()
                 .pacienteId(pacienteId)
@@ -128,9 +111,8 @@ class PacienteProfissionalServiceTest {
     void deveVincularProfissionalDaOrganizacaoAtualAoPaciente() {
         Paciente paciente = paciente(1L, organizacaoAtual);
         Usuario profissional = usuario(2L, "Joana Nutri");
-        when(pacienteRepository.findByIdAndOrganizacaoId(1L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(paciente));
-        when(vinculoRepository.findByUsuarioIdAndAtivoTrueOrderByIdAsc(2L))
-                .thenReturn(List.of(vinculo(profissional, organizacaoAtual, true)));
+        when(validadorOrganizacional.pacienteDaOrganizacao(1L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(paciente));
+        when(validadorOrganizacional.usuarioAtivoNaOrganizacao(2L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(profissional));
         when(pacienteProfissionalRepository.findByPacienteIdAndProfissionalId(1L, 2L)).thenReturn(Optional.empty());
 
         PacienteProfissionalResponseDTO response = pacienteProfissionalService.vincular(request(1L, 2L));
@@ -143,7 +125,7 @@ class PacienteProfissionalServiceTest {
 
     @Test
     void deveFalharQuandoPacienteNaoPertenceAOrganizacaoAtual() {
-        when(pacienteRepository.findByIdAndOrganizacaoId(1L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.empty());
+        when(validadorOrganizacional.pacienteDaOrganizacao(1L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> pacienteProfissionalService.vincular(request(1L, 2L)))
                 .isInstanceOf(NegocioException.class)
@@ -155,11 +137,8 @@ class PacienteProfissionalServiceTest {
     @Test
     void deveFalharQuandoProfissionalNaoTemVinculoAtivoNaOrganizacaoAtual() {
         Paciente paciente = paciente(1L, organizacaoAtual);
-        Organizacao outraOrganizacao = organizacao(8L, "Outra Clínica");
-        Usuario profissionalDeOutraOrg = usuario(2L, "Carlos Nutri");
-        when(pacienteRepository.findByIdAndOrganizacaoId(1L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(paciente));
-        when(vinculoRepository.findByUsuarioIdAndAtivoTrueOrderByIdAsc(2L))
-                .thenReturn(List.of(vinculo(profissionalDeOutraOrg, outraOrganizacao, true)));
+        when(validadorOrganizacional.pacienteDaOrganizacao(1L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(paciente));
+        when(validadorOrganizacional.usuarioAtivoNaOrganizacao(2L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> pacienteProfissionalService.vincular(request(1L, 2L)))
                 .isInstanceOf(NegocioException.class)
@@ -171,8 +150,8 @@ class PacienteProfissionalServiceTest {
     @Test
     void deveFalharQuandoProfissionalInexistente() {
         Paciente paciente = paciente(1L, organizacaoAtual);
-        when(pacienteRepository.findByIdAndOrganizacaoId(1L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(paciente));
-        when(vinculoRepository.findByUsuarioIdAndAtivoTrueOrderByIdAsc(99L)).thenReturn(List.of());
+        when(validadorOrganizacional.pacienteDaOrganizacao(1L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(paciente));
+        when(validadorOrganizacional.usuarioAtivoNaOrganizacao(99L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> pacienteProfissionalService.vincular(request(1L, 99L)))
                 .isInstanceOf(NegocioException.class)
@@ -187,9 +166,8 @@ class PacienteProfissionalServiceTest {
                 .paciente(paciente).profissional(profissional).organizacao(organizacaoAtual).ativo(true).build();
         vinculoExistente.setId(5L);
 
-        when(pacienteRepository.findByIdAndOrganizacaoId(1L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(paciente));
-        when(vinculoRepository.findByUsuarioIdAndAtivoTrueOrderByIdAsc(2L))
-                .thenReturn(List.of(vinculo(profissional, organizacaoAtual, true)));
+        when(validadorOrganizacional.pacienteDaOrganizacao(1L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(paciente));
+        when(validadorOrganizacional.usuarioAtivoNaOrganizacao(2L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(profissional));
         when(pacienteProfissionalRepository.findByPacienteIdAndProfissionalId(1L, 2L)).thenReturn(Optional.of(vinculoExistente));
 
         assertThatThrownBy(() -> pacienteProfissionalService.vincular(request(1L, 2L)))
@@ -207,9 +185,8 @@ class PacienteProfissionalServiceTest {
                 .paciente(paciente).profissional(profissional).organizacao(organizacaoAtual).ativo(false).build();
         vinculoInativo.setId(5L);
 
-        when(pacienteRepository.findByIdAndOrganizacaoId(1L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(paciente));
-        when(vinculoRepository.findByUsuarioIdAndAtivoTrueOrderByIdAsc(2L))
-                .thenReturn(List.of(vinculo(profissional, organizacaoAtual, true)));
+        when(validadorOrganizacional.pacienteDaOrganizacao(1L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(paciente));
+        when(validadorOrganizacional.usuarioAtivoNaOrganizacao(2L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(profissional));
         when(pacienteProfissionalRepository.findByPacienteIdAndProfissionalId(1L, 2L)).thenReturn(Optional.of(vinculoInativo));
 
         PacienteProfissionalResponseDTO response = pacienteProfissionalService.vincular(request(1L, 2L));

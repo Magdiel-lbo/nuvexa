@@ -161,14 +161,15 @@ class ProntuarioAnexoServiceTest {
     }
 
     @Test
-    void devePermitirUploadEmAssinado() {
+    void naoDevePermitirUploadEmAssinado() {
         Prontuario prontuario = prontuario(10L, StatusProntuario.ASSINADO);
         when(prontuarioRepository.findByIdAndOrganizacaoId(10L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(prontuario));
-        when(prontuarioAnexoRepository.save(any(ProntuarioAnexo.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        ProntuarioAnexoResponseDTO resultado = service.upload(10L, arquivoValido());
-
-        assertThat(resultado).isNotNull();
+        assertThatThrownBy(() -> service.upload(10L, arquivoValido()))
+                .isInstanceOf(NegocioException.class)
+                .satisfies(ex -> assertThat(((NegocioException) ex).getStatus()).isEqualTo(HttpStatus.BAD_REQUEST));
+        verify(prontuarioAnexoRepository, never()).save(any());
+        verify(storageService, never()).upload(anyString(), any(), anyString());
     }
 
     @Test

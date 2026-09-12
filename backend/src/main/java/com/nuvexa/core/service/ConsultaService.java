@@ -6,14 +6,15 @@ import com.nuvexa.core.dto.response.ConsultaResponseDTO;
 import com.nuvexa.core.dto.response.ProfissionalResponseDTO;
 import com.nuvexa.core.model.Consulta;
 import com.nuvexa.core.model.QConsulta;
+import com.nuvexa.core.model.StatusConsulta;
 import com.nuvexa.core.repository.ConsultaRepository;
 import com.nuvexa.core.model.Paciente;
 import com.nuvexa.core.model.Usuario;
 import com.nuvexa.core.model.Vinculo;
-import com.nuvexa.core.repository.PacienteRepository;
 import com.nuvexa.core.repository.VinculoRepository;
 import com.nuvexa.platform.exception.NegocioException;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.NumberPath;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.modelmapper.ModelMapper;
@@ -21,6 +22,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -30,14 +32,17 @@ import java.util.List;
 public class ConsultaService {
 
     private final ConsultaRepository consultaRepository;
-    private final PacienteRepository pacienteRepository;
     private final VinculoRepository vinculoRepository;
     private final ModelMapper modelMapper;
     private final OrganizacaoScopedContext contexto;
+    private final ValidadorOrganizacional validadorOrganizacional;
 
     public ConsultaResponseDTO create(ConsultaCreateRequestDTO request) {
         Paciente paciente = buscarPacienteOuFalhar(request.getPacienteId());
         Usuario profissional = buscarProfissionalOuFalhar(request.getProfissionalId());
+        Long organizacaoId = contexto.getContextoDeAutenticacao().organizacaoAtualId();
+        garantirSemConflitoDeHorario(organizacaoId, profissional.getId(), paciente.getId(),
+                request.getDataHora(), request.getDuracaoMinutos(), request.getStatus(), null);
 
         Consulta consulta = consultaRepository.save(
                 request.toConsulta(contexto.getContextoDeAutenticacao().organizacaoAtual(), paciente, profissional));
@@ -47,8 +52,13 @@ public class ConsultaService {
 
     public ConsultaResponseDTO update(Long id, ConsultaUpdateRequestDTO request) {
         Consulta consulta = buscarConsultaOuFalhar(id);
+        garantirEditavel(consulta);
         Usuario profissional = buscarProfissionalOuFalhar(request.getProfissionalId());
         request.atualizar(consulta, profissional, modelMapper);
+
+        Long organizacaoId = contexto.getContextoDeAutenticacao().organizacaoAtualId();
+        garantirSemConflitoDeHorario(organizacaoId, consulta.getProfissional().getId(), consulta.getPaciente().getId(),
+                consulta.getDataHora(), consulta.getDuracaoMinutos(), consulta.getStatus(), consulta.getId());
 
         Consulta saved = consultaRepository.save(consulta);
         log.info("Consulta atualizada com id={}", id);
@@ -110,8 +120,7 @@ public class ConsultaService {
      * organização vira 404, não 403 (um 403 confirmaria que aquele id existe).
      */
     private Paciente buscarPacienteOuFalhar(Long pacienteId) {
-        return pacienteRepository
-                .findByIdAndOrganizacaoId(pacienteId, contexto.getContextoDeAutenticacao().organizacaoAtualId())
+        return validadorOrganizacional.pacienteDaOrganizacao(pacienteId, contexto.getContextoDeAutenticacao().organizacaoAtualId())
                 .orElseThrow(() -> new NegocioException(HttpStatus.NOT_FOUND, resolveMessage("paciente.naoEncontrado", pacienteId)));
     }
 
@@ -122,13 +131,72 @@ public class ConsultaService {
      * organizacional.
      */
     private Usuario buscarProfissionalOuFalhar(Long profissionalId) {
-        Long organizacaoAtualId = contexto.getContextoDeAutenticacao().organizacaoAtualId();
-        return vinculoRepository.findByUsuarioIdAndAtivoTrueOrderByIdAsc(profissionalId).stream()
-                .filter(vinculo -> vinculo.getOrganizacao().getId().equals(organizacaoAtualId))
-                .map(Vinculo::getUsuario)
-                .findFirst()
+        return validadorOrganizacional.usuarioAtivoNaOrganizacao(profissionalId, contexto.getContextoDeAutenticacao().organizacaoAtualId())
                 .orElseThrow(() -> new NegocioException(HttpStatus.BAD_REQUEST,
                         resolveMessage("consulta.profissional.invalido", profissionalId)));
+    }
+
+    /**
+     * REALIZADA/CANCELADA/FALTOU são status terminais — sem transição de saída (nenhum dos três
+     * volta a ser AGENDADA/CONFIRMADA nem muda pra outro terminal). Bloqueia o update inteiro
+     * nesse caso, não só o campo status, mesmo padrão de {@code ProntuarioService.garantirEditavel}
+     * / {@code AvaliacaoService.garantirEditavel}.
+     */
+    private void garantirEditavel(Consulta consulta) {
+        StatusConsulta status = consulta.getStatus();
+        if (status == StatusConsulta.REALIZADA || status == StatusConsulta.CANCELADA || status == StatusConsulta.FALTOU) {
+            throw new NegocioException(HttpStatus.BAD_REQUEST, resolveMessage("consulta.finalizada.imutavel"));
+        }
+    }
+
+    /**
+     * Sem conflito = nenhuma outra consulta da mesma organização, do mesmo profissional OU do
+     * mesmo paciente, com status diferente de CANCELADA, ocupa um intervalo de tempo sobreposto
+     * a [dataHora, dataHora + duracaoMinutos). Consulta sendo (re)agendada como CANCELADA não
+     * precisa da checagem — não vai ocupar horário nenhum. No update, a própria consulta é
+     * excluída da comparação via {@code consultaIdExcluida}.
+     */
+    private void garantirSemConflitoDeHorario(Long organizacaoId, Long profissionalId, Long pacienteId,
+            LocalDateTime dataHora, Integer duracaoMinutos, StatusConsulta status, Long consultaIdExcluida) {
+        if (status == StatusConsulta.CANCELADA) {
+            return;
+        }
+        LocalDateTime inicio = dataHora;
+        LocalDateTime fim = dataHora.plusMinutes(duracaoMinutos);
+
+        QConsulta consulta = QConsulta.consulta;
+        if (existeConflito(consulta.profissional.id, profissionalId, organizacaoId, inicio, fim, consultaIdExcluida)) {
+            throw new NegocioException(HttpStatus.BAD_REQUEST, resolveMessage("consulta.conflito.profissional"));
+        }
+        if (existeConflito(consulta.paciente.id, pacienteId, organizacaoId, inicio, fim, consultaIdExcluida)) {
+            throw new NegocioException(HttpStatus.BAD_REQUEST, resolveMessage("consulta.conflito.paciente"));
+        }
+    }
+
+    /**
+     * Filtra no banco por organização/campo/status (reduz o que chega ao Java), e resolve a
+     * sobreposição exata (`existenteFim > inicio`) em memória — evita expressar aritmética de
+     * data dinâmica (coluna + coluna) no QueryDSL só para um conjunto que já é pequeno por
+     * profissional/paciente.
+     */
+    private boolean existeConflito(NumberPath<Long> campo, Long valor, Long organizacaoId,
+            LocalDateTime inicio, LocalDateTime fim, Long consultaIdExcluida) {
+        QConsulta consulta = QConsulta.consulta;
+        BooleanExpression filtro = consulta.organizacao.id.eq(organizacaoId)
+                .and(campo.eq(valor))
+                .and(consulta.status.ne(StatusConsulta.CANCELADA))
+                .and(consulta.dataHora.lt(fim));
+        if (consultaIdExcluida != null) {
+            filtro = filtro.and(consulta.id.ne(consultaIdExcluida));
+        }
+
+        List<Consulta> candidatas = contexto.getQueryFactory()
+                .selectFrom(consulta)
+                .where(filtro)
+                .fetch();
+
+        return candidatas.stream()
+                .anyMatch(candidata -> candidata.getDataHora().plusMinutes(candidata.getDuracaoMinutos()).isAfter(inicio));
     }
 
     private Consulta buscarConsultaOuFalhar(Long id) {

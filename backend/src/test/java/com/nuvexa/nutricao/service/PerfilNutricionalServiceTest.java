@@ -7,9 +7,9 @@ import com.nuvexa.core.model.Sexo;
 import com.nuvexa.core.model.StatusOrganizacao;
 import com.nuvexa.core.model.TipoOrganizacao;
 import com.nuvexa.core.model.Usuario;
-import com.nuvexa.core.repository.PacienteRepository;
 import com.nuvexa.core.service.ContextoDeAutenticacao;
 import com.nuvexa.core.service.OrganizacaoScopedContext;
+import com.nuvexa.core.service.ValidadorOrganizacional;
 import com.nuvexa.nutricao.calculator.GastoCaloricoCalculator;
 import com.nuvexa.nutricao.calculator.ImcCalculator;
 import com.nuvexa.nutricao.calculator.TaxaMetabolicaCalculator;
@@ -55,7 +55,7 @@ class PerfilNutricionalServiceTest {
     private static final Long ORGANIZACAO_ATUAL_ID = 7L;
 
     private PerfilNutricionalRepository perfilNutricionalRepository;
-    private PacienteRepository pacienteRepository;
+    private ValidadorOrganizacional validadorOrganizacional;
     private AvaliacaoRepository avaliacaoRepository;
     private AvaliacaoService avaliacaoService;
     private ModelMapper modelMapper;
@@ -74,7 +74,7 @@ class PerfilNutricionalServiceTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         perfilNutricionalRepository = mock(PerfilNutricionalRepository.class);
-        pacienteRepository = mock(PacienteRepository.class);
+        validadorOrganizacional = mock(ValidadorOrganizacional.class);
         avaliacaoRepository = mock(AvaliacaoRepository.class);
         avaliacaoService = mock(AvaliacaoService.class);
         modelMapper = mock(ModelMapper.class);
@@ -99,8 +99,8 @@ class PerfilNutricionalServiceTest {
         when(avaliacaoRepository.save(any(Avaliacao.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         service = new PerfilNutricionalService(
-                perfilNutricionalRepository, pacienteRepository, avaliacaoRepository, avaliacaoService,
-                modelMapper, imcCalculator, taxaMetabolicaCalculator, gastoCaloricoCalculator, contexto);
+                perfilNutricionalRepository, avaliacaoRepository, avaliacaoService,
+                modelMapper, imcCalculator, taxaMetabolicaCalculator, gastoCaloricoCalculator, contexto, validadorOrganizacional);
     }
 
     private Organizacao organizacao(Long id, String nome) {
@@ -148,7 +148,7 @@ class PerfilNutricionalServiceTest {
     @Test
     void deveCriarPerfilEAvaliacaoInicialNaMesmaOperacao() {
         Paciente paciente = paciente(1L);
-        when(pacienteRepository.findByIdAndOrganizacaoId(1L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(paciente));
+        when(validadorOrganizacional.pacienteDaOrganizacao(1L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(paciente));
         when(avaliacaoService.buscarUltimaAvaliacaoComPeso(1L)).thenReturn(Optional.empty());
 
         service.create(1L, createRequest(new BigDecimal("58.00")));
@@ -173,7 +173,7 @@ class PerfilNutricionalServiceTest {
     @Test
     void deveFalharAoCriarComPesoInicialInvalido() {
         Paciente paciente = paciente(1L);
-        when(pacienteRepository.findByIdAndOrganizacaoId(1L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(paciente));
+        when(validadorOrganizacional.pacienteDaOrganizacao(1L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(paciente));
 
         assertThatThrownBy(() -> service.create(1L, createRequest(BigDecimal.ZERO)))
                 .isInstanceOf(NegocioException.class)

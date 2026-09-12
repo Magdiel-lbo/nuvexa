@@ -3,7 +3,6 @@ package com.nuvexa.core.service;
 import com.nuvexa.core.dto.request.ProntuarioAdendoCreateRequestDTO;
 import com.nuvexa.core.dto.response.ProntuarioAdendoResponseDTO;
 import com.nuvexa.core.model.Organizacao;
-import com.nuvexa.core.model.PapelOrganizacional;
 import com.nuvexa.core.model.Paciente;
 import com.nuvexa.core.model.Perfil;
 import com.nuvexa.core.model.Prontuario;
@@ -14,10 +13,8 @@ import com.nuvexa.core.model.StatusOrganizacao;
 import com.nuvexa.core.model.StatusProntuario;
 import com.nuvexa.core.model.TipoOrganizacao;
 import com.nuvexa.core.model.Usuario;
-import com.nuvexa.core.model.Vinculo;
 import com.nuvexa.core.repository.ProntuarioAdendoRepository;
 import com.nuvexa.core.repository.ProntuarioRepository;
-import com.nuvexa.core.repository.VinculoRepository;
 import com.nuvexa.platform.auditoria.AuditoriaService;
 import com.nuvexa.platform.auditoria.EntidadeAuditavel;
 import com.nuvexa.platform.auditoria.TipoEventoAuditoria;
@@ -32,7 +29,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.time.LocalDate;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -51,7 +47,7 @@ class ProntuarioAdendoServiceTest {
 
     private ProntuarioAdendoRepository prontuarioAdendoRepository;
     private ProntuarioRepository prontuarioRepository;
-    private VinculoRepository vinculoRepository;
+    private ValidadorOrganizacional validadorOrganizacional;
     private AuditoriaService auditoriaService;
     private OrganizacaoScopedContext contexto;
     private ContextoDeAutenticacao contextoDeAutenticacao;
@@ -65,7 +61,7 @@ class ProntuarioAdendoServiceTest {
         MockitoAnnotations.openMocks(this);
         prontuarioAdendoRepository = mock(ProntuarioAdendoRepository.class);
         prontuarioRepository = mock(ProntuarioRepository.class);
-        vinculoRepository = mock(VinculoRepository.class);
+        validadorOrganizacional = mock(ValidadorOrganizacional.class);
         auditoriaService = mock(AuditoriaService.class);
         contexto = mock(OrganizacaoScopedContext.class);
         contextoDeAutenticacao = mock(ContextoDeAutenticacao.class);
@@ -80,7 +76,7 @@ class ProntuarioAdendoServiceTest {
         when(contextoDeAutenticacao.usuarioAtual()).thenReturn(usuario(99L, "Usuário Logado"));
         when(mensagens.getMessage(any(String.class), any(Object[].class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        service = new ProntuarioAdendoService(prontuarioAdendoRepository, prontuarioRepository, vinculoRepository, auditoriaService, contexto);
+        service = new ProntuarioAdendoService(prontuarioAdendoRepository, prontuarioRepository, auditoriaService, contexto, validadorOrganizacional);
     }
 
     private Organizacao organizacao(Long id, String nome) {
@@ -93,10 +89,6 @@ class ProntuarioAdendoServiceTest {
         Usuario usuario = Usuario.builder().nome(nome).email("x" + id + "@nuvexa.com").senha("hash").perfil(Perfil.PROFISSIONAL).ativo(true).build();
         usuario.setId(id);
         return usuario;
-    }
-
-    private Vinculo vinculo(Usuario usuario, Organizacao organizacao, boolean ativo) {
-        return Vinculo.builder().usuario(usuario).organizacao(organizacao).papel(PapelOrganizacional.MEMBRO).ativo(ativo).build();
     }
 
     private Prontuario prontuario(Long id, StatusProntuario status, Usuario autor) {
@@ -131,7 +123,7 @@ class ProntuarioAdendoServiceTest {
         Usuario autorAdendo = usuario(3L, "Carlos Nutri");
         Prontuario prontuario = prontuario(10L, StatusProntuario.ASSINADO, autorProntuario);
         when(prontuarioRepository.findByIdAndOrganizacaoId(10L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(prontuario));
-        when(vinculoRepository.findByUsuarioIdAndAtivoTrueOrderByIdAsc(3L)).thenReturn(List.of(vinculo(autorAdendo, organizacaoAtual, true)));
+        when(validadorOrganizacional.usuarioAtivoNaOrganizacao(3L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(autorAdendo));
         when(prontuarioAdendoRepository.save(any(ProntuarioAdendo.class))).thenAnswer(invocation -> {
             ProntuarioAdendo adendo = invocation.getArgument(0);
             adendo.setId(55L);
@@ -182,7 +174,7 @@ class ProntuarioAdendoServiceTest {
         Usuario autorProntuario = usuario(2L, "Joana Nutri");
         Prontuario prontuario = prontuario(10L, StatusProntuario.ASSINADO, autorProntuario);
         when(prontuarioRepository.findByIdAndOrganizacaoId(10L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(prontuario));
-        when(vinculoRepository.findByUsuarioIdAndAtivoTrueOrderByIdAsc(999L)).thenReturn(List.of());
+        when(validadorOrganizacional.usuarioAtivoNaOrganizacao(999L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.create(10L, request(999L, "Correção.")))
                 .isInstanceOf(NegocioException.class)
@@ -198,7 +190,7 @@ class ProntuarioAdendoServiceTest {
         String conteudoOriginal = prontuario.getConteudo();
         StatusProntuario statusOriginal = prontuario.getStatus();
         when(prontuarioRepository.findByIdAndOrganizacaoId(10L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(prontuario));
-        when(vinculoRepository.findByUsuarioIdAndAtivoTrueOrderByIdAsc(3L)).thenReturn(List.of(vinculo(autorAdendo, organizacaoAtual, true)));
+        when(validadorOrganizacional.usuarioAtivoNaOrganizacao(3L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(autorAdendo));
         when(prontuarioAdendoRepository.save(any(ProntuarioAdendo.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         service.create(10L, request(3L, "Correção do peso registrado."));
@@ -215,7 +207,7 @@ class ProntuarioAdendoServiceTest {
         Usuario autorAdendo = usuario(3L, "Carlos Nutri");
         Prontuario prontuario = prontuario(10L, StatusProntuario.ASSINADO, autorProntuario);
         when(prontuarioRepository.findByIdAndOrganizacaoId(10L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(prontuario));
-        when(vinculoRepository.findByUsuarioIdAndAtivoTrueOrderByIdAsc(3L)).thenReturn(List.of(vinculo(autorAdendo, organizacaoAtual, true)));
+        when(validadorOrganizacional.usuarioAtivoNaOrganizacao(3L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(autorAdendo));
         when(prontuarioAdendoRepository.save(any(ProntuarioAdendo.class))).thenAnswer(invocation -> {
             ProntuarioAdendo adendo = invocation.getArgument(0);
             adendo.setId(55L);

@@ -1,8 +1,8 @@
 package com.nuvexa.nutricao.service;
 
 import com.nuvexa.core.model.Paciente;
-import com.nuvexa.core.repository.PacienteRepository;
 import com.nuvexa.core.service.OrganizacaoScopedContext;
+import com.nuvexa.core.service.ValidadorOrganizacional;
 import com.nuvexa.nutricao.calculator.GastoCaloricoCalculator;
 import com.nuvexa.nutricao.calculator.ImcCalculator;
 import com.nuvexa.nutricao.calculator.TaxaMetabolicaCalculator;
@@ -48,7 +48,6 @@ import java.util.Optional;
 public class PerfilNutricionalService {
 
     private final PerfilNutricionalRepository perfilNutricionalRepository;
-    private final PacienteRepository pacienteRepository;
     private final AvaliacaoRepository avaliacaoRepository;
     private final AvaliacaoService avaliacaoService;
     private final ModelMapper modelMapper;
@@ -56,6 +55,7 @@ public class PerfilNutricionalService {
     private final TaxaMetabolicaCalculator taxaMetabolicaCalculator;
     private final GastoCaloricoCalculator gastoCaloricoCalculator;
     private final OrganizacaoScopedContext contexto;
+    private final ValidadorOrganizacional validadorOrganizacional;
 
     public PerfilNutricionalResponseDTO create(Long pacienteId, PerfilNutricionalCreateRequestDTO request) {
         Paciente paciente = buscarPacienteOuFalhar(pacienteId);
@@ -143,8 +143,7 @@ public class PerfilNutricionalService {
     }
 
     private Paciente buscarPacienteOuFalhar(Long pacienteId) {
-        return pacienteRepository
-                .findByIdAndOrganizacaoId(pacienteId, contexto.getContextoDeAutenticacao().organizacaoAtualId())
+        return validadorOrganizacional.pacienteDaOrganizacao(pacienteId, contexto.getContextoDeAutenticacao().organizacaoAtualId())
                 .orElseThrow(() -> new NegocioException(HttpStatus.NOT_FOUND, resolveMessage("paciente.naoEncontrado", pacienteId)));
     }
 

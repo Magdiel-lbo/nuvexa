@@ -27,7 +27,8 @@ import java.util.UUID;
 
 /**
  * Só cria, lista, baixa e exclui — sem update, mesma garantia de imutabilidade de
- * {@link ProntuarioAnexo}. Exclusão em prontuário {@code ASSINADO} é bloqueada; upload não.
+ * {@link ProntuarioAnexo}. Upload e exclusão em prontuário {@code ASSINADO} são bloqueados,
+ * por simetria — o Prontuário já é imutável em tudo mais depois de assinado.
  */
 @Service
 @RequiredArgsConstructor
@@ -56,6 +57,7 @@ public class ProntuarioAnexoService {
 
     public ProntuarioAnexoResponseDTO upload(Long prontuarioId, MultipartFile arquivo) {
         Prontuario prontuario = buscarProntuarioOuFalhar(prontuarioId);
+        garantirEditavel(prontuario);
         validarArquivo(arquivo);
 
         String nomeOriginal = sanitizarNomeOriginal(arquivo.getOriginalFilename());
@@ -90,8 +92,7 @@ public class ProntuarioAnexoService {
             throw e;
         }
 
-        auditoriaService.registrar(EntidadeAuditavel.PRONTUARIO, prontuario.getId(), TipoEventoAuditoria.UPLOAD_ANEXO,
-                organizacaoId, usuarioAtual.getId(), usuarioAtual.getNome(),
+        registrarAuditoria(prontuario.getId(), TipoEventoAuditoria.UPLOAD_ANEXO,
                 null, "anexo id=" + anexo.getId() + ": " + nomeOriginal);
 
         log.info("Anexo criado com id={} para prontuarioId={}", anexo.getId(), prontuarioId);
@@ -116,20 +117,26 @@ public class ProntuarioAnexoService {
 
     public void delete(Long prontuarioId, Long anexoId) {
         Prontuario prontuario = buscarProntuarioOuFalhar(prontuarioId);
-        if (prontuario.getStatus() == StatusProntuario.ASSINADO) {
-            throw new NegocioException(HttpStatus.BAD_REQUEST, resolveMessage("prontuarioAnexo.assinado.imutavel"));
-        }
+        garantirEditavel(prontuario);
         ProntuarioAnexo anexo = buscarAnexoOuFalhar(prontuarioId, anexoId);
 
         prontuarioAnexoRepository.delete(anexo);
         storageService.delete(anexo.getChaveStorage());
 
-        Usuario usuarioAtual = contexto.getContextoDeAutenticacao().usuarioAtual();
-        auditoriaService.registrar(EntidadeAuditavel.PRONTUARIO, prontuario.getId(), TipoEventoAuditoria.EXCLUSAO_ANEXO,
-                contexto.getContextoDeAutenticacao().organizacaoAtualId(), usuarioAtual.getId(), usuarioAtual.getNome(),
+        registrarAuditoria(prontuario.getId(), TipoEventoAuditoria.EXCLUSAO_ANEXO,
                 "anexo id=" + anexo.getId() + ": " + anexo.getNomeOriginal(), null);
 
         log.info("Anexo removido com id={} do prontuarioId={}", anexoId, prontuarioId);
+    }
+
+    /**
+     * Prontuário assinado é imutável em tudo mais ({@code ProntuarioService.garantirEditavel}) —
+     * upload e exclusão de anexo seguem a mesma regra, por simetria.
+     */
+    private void garantirEditavel(Prontuario prontuario) {
+        if (prontuario.getStatus() == StatusProntuario.ASSINADO) {
+            throw new NegocioException(HttpStatus.BAD_REQUEST, resolveMessage("prontuarioAnexo.assinado.imutavel"));
+        }
     }
 
     private void validarArquivo(MultipartFile arquivo) {
@@ -175,6 +182,17 @@ public class ProntuarioAnexoService {
         }
         int idx = nomeArquivo.lastIndexOf('.');
         return idx >= 0 && idx < nomeArquivo.length() - 1 ? nomeArquivo.substring(idx + 1).toLowerCase() : "";
+    }
+
+    /**
+     * Mesmo helper de {@code ProntuarioService.registrarAuditoria} — empacota a resolução de
+     * usuário/organização atuais antes de chamar {@link AuditoriaService#registrar}.
+     */
+    private void registrarAuditoria(Long prontuarioId, TipoEventoAuditoria tipoEvento, String antes, String depois) {
+        Usuario usuarioAtual = contexto.getContextoDeAutenticacao().usuarioAtual();
+        auditoriaService.registrar(EntidadeAuditavel.PRONTUARIO, prontuarioId, tipoEvento,
+                contexto.getContextoDeAutenticacao().organizacaoAtualId(), usuarioAtual.getId(), usuarioAtual.getNome(),
+                antes, depois);
     }
 
     private Prontuario buscarProntuarioOuFalhar(Long id) {
