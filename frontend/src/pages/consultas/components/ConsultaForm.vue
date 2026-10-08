@@ -53,6 +53,15 @@
         <v-textarea v-model="model.motivo" :label="$t('consulta.motivo')" rows="2" />
       </v-col>
 
+      <v-col v-if="precisaMotivoTransicao" cols="12">
+        <v-textarea
+          v-model="model.motivoTransicao"
+          :label="$t('consulta.motivoTransicao')"
+          rows="2"
+          :rules="[rules.obrigatorio]"
+        />
+      </v-col>
+
       <v-col cols="12">
         <v-textarea v-model="model.observacoes" :label="$t('consulta.observacoes')" rows="3" />
       </v-col>
@@ -80,6 +89,7 @@ export interface ConsultaFormModel {
   status: ConsultaStatus
   observacoes: string | null
   motivo: string | null
+  motivoTransicao: string | null
 }
 
 @Component({ name: 'ConsultaForm', components: { NuvexaProfissionalSelect, NuvexaPacienteSelect } })
@@ -99,7 +109,21 @@ export default class ConsultaForm extends Vue {
   @Prop({ default: false })
   mostrarSelecaoPaciente!: boolean
 
+  // Status da consulta antes desta edição — null na criação. Usado só para decidir se a
+  // mudança de status atual é de fato uma transição (edição) ou o status inicial (criação),
+  // já que o backend exige motivoTransicao nos dois casos quando o valor é CANCELADA/FALTOU.
+  @Prop({ default: null })
+  statusOriginal!: ConsultaStatus | null
+
   formValido = true
+
+  get precisaMotivoTransicao(): boolean {
+    const exigeParaEsteStatus = this.model.status === 'CANCELADA' || this.model.status === 'FALTOU'
+    if (!exigeParaEsteStatus) {
+      return false
+    }
+    return this.statusOriginal === null || this.statusOriginal !== this.model.status
+  }
 
   get rules() {
     return {

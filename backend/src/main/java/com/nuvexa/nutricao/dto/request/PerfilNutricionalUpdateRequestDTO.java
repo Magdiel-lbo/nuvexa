@@ -3,6 +3,7 @@ package com.nuvexa.nutricao.dto.request;
 import com.nuvexa.nutricao.model.NivelAtividade;
 import com.nuvexa.nutricao.model.Objetivo;
 import com.nuvexa.nutricao.model.PerfilNutricional;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,6 +22,7 @@ import java.math.BigDecimal;
 public class PerfilNutricionalUpdateRequestDTO {
 
     @NotNull(message = "{paciente.altura.obrigatoria}")
+    @Schema(description = "Altura em metros", example = "1.75")
     private BigDecimal altura;
 
     @NotNull(message = "{paciente.objetivo.obrigatorio}")

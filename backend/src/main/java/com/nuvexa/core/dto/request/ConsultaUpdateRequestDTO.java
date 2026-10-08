@@ -48,6 +48,15 @@ public class ConsultaUpdateRequestDTO {
 
     private String motivo;
 
+    /**
+     * Motivo da transição de status (obrigatório quando {@code status} muda para CANCELADA ou
+     * FALTOU; ignorado quando o status não muda — validado em {@code ConsultaService}, não aqui,
+     * por depender do status anterior). Não confundir com {@link #motivo}, que é o motivo/razão
+     * da consulta em si. De propósito fora do {@code ModelMapper.map()}: é lido diretamente pelo
+     * service ao montar o histórico, nunca persistido como campo de {@link Consulta}.
+     */
+    private String motivoTransicao;
+
     public void atualizar(Consulta consulta, Usuario profissional, ModelMapper modelMapper) {
         modelMapper.map(this, consulta);
         consulta.setProfissional(profissional);

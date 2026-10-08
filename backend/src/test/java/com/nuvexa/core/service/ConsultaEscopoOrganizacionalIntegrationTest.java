@@ -5,9 +5,11 @@ import com.nuvexa.core.dto.request.ConsultaUpdateRequestDTO;
 import com.nuvexa.core.dto.response.ConsultaResponseDTO;
 import com.nuvexa.core.dto.response.ProfissionalResponseDTO;
 import com.nuvexa.core.model.Consulta;
+import com.nuvexa.core.model.ConsultaStatusHistorico;
 import com.nuvexa.core.model.StatusConsulta;
 import com.nuvexa.core.model.TipoConsulta;
 import com.nuvexa.core.repository.ConsultaRepository;
+import com.nuvexa.core.repository.ConsultaStatusHistoricoRepository;
 import com.nuvexa.core.service.ContextoDeAutenticacao;
 import com.nuvexa.core.model.Organizacao;
 import com.nuvexa.core.model.StatusOrganizacao;
@@ -59,6 +61,9 @@ class ConsultaEscopoOrganizacionalIntegrationTest {
     private ConsultaRepository consultaRepository;
 
     @Autowired
+    private ConsultaStatusHistoricoRepository consultaStatusHistoricoRepository;
+
+    @Autowired
     private PacienteRepository pacienteRepository;
 
     @Autowired
@@ -79,6 +84,7 @@ class ConsultaEscopoOrganizacionalIntegrationTest {
     private Paciente pacienteAlheio;
     private Usuario meuProfissional;
     private Usuario profissionalAlheio;
+    private Usuario usuarioLogado;
 
     @BeforeEach
     void setUp() {
@@ -88,7 +94,12 @@ class ConsultaEscopoOrganizacionalIntegrationTest {
         pacienteAlheio = novoPaciente(outraOrganizacao, "Bruno da Outra Clinica");
         meuProfissional = novoProfissionalVinculado(minhaOrganizacao, "Joana Nutri");
         profissionalAlheio = novoProfissionalVinculado(outraOrganizacao, "Carlos Nutri");
+        // Usuário autenticado sem vínculo/perfil de profissional de propósito: alteradoPor deve
+        // ser sempre quem chamou a operação, não precisa ser o Consulta.profissional nem aparecer
+        // em listarProfissionais() (que já tem teste próprio contando exatamente 1 resultado).
+        usuarioLogado = novoUsuario("Usuária Logada");
         estarLogadoEm(minhaOrganizacao);
+        when(contextoDeAutenticacao.usuarioAtual()).thenReturn(usuarioLogado);
     }
 
     private Organizacao novaOrganizacao(String nome) {
@@ -114,13 +125,7 @@ class ConsultaEscopoOrganizacionalIntegrationTest {
     }
 
     private Usuario novoProfissionalVinculado(Organizacao organizacao, String nome) {
-        Usuario usuario = usuarioRepository.saveAndFlush(Usuario.builder()
-                .nome(nome)
-                .email(nome.toLowerCase().replace(" ", ".") + "@nuvexa.com")
-                .senha("hash")
-                .perfil(Perfil.PROFISSIONAL)
-                .ativo(true)
-                .build());
+        Usuario usuario = novoUsuario(nome);
         vinculoRepository.saveAndFlush(Vinculo.builder()
                 .usuario(usuario)
                 .organizacao(organizacao)
@@ -128,6 +133,16 @@ class ConsultaEscopoOrganizacionalIntegrationTest {
                 .ativo(true)
                 .build());
         return usuario;
+    }
+
+    private Usuario novoUsuario(String nome) {
+        return usuarioRepository.saveAndFlush(Usuario.builder()
+                .nome(nome)
+                .email(nome.toLowerCase().replace(" ", ".") + "@nuvexa.com")
+                .senha("hash")
+                .perfil(Perfil.PROFISSIONAL)
+                .ativo(true)
+                .build());
     }
 
     private Consulta novaConsulta(Organizacao organizacao, Paciente paciente, Usuario profissional) {
@@ -167,6 +182,18 @@ class ConsultaEscopoOrganizacionalIntegrationTest {
         request.setTipo(TipoConsulta.AVALIACAO);
         request.setStatus(StatusConsulta.CONFIRMADA);
         return request;
+    }
+
+    private ConsultaUpdateRequestDTO updateRequest(Long profissionalId, StatusConsulta status, String motivoTransicao) {
+        ConsultaUpdateRequestDTO request = updateRequest(profissionalId);
+        request.setStatus(status);
+        request.setMotivoTransicao(motivoTransicao);
+        return request;
+    }
+
+    private List<ConsultaStatusHistorico> historicoDe(Consulta consulta) {
+        return consultaStatusHistoricoRepository
+                .findByConsultaIdAndOrganizacaoIdOrderByCriadoEmAsc(consulta.getId(), minhaOrganizacao.getId());
     }
 
     @Test
@@ -461,5 +488,216 @@ class ConsultaEscopoOrganizacionalIntegrationTest {
         ConsultaResponseDTO atualizada = consultaService.update(consulta.getId(), updateRequest(meuProfissional.getId()));
 
         assertThat(atualizada).isNotNull();
+    }
+
+    @Test
+    void naoDevePermitirExcluirConsultaRealizada() {
+        Consulta consulta = novaConsulta(minhaOrganizacao, meuPaciente, meuProfissional,
+                LocalDateTime.of(2026, 11, 2, 9, 0), 30, StatusConsulta.REALIZADA);
+
+        assertThatThrownBy(() -> consultaService.delete(consulta.getId()))
+                .isInstanceOf(NegocioException.class)
+                .satisfies(ex -> assertThat(((NegocioException) ex).getStatus()).isEqualTo(HttpStatus.BAD_REQUEST));
+
+        assertThat(consultaRepository.findById(consulta.getId())).isPresent();
+    }
+
+    @Test
+    void naoDevePermitirExcluirConsultaCancelada() {
+        Consulta consulta = novaConsulta(minhaOrganizacao, meuPaciente, meuProfissional,
+                LocalDateTime.of(2026, 11, 2, 9, 0), 30, StatusConsulta.CANCELADA);
+
+        assertThatThrownBy(() -> consultaService.delete(consulta.getId()))
+                .isInstanceOf(NegocioException.class)
+                .satisfies(ex -> assertThat(((NegocioException) ex).getStatus()).isEqualTo(HttpStatus.BAD_REQUEST));
+
+        assertThat(consultaRepository.findById(consulta.getId())).isPresent();
+    }
+
+    @Test
+    void naoDevePermitirExcluirConsultaComFalta() {
+        Consulta consulta = novaConsulta(minhaOrganizacao, meuPaciente, meuProfissional,
+                LocalDateTime.of(2026, 11, 2, 9, 0), 30, StatusConsulta.FALTOU);
+
+        assertThatThrownBy(() -> consultaService.delete(consulta.getId()))
+                .isInstanceOf(NegocioException.class)
+                .satisfies(ex -> assertThat(((NegocioException) ex).getStatus()).isEqualTo(HttpStatus.BAD_REQUEST));
+
+        assertThat(consultaRepository.findById(consulta.getId())).isPresent();
+    }
+
+    @Test
+    void devePermitirExcluirConsultaAgendada() {
+        Consulta consulta = novaConsulta(minhaOrganizacao, meuPaciente, meuProfissional,
+                LocalDateTime.of(2026, 11, 2, 9, 0), 30, StatusConsulta.AGENDADA);
+
+        consultaService.delete(consulta.getId());
+
+        assertThat(consultaRepository.findById(consulta.getId())).isEmpty();
+    }
+
+    // --- Histórico de transição de status ---
+
+    @Test
+    void deveRegistrarTransicaoDeStatusNaCriacao() {
+        ConsultaResponseDTO criada = consultaService.create(createRequest(meuPaciente.getId(), meuProfissional.getId()));
+
+        List<ConsultaStatusHistorico> historico = consultaStatusHistoricoRepository
+                .findByConsultaIdAndOrganizacaoIdOrderByCriadoEmAsc(criada.getId(), minhaOrganizacao.getId());
+
+        assertThat(historico).hasSize(1);
+        assertThat(historico.getFirst().getStatusAnterior()).isNull();
+        assertThat(historico.getFirst().getStatusNovo()).isEqualTo(StatusConsulta.AGENDADA);
+        assertThat(historico.getFirst().getAlteradoPor().getId()).isEqualTo(usuarioLogado.getId());
+        assertThat(historico.getFirst().getOrganizacao().getId()).isEqualTo(minhaOrganizacao.getId());
+    }
+
+    @Test
+    void devePermitirExcluirConsultaCriadaSemNenhumaTransicaoDeStatus() {
+        // A linha de criação (null->status inicial) sozinha não deve bloquear exclusão — só uma
+        // transição real (status mudou de um valor pra outro) conta, ver garantirSemHistorico.
+        ConsultaResponseDTO criada = consultaService.create(createRequest(meuPaciente.getId(), meuProfissional.getId()));
+
+        consultaService.delete(criada.getId());
+
+        assertThat(consultaRepository.findById(criada.getId())).isEmpty();
+    }
+
+    @Test
+    void deveRegistrarExatamenteUmaTransicaoQuandoStatusMuda() {
+        Consulta consulta = novaConsulta(minhaOrganizacao, meuPaciente, meuProfissional,
+                LocalDateTime.of(2026, 11, 2, 9, 0), 30, StatusConsulta.AGENDADA);
+
+        consultaService.update(consulta.getId(), updateRequest(meuProfissional.getId(), StatusConsulta.CONFIRMADA, null));
+
+        List<ConsultaStatusHistorico> historico = historicoDe(consulta);
+        assertThat(historico).hasSize(1);
+        assertThat(historico.getFirst().getStatusAnterior()).isEqualTo(StatusConsulta.AGENDADA);
+        assertThat(historico.getFirst().getStatusNovo()).isEqualTo(StatusConsulta.CONFIRMADA);
+        assertThat(historico.getFirst().getOrganizacao().getId()).isEqualTo(minhaOrganizacao.getId());
+    }
+
+    @Test
+    void naoDeveRegistrarHistoricoQuandoStatusNaoMuda() {
+        Consulta consulta = novaConsulta(minhaOrganizacao, meuPaciente, meuProfissional,
+                LocalDateTime.of(2026, 11, 2, 9, 0), 30, StatusConsulta.AGENDADA);
+
+        ConsultaUpdateRequestDTO request = updateRequest(meuProfissional.getId(), StatusConsulta.AGENDADA, null);
+        request.setObservacoes("Só uma observação nova, sem mudar status");
+        consultaService.update(consulta.getId(), request);
+
+        assertThat(historicoDe(consulta)).isEmpty();
+    }
+
+    @Test
+    void devePreservarSequenciaCompletaEmMultiplasTransicoes() {
+        Consulta consulta = novaConsulta(minhaOrganizacao, meuPaciente, meuProfissional,
+                LocalDateTime.of(2026, 11, 2, 9, 0), 30, StatusConsulta.AGENDADA);
+
+        consultaService.update(consulta.getId(), updateRequest(meuProfissional.getId(), StatusConsulta.CONFIRMADA, null));
+        consultaService.update(consulta.getId(), updateRequest(meuProfissional.getId(), StatusConsulta.REALIZADA, null));
+
+        List<ConsultaStatusHistorico> historico = historicoDe(consulta);
+        assertThat(historico).hasSize(2);
+        assertThat(historico.get(0).getStatusAnterior()).isEqualTo(StatusConsulta.AGENDADA);
+        assertThat(historico.get(0).getStatusNovo()).isEqualTo(StatusConsulta.CONFIRMADA);
+        assertThat(historico.get(1).getStatusAnterior()).isEqualTo(StatusConsulta.CONFIRMADA);
+        assertThat(historico.get(1).getStatusNovo()).isEqualTo(StatusConsulta.REALIZADA);
+    }
+
+    @Test
+    void deveExigirMotivoTransicaoParaCancelar() {
+        Consulta consulta = novaConsulta(minhaOrganizacao, meuPaciente, meuProfissional,
+                LocalDateTime.of(2026, 11, 2, 9, 0), 30, StatusConsulta.AGENDADA);
+
+        assertThatThrownBy(() -> consultaService.update(consulta.getId(),
+                updateRequest(meuProfissional.getId(), StatusConsulta.CANCELADA, null)))
+                .isInstanceOf(NegocioException.class)
+                .satisfies(ex -> assertThat(((NegocioException) ex).getStatus()).isEqualTo(HttpStatus.BAD_REQUEST));
+
+        assertThat(historicoDe(consulta)).isEmpty();
+        assertThat(consultaRepository.findById(consulta.getId()).orElseThrow().getStatus()).isEqualTo(StatusConsulta.AGENDADA);
+    }
+
+    @Test
+    void deveExigirMotivoTransicaoParaFalta() {
+        Consulta consulta = novaConsulta(minhaOrganizacao, meuPaciente, meuProfissional,
+                LocalDateTime.of(2026, 11, 2, 9, 0), 30, StatusConsulta.AGENDADA);
+
+        assertThatThrownBy(() -> consultaService.update(consulta.getId(),
+                updateRequest(meuProfissional.getId(), StatusConsulta.FALTOU, "   ")))
+                .isInstanceOf(NegocioException.class)
+                .satisfies(ex -> assertThat(((NegocioException) ex).getStatus()).isEqualTo(HttpStatus.BAD_REQUEST));
+
+        assertThat(historicoDe(consulta)).isEmpty();
+    }
+
+    @Test
+    void devePermitirCancelarComMotivoTransicaoPreenchido() {
+        Consulta consulta = novaConsulta(minhaOrganizacao, meuPaciente, meuProfissional,
+                LocalDateTime.of(2026, 11, 2, 9, 0), 30, StatusConsulta.AGENDADA);
+
+        consultaService.update(consulta.getId(),
+                updateRequest(meuProfissional.getId(), StatusConsulta.CANCELADA, "Paciente remarcou por telefone"));
+
+        List<ConsultaStatusHistorico> historico = historicoDe(consulta);
+        assertThat(historico).hasSize(1);
+        assertThat(historico.getFirst().getStatusNovo()).isEqualTo(StatusConsulta.CANCELADA);
+        assertThat(historico.getFirst().getMotivoTransicao()).isEqualTo("Paciente remarcou por telefone");
+    }
+
+    @Test
+    void deveAceitarMotivoTransicaoOpcionalParaOutrasTransicoes() {
+        Consulta consulta = novaConsulta(minhaOrganizacao, meuPaciente, meuProfissional,
+                LocalDateTime.of(2026, 11, 2, 9, 0), 30, StatusConsulta.AGENDADA);
+
+        consultaService.update(consulta.getId(), updateRequest(meuProfissional.getId(), StatusConsulta.CONFIRMADA, null));
+
+        List<ConsultaStatusHistorico> historico = historicoDe(consulta);
+        assertThat(historico).hasSize(1);
+        assertThat(historico.getFirst().getMotivoTransicao()).isNull();
+    }
+
+    @Test
+    void alteradoPorDeveSerOUsuarioAutenticadoQueRealizouAOperacao() {
+        Consulta consulta = novaConsulta(minhaOrganizacao, meuPaciente, meuProfissional,
+                LocalDateTime.of(2026, 11, 2, 9, 0), 30, StatusConsulta.AGENDADA);
+
+        consultaService.update(consulta.getId(), updateRequest(meuProfissional.getId(), StatusConsulta.CONFIRMADA, null));
+
+        // alteradoPor é quem chamou a operação (usuarioLogado), não o profissional da consulta.
+        assertThat(historicoDe(consulta).getFirst().getAlteradoPor().getId()).isEqualTo(usuarioLogado.getId());
+        assertThat(usuarioLogado.getId()).isNotEqualTo(meuProfissional.getId());
+    }
+
+    @Test
+    void naoDeveEnxergarHistoricoDeConsultaDeOutraOrganizacao() {
+        Consulta alheia = novaConsulta(outraOrganizacao, pacienteAlheio, profissionalAlheio,
+                LocalDateTime.of(2026, 11, 2, 9, 0), 30, StatusConsulta.AGENDADA);
+        consultaStatusHistoricoRepository.saveAndFlush(ConsultaStatusHistorico.builder()
+                .consulta(alheia)
+                .organizacao(outraOrganizacao)
+                .statusAnterior(null)
+                .statusNovo(StatusConsulta.AGENDADA)
+                .alteradoPor(profissionalAlheio)
+                .build());
+
+        List<ConsultaStatusHistorico> historicoVistoDaMinhaOrganizacao = consultaStatusHistoricoRepository
+                .findByConsultaIdAndOrganizacaoIdOrderByCriadoEmAsc(alheia.getId(), minhaOrganizacao.getId());
+
+        assertThat(historicoVistoDaMinhaOrganizacao).isEmpty();
+    }
+
+    @Test
+    void naoDevePermitirExcluirConsultaComHistoricoDeTransicaoDeStatus() {
+        Consulta consulta = novaConsulta(minhaOrganizacao, meuPaciente, meuProfissional,
+                LocalDateTime.of(2026, 11, 2, 9, 0), 30, StatusConsulta.AGENDADA);
+        consultaService.update(consulta.getId(), updateRequest(meuProfissional.getId(), StatusConsulta.CONFIRMADA, null));
+
+        assertThatThrownBy(() -> consultaService.delete(consulta.getId()))
+                .isInstanceOf(NegocioException.class)
+                .satisfies(ex -> assertThat(((NegocioException) ex).getStatus()).isEqualTo(HttpStatus.BAD_REQUEST));
+
+        assertThat(consultaRepository.findById(consulta.getId())).isPresent();
     }
 }

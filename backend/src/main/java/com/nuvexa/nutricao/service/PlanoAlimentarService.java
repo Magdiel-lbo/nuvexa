@@ -12,6 +12,9 @@ import com.nuvexa.nutricao.model.PlanoAlimentar;
 import com.nuvexa.nutricao.model.QPlanoAlimentar;
 import com.nuvexa.nutricao.model.StatusPlanoAlimentar;
 import com.nuvexa.nutricao.repository.PlanoAlimentarRepository;
+import com.nuvexa.platform.auditoria.AuditoriaService;
+import com.nuvexa.platform.auditoria.EntidadeAuditavel;
+import com.nuvexa.platform.auditoria.TipoEventoAuditoria;
 import com.nuvexa.platform.exception.NegocioException;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +35,7 @@ public class PlanoAlimentarService {
     private final PlanoAlimentarRepository planoAlimentarRepository;
     private final ModelMapper modelMapper;
     private final OrganizacaoScopedContext contexto;
+    private final AuditoriaService auditoriaService;
     private final ValidadorOrganizacional validadorOrganizacional;
 
     public PlanoAlimentarResponseDTO create(PlanoAlimentarCreateRequestDTO request) {
@@ -40,6 +44,9 @@ public class PlanoAlimentarService {
 
         PlanoAlimentar planoAlimentar = planoAlimentarRepository.save(
                 request.toPlanoAlimentar(contexto.getContextoDeAutenticacao().organizacaoAtual(), paciente, autor));
+
+        registrarAuditoria(planoAlimentar.getId(), TipoEventoAuditoria.CRIACAO, null, descrever(planoAlimentar));
+
         log.info("Plano alimentar criado com id={}", planoAlimentar.getId());
         return PlanoAlimentarResponseDTO.from(planoAlimentar);
     }
@@ -48,10 +55,14 @@ public class PlanoAlimentarService {
         PlanoAlimentar planoAlimentar = buscarPlanoAlimentarOuFalhar(id);
         garantirEditavel(planoAlimentar);
         garantirTransicaoValida(planoAlimentar.getStatus(), request.getStatus());
+        String antes = descrever(planoAlimentar);
         Usuario autor = buscarAutorOuFalhar(request.getAutorId());
         request.atualizar(planoAlimentar, autor, modelMapper);
 
         PlanoAlimentar saved = planoAlimentarRepository.save(planoAlimentar);
+
+        registrarAuditoria(saved.getId(), TipoEventoAuditoria.EDICAO, antes, descrever(saved));
+
         log.info("Plano alimentar atualizado com id={}", id);
         return PlanoAlimentarResponseDTO.from(saved);
     }
@@ -72,7 +83,14 @@ public class PlanoAlimentarService {
 
     public void delete(Long id) {
         PlanoAlimentar planoAlimentar = buscarPlanoAlimentarOuFalhar(id);
+        garantirEditavel(planoAlimentar);
+        String antes = descrever(planoAlimentar);
+        Long planoAlimentarId = planoAlimentar.getId();
+
         planoAlimentarRepository.delete(planoAlimentar);
+
+        registrarAuditoria(planoAlimentarId, TipoEventoAuditoria.EXCLUSAO, antes, null);
+
         log.info("Plano alimentar removido com id={}", id);
     }
 
@@ -117,6 +135,27 @@ public class PlanoAlimentarService {
         if (atual == StatusPlanoAlimentar.ATIVO && novo == StatusPlanoAlimentar.RASCUNHO) {
             throw new NegocioException(HttpStatus.BAD_REQUEST, resolveMessage("planoAlimentar.transicao.invalida"));
         }
+    }
+
+    /**
+     * Snapshot simples dos campos relevantes para o evento de auditoria — mesmo padrão de
+     * {@code ProntuarioService.descrever}.
+     */
+    private String descrever(PlanoAlimentar planoAlimentar) {
+        return "nome=%s, dataInicio=%s, calorias=%d, refeicoesPorDia=%d, status=%s, autorId=%d".formatted(
+                planoAlimentar.getNome(), planoAlimentar.getDataInicio(), planoAlimentar.getCalorias(),
+                planoAlimentar.getRefeicoesPorDia(), planoAlimentar.getStatus(), planoAlimentar.getAutor().getId());
+    }
+
+    /**
+     * Mesmo helper de {@code ProntuarioService.registrarAuditoria} — empacota a resolução de
+     * usuário/organização atuais antes de chamar {@link AuditoriaService#registrar}.
+     */
+    private void registrarAuditoria(Long planoAlimentarId, TipoEventoAuditoria tipoEvento, String antes, String depois) {
+        Usuario usuarioAtual = contexto.getContextoDeAutenticacao().usuarioAtual();
+        auditoriaService.registrar(EntidadeAuditavel.PLANO_ALIMENTAR, planoAlimentarId, tipoEvento,
+                contexto.getContextoDeAutenticacao().organizacaoAtualId(), usuarioAtual.getId(), usuarioAtual.getNome(),
+                antes, depois);
     }
 
     private Paciente buscarPacienteOuFalhar(Long pacienteId) {

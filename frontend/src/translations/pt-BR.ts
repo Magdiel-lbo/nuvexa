@@ -660,6 +660,8 @@ export default {
     observacoes: 'Observações',
     motivo: 'Motivo da consulta',
     motivoCancelamento: 'Motivo do cancelamento',
+    motivoFalta: 'Motivo da falta',
+    motivoTransicao: 'Motivo da mudança de status',
     status: {
       AGENDADA: 'Agendada',
       CONFIRMADA: 'Confirmada',

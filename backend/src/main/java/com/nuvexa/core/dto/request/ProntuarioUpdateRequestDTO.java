@@ -4,6 +4,7 @@ import com.nuvexa.core.model.Prontuario;
 import com.nuvexa.core.model.SecaoProntuario;
 import com.nuvexa.core.model.StatusProntuario;
 import com.nuvexa.core.model.Usuario;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -35,6 +36,7 @@ public class ProntuarioUpdateRequestDTO {
 
     private String conteudo;
 
+    @Schema(description = "Indica se o prontuário faz referência a algum anexo — não é derivado automaticamente dos anexos reais cadastrados em /api/v1/prontuarios/{prontuarioId}/anexos, é um flag independente")
     private boolean comAnexo;
 
     public void atualizar(Prontuario prontuario, Usuario autor, ModelMapper modelMapper) {

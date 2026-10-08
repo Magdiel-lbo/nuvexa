@@ -44,8 +44,9 @@ class ConsultaService {
   }
 
   // Recebe a consulta inteira porque o PUT do backend substitui o registro por completo — não
-  // existe PATCH parcial. Preserva todos os outros campos, só troca o status.
-  async atualizarStatus(consulta: Consulta, status: ConsultaStatus): Promise<Consulta> {
+  // existe PATCH parcial. Preserva todos os outros campos, só troca o status. motivoTransicao só
+  // é exigido pelo backend quando o novo status é CANCELADA ou FALTOU.
+  async atualizarStatus(consulta: Consulta, status: ConsultaStatus, motivoTransicao: string | null = null): Promise<Consulta> {
     return this.atualizar(consulta.id, {
       profissionalId: consulta.profissionalId,
       dataHora: consulta.dataHora,
@@ -54,11 +55,12 @@ class ConsultaService {
       status,
       observacoes: consulta.observacoes,
       motivo: consulta.motivo,
+      motivoTransicao,
     })
   }
 
-  async cancelar(consulta: Consulta): Promise<Consulta> {
-    return this.atualizarStatus(consulta, 'CANCELADA')
+  async cancelar(consulta: Consulta, motivoTransicao: string): Promise<Consulta> {
+    return this.atualizarStatus(consulta, 'CANCELADA', motivoTransicao)
   }
 
   async excluir(id: number): Promise<void> {

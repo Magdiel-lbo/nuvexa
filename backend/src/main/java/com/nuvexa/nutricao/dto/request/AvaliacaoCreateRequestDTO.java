@@ -6,6 +6,7 @@ import com.nuvexa.core.model.Usuario;
 import com.nuvexa.nutricao.model.Avaliacao;
 import com.nuvexa.nutricao.model.StatusAvaliacao;
 import com.nuvexa.nutricao.model.TipoAvaliacao;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -38,8 +39,10 @@ public class AvaliacaoCreateRequestDTO {
     @NotNull(message = "{avaliacao.status.obrigatorio}")
     private StatusAvaliacao status;
 
+    @Schema(description = "Peso em quilogramas", example = "68.2")
     private BigDecimal peso;
 
+    @Schema(description = "Percentual de gordura corporal (0-100)", example = "18.5")
     private BigDecimal percentualGordura;
 
     public Avaliacao toAvaliacao(Organizacao organizacao, Paciente paciente, Usuario avaliador) {

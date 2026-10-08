@@ -435,8 +435,14 @@ export default class ConsultaLista extends Vue {
   }
 
   async onCancel(consulta: Consulta) {
+    // Backend exige motivoTransicao para CANCELADA — coleta antes de chamar a API, mesmo padrão
+    // nativo já usado em ConsultaDetalhe.confirmarExclusao (window.confirm).
+    const motivoTransicao = window.prompt(this.$t('consulta.motivoCancelamento') as string)
+    if (!motivoTransicao || !motivoTransicao.trim()) {
+      return
+    }
     try {
-      await consultaService.cancelar(consulta)
+      await consultaService.cancelar(consulta, motivoTransicao)
       await this.recarregar()
       this.appStore.setToast({ mensagem: `Consulta de ${consulta.pacienteNome} cancelada.`, erro: false })
     } catch (e) {

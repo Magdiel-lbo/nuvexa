@@ -5,9 +5,11 @@ import com.nuvexa.core.dto.request.ConsultaUpdateRequestDTO;
 import com.nuvexa.core.dto.response.ConsultaResponseDTO;
 import com.nuvexa.core.dto.response.ProfissionalResponseDTO;
 import com.nuvexa.core.model.Consulta;
+import com.nuvexa.core.model.ConsultaStatusHistorico;
 import com.nuvexa.core.model.QConsulta;
 import com.nuvexa.core.model.StatusConsulta;
 import com.nuvexa.core.repository.ConsultaRepository;
+import com.nuvexa.core.repository.ConsultaStatusHistoricoRepository;
 import com.nuvexa.core.model.Paciente;
 import com.nuvexa.core.model.Usuario;
 import com.nuvexa.core.model.Vinculo;
@@ -32,6 +34,7 @@ import java.util.List;
 public class ConsultaService {
 
     private final ConsultaRepository consultaRepository;
+    private final ConsultaStatusHistoricoRepository consultaStatusHistoricoRepository;
     private final VinculoRepository vinculoRepository;
     private final ModelMapper modelMapper;
     private final OrganizacaoScopedContext contexto;
@@ -43,9 +46,13 @@ public class ConsultaService {
         Long organizacaoId = contexto.getContextoDeAutenticacao().organizacaoAtualId();
         garantirSemConflitoDeHorario(organizacaoId, profissional.getId(), paciente.getId(),
                 request.getDataHora(), request.getDuracaoMinutos(), request.getStatus(), null);
+        garantirMotivoTransicaoQuandoExigido(request.getStatus(), request.getMotivoTransicao());
 
         Consulta consulta = consultaRepository.save(
                 request.toConsulta(contexto.getContextoDeAutenticacao().organizacaoAtual(), paciente, profissional));
+
+        registrarTransicao(consulta, null, consulta.getStatus(), request.getMotivoTransicao());
+
         log.info("Consulta criada com id={}", consulta.getId());
         return ConsultaResponseDTO.from(consulta);
     }
@@ -53,6 +60,10 @@ public class ConsultaService {
     public ConsultaResponseDTO update(Long id, ConsultaUpdateRequestDTO request) {
         Consulta consulta = buscarConsultaOuFalhar(id);
         garantirEditavel(consulta);
+        StatusConsulta statusAnterior = consulta.getStatus();
+        if (statusAnterior != request.getStatus()) {
+            garantirMotivoTransicaoQuandoExigido(request.getStatus(), request.getMotivoTransicao());
+        }
         Usuario profissional = buscarProfissionalOuFalhar(request.getProfissionalId());
         request.atualizar(consulta, profissional, modelMapper);
 
@@ -61,6 +72,11 @@ public class ConsultaService {
                 consulta.getDataHora(), consulta.getDuracaoMinutos(), consulta.getStatus(), consulta.getId());
 
         Consulta saved = consultaRepository.save(consulta);
+
+        if (statusAnterior != saved.getStatus()) {
+            registrarTransicao(saved, statusAnterior, saved.getStatus(), request.getMotivoTransicao());
+        }
+
         log.info("Consulta atualizada com id={}", id);
         return ConsultaResponseDTO.from(saved);
     }
@@ -90,6 +106,8 @@ public class ConsultaService {
 
     public void delete(Long id) {
         Consulta consulta = buscarConsultaOuFalhar(id);
+        garantirEditavel(consulta);
+        garantirSemHistorico(consulta);
         consultaRepository.delete(consulta);
         log.info("Consulta removida com id={}", id);
     }
@@ -147,6 +165,47 @@ public class ConsultaService {
         if (status == StatusConsulta.REALIZADA || status == StatusConsulta.CANCELADA || status == StatusConsulta.FALTOU) {
             throw new NegocioException(HttpStatus.BAD_REQUEST, resolveMessage("consulta.finalizada.imutavel"));
         }
+    }
+
+    /**
+     * CANCELADA/FALTOU exigem justificativa — as demais transições (inclusive a criação direta
+     * em qualquer outro status) não. Regra vale tanto na criação (null → status inicial) quanto
+     * em toda transição de update, mesmo critério aplicado nos dois lugares.
+     */
+    private void garantirMotivoTransicaoQuandoExigido(StatusConsulta statusNovo, String motivoTransicao) {
+        boolean exigido = statusNovo == StatusConsulta.CANCELADA || statusNovo == StatusConsulta.FALTOU;
+        if (exigido && (motivoTransicao == null || motivoTransicao.isBlank())) {
+            throw new NegocioException(HttpStatus.BAD_REQUEST, resolveMessage("consulta.motivoTransicao.obrigatorio"));
+        }
+    }
+
+    /**
+     * Histórico representa rastreabilidade clínica — uma vez que a consulta mudou de status
+     * alguma vez, não pode mais ser excluída (mesmo padrão de {@code ProntuarioService.
+     * garantirSemFilhos}). A linha de criação (statusAnterior nulo) sozinha não conta: ver
+     * {@link ConsultaStatusHistoricoRepository#existsByConsultaIdAndStatusAnteriorIsNotNull}.
+     */
+    private void garantirSemHistorico(Consulta consulta) {
+        if (consultaStatusHistoricoRepository.existsByConsultaIdAndStatusAnteriorIsNotNull(consulta.getId())) {
+            throw new NegocioException(HttpStatus.BAD_REQUEST, resolveMessage("consulta.comHistorico.naoExcluivel"));
+        }
+    }
+
+    /**
+     * Uma linha por transição, nunca sobrescrita — ver {@link ConsultaStatusHistorico}.
+     * {@code alteradoPor} é sempre o usuário autenticado que fez a chamada, não necessariamente o
+     * {@code profissional} da consulta (ex.: recepção reagendando em nome de outro profissional).
+     */
+    private void registrarTransicao(Consulta consulta, StatusConsulta statusAnterior, StatusConsulta statusNovo, String motivoTransicao) {
+        Usuario usuarioAtual = contexto.getContextoDeAutenticacao().usuarioAtual();
+        consultaStatusHistoricoRepository.save(ConsultaStatusHistorico.builder()
+                .consulta(consulta)
+                .organizacao(consulta.getOrganizacao())
+                .statusAnterior(statusAnterior)
+                .statusNovo(statusNovo)
+                .alteradoPor(usuarioAtual)
+                .motivoTransicao(motivoTransicao)
+                .build());
     }
 
     /**

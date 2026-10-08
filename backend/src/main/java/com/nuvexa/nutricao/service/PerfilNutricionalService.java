@@ -1,6 +1,7 @@
 package com.nuvexa.nutricao.service;
 
 import com.nuvexa.core.model.Paciente;
+import com.nuvexa.core.model.Usuario;
 import com.nuvexa.core.service.OrganizacaoScopedContext;
 import com.nuvexa.core.service.ValidadorOrganizacional;
 import com.nuvexa.nutricao.calculator.GastoCaloricoCalculator;
@@ -16,6 +17,9 @@ import com.nuvexa.nutricao.model.QPerfilNutricional;
 import com.nuvexa.nutricao.repository.AvaliacaoRepository;
 import com.nuvexa.nutricao.repository.PerfilNutricionalRepository;
 import com.nuvexa.core.model.QPaciente;
+import com.nuvexa.platform.auditoria.AuditoriaService;
+import com.nuvexa.platform.auditoria.EntidadeAuditavel;
+import com.nuvexa.platform.auditoria.TipoEventoAuditoria;
 import com.nuvexa.platform.exception.NegocioException;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import lombok.RequiredArgsConstructor;
@@ -55,6 +59,7 @@ public class PerfilNutricionalService {
     private final TaxaMetabolicaCalculator taxaMetabolicaCalculator;
     private final GastoCaloricoCalculator gastoCaloricoCalculator;
     private final OrganizacaoScopedContext contexto;
+    private final AuditoriaService auditoriaService;
     private final ValidadorOrganizacional validadorOrganizacional;
 
     public PerfilNutricionalResponseDTO create(Long pacienteId, PerfilNutricionalCreateRequestDTO request) {
@@ -69,6 +74,8 @@ public class PerfilNutricionalService {
                 contexto.getContextoDeAutenticacao().usuarioAtual(), LocalDate.now(), request.getPesoInicial());
         avaliacaoRepository.save(avaliacaoInicial);
 
+        registrarAuditoria(perfilNutricional.getId(), TipoEventoAuditoria.CRIACAO, null, descrever(perfilNutricional));
+
         log.info("Perfil nutricional criado para paciente com id={}", pacienteId);
         return toResponseComCalculos(perfilNutricional);
     }
@@ -76,9 +83,13 @@ public class PerfilNutricionalService {
     public PerfilNutricionalResponseDTO update(Long pacienteId, PerfilNutricionalUpdateRequestDTO request) {
         PerfilNutricional perfilNutricional = buscarPerfilOuFalhar(pacienteId);
         validar(request.getAltura(), request.getCaloriasDiariasManuais());
+        String antes = descrever(perfilNutricional);
 
         request.atualizar(perfilNutricional, modelMapper);
         PerfilNutricional saved = perfilNutricionalRepository.save(perfilNutricional);
+
+        registrarAuditoria(saved.getId(), TipoEventoAuditoria.EDICAO, antes, descrever(saved));
+
         log.info("Perfil nutricional atualizado para paciente com id={}", pacienteId);
         return toResponseComCalculos(saved);
     }
@@ -123,7 +134,13 @@ public class PerfilNutricionalService {
     /** Remove o perfil nutricional — o Paciente em si é preservado (histórico de Consulta/Prontuário/etc. não depende do perfil). */
     public void delete(Long pacienteId) {
         PerfilNutricional perfilNutricional = buscarPerfilOuFalhar(pacienteId);
+        String antes = descrever(perfilNutricional);
+        Long perfilNutricionalId = perfilNutricional.getId();
+
         perfilNutricionalRepository.delete(perfilNutricional);
+
+        registrarAuditoria(perfilNutricionalId, TipoEventoAuditoria.EXCLUSAO, antes, null);
+
         log.info("Perfil nutricional removido para paciente com id={} (Paciente preservado)", pacienteId);
     }
 
@@ -159,6 +176,28 @@ public class PerfilNutricionalService {
 
     private String resolveMessage(String key, Object... args) {
         return contexto.getMensagens().getMessage(key, args);
+    }
+
+    /**
+     * Snapshot simples dos campos relevantes para o evento de auditoria — mesmo padrão de
+     * {@code ProntuarioService.descrever}. Não inclui peso: peso não é estado deste perfil (ver
+     * javadoc da classe), seu histórico já é rastreado via {@link Avaliacao}.
+     */
+    private String descrever(PerfilNutricional perfilNutricional) {
+        return "altura=%s, objetivo=%s, nivelAtividade=%s, caloriasDiariasManuais=%s, observacoes=%s".formatted(
+                perfilNutricional.getAltura(), perfilNutricional.getObjetivo(), perfilNutricional.getNivelAtividade(),
+                perfilNutricional.getCaloriasDiariasManuais(), perfilNutricional.getObservacoes());
+    }
+
+    /**
+     * Mesmo helper de {@code ProntuarioService.registrarAuditoria} — empacota a resolução de
+     * usuário/organização atuais antes de chamar {@link AuditoriaService#registrar}.
+     */
+    private void registrarAuditoria(Long perfilNutricionalId, TipoEventoAuditoria tipoEvento, String antes, String depois) {
+        Usuario usuarioAtual = contexto.getContextoDeAutenticacao().usuarioAtual();
+        auditoriaService.registrar(EntidadeAuditavel.PERFIL_NUTRICIONAL, perfilNutricionalId, tipoEvento,
+                contexto.getContextoDeAutenticacao().organizacaoAtualId(), usuarioAtual.getId(), usuarioAtual.getNome(),
+                antes, depois);
     }
 
     private PerfilNutricionalResponseDTO toResponseComCalculos(PerfilNutricional perfilNutricional) {

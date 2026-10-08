@@ -37,6 +37,7 @@
             :submit-label="(isCriacao ? $t('acao.criar') : $t('acao.salvar')) as string"
             :loading="salvando"
             :mostrar-selecao-paciente="isCriacao"
+            :status-original="consulta ? consulta.status : null"
             @submit="onSubmit"
             @cancel="voltar"
           />
@@ -77,6 +78,7 @@ function formModelPadrao(): ConsultaFormModel {
     status: 'AGENDADA',
     observacoes: null,
     motivo: null,
+    motivoTransicao: null,
   }
 }
 
@@ -146,6 +148,7 @@ export default class ConsultaFormulario extends Vue {
         status: consulta.status,
         observacoes: consulta.observacoes,
         motivo: consulta.motivo,
+        motivoTransicao: null,
       }
       if (this.isView) {
         await this.carregarDetalhe(consulta)
@@ -203,6 +206,7 @@ export default class ConsultaFormulario extends Vue {
       status: form.status,
       observacoes: form.observacoes,
       motivo: form.motivo,
+      motivoTransicao: form.motivoTransicao,
     })
   }
 
@@ -219,6 +223,7 @@ export default class ConsultaFormulario extends Vue {
       status: form.status,
       observacoes: form.observacoes,
       motivo: form.motivo,
+      motivoTransicao: form.motivoTransicao,
     })
   }
 
@@ -247,9 +252,19 @@ export default class ConsultaFormulario extends Vue {
     if (!consulta) {
       return
     }
+    // Backend exige motivoTransicao para CANCELADA/FALTOU — hoje só "Marcar falta" chega aqui
+    // (ConsultaDetalhe não emite mudar-status para CANCELADA), mas cobre os dois por simetria.
+    let motivoTransicao: string | null = null
+    if (status === 'CANCELADA' || status === 'FALTOU') {
+      const label = status === 'CANCELADA' ? this.$t('consulta.motivoCancelamento') : this.$t('consulta.motivoFalta')
+      motivoTransicao = window.prompt(label as string)
+      if (!motivoTransicao || !motivoTransicao.trim()) {
+        return
+      }
+    }
     this.atualizandoStatus = true
     try {
-      this.consulta = await consultaService.atualizarStatus(consulta, status)
+      this.consulta = await consultaService.atualizarStatus(consulta, status, motivoTransicao)
       this.appStore.setToast({ mensagem: this.$t('sucesso.statusConsultaAtualizado') as string, erro: false })
     } catch (e) {
       this.appStore.setToast({ mensagem: extrairMensagemErro(e, this.$t('erro.salvarConsulta') as string), erro: true })

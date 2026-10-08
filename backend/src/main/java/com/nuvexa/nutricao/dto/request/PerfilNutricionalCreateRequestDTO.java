@@ -4,6 +4,7 @@ import com.nuvexa.core.model.Paciente;
 import com.nuvexa.nutricao.model.NivelAtividade;
 import com.nuvexa.nutricao.model.Objetivo;
 import com.nuvexa.nutricao.model.PerfilNutricional;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,6 +22,7 @@ import java.math.BigDecimal;
 public class PerfilNutricionalCreateRequestDTO {
 
     @NotNull(message = "{paciente.altura.obrigatoria}")
+    @Schema(description = "Altura em metros", example = "1.75")
     private BigDecimal altura;
 
     /**
@@ -28,6 +30,7 @@ public class PerfilNutricionalCreateRequestDTO {
      * {@link com.nuvexa.nutricao.model.Avaliacao} do paciente (ver {@code PerfilNutricionalService.create}).
      */
     @NotNull(message = "{paciente.peso.obrigatorio}")
+    @Schema(description = "Peso em quilogramas", example = "70.5")
     private BigDecimal pesoInicial;
 
     @NotNull(message = "{paciente.objetivo.obrigatorio}")

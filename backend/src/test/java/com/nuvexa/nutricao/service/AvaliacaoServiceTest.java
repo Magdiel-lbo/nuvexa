@@ -268,12 +268,39 @@ class AvaliacaoServiceTest {
     void deveRegistrarEventoExclusaoNaAuditoria() {
         Paciente paciente = paciente(1L);
         Usuario avaliador = usuario(2L, "Joana Nutri");
-        Avaliacao existente = avaliacao(10L, paciente, avaliador, StatusAvaliacao.CONCLUIDA, new BigDecimal("70.00"));
+        Avaliacao existente = avaliacao(10L, paciente, avaliador, StatusAvaliacao.AGENDADA, null);
         when(avaliacaoRepository.findByIdAndOrganizacaoId(10L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(existente));
 
         service.delete(10L);
 
         verify(auditoriaService).registrar(eq(EntidadeAuditavel.AVALIACAO), eq(10L), eq(TipoEventoAuditoria.EXCLUSAO),
                 eq(ORGANIZACAO_ATUAL_ID), eq(99L), eq("Usuário Logado"), any(String.class), isNull());
+    }
+
+    @Test
+    void naoDevePermitirExcluirAvaliacaoConcluida() {
+        Paciente paciente = paciente(1L);
+        Usuario avaliador = usuario(2L, "Joana Nutri");
+        Avaliacao existente = avaliacao(10L, paciente, avaliador, StatusAvaliacao.CONCLUIDA, new BigDecimal("70.00"));
+        when(avaliacaoRepository.findByIdAndOrganizacaoId(10L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(existente));
+
+        assertThatThrownBy(() -> service.delete(10L))
+                .isInstanceOf(NegocioException.class)
+                .satisfies(ex -> assertThat(((NegocioException) ex).getStatus()).isEqualTo(HttpStatus.BAD_REQUEST));
+
+        verify(avaliacaoRepository, never()).delete(any());
+        verify(auditoriaService, never()).registrar(any(), any(), any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void devePermitirExcluirAvaliacaoAgendada() {
+        Paciente paciente = paciente(1L);
+        Usuario avaliador = usuario(2L, "Joana Nutri");
+        Avaliacao existente = avaliacao(10L, paciente, avaliador, StatusAvaliacao.AGENDADA, null);
+        when(avaliacaoRepository.findByIdAndOrganizacaoId(10L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(existente));
+
+        service.delete(10L);
+
+        verify(avaliacaoRepository).delete(existente);
     }
 }

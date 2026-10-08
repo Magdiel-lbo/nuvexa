@@ -24,6 +24,9 @@ import com.nuvexa.nutricao.model.StatusAvaliacao;
 import com.nuvexa.nutricao.model.TipoAvaliacao;
 import com.nuvexa.nutricao.repository.AvaliacaoRepository;
 import com.nuvexa.nutricao.repository.PerfilNutricionalRepository;
+import com.nuvexa.platform.auditoria.AuditoriaService;
+import com.nuvexa.platform.auditoria.EntidadeAuditavel;
+import com.nuvexa.platform.auditoria.TipoEventoAuditoria;
 import com.nuvexa.platform.exception.NegocioException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,6 +44,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -65,6 +70,7 @@ class PerfilNutricionalServiceTest {
     private OrganizacaoScopedContext contexto;
     private ContextoDeAutenticacao contextoDeAutenticacao;
     private MessageSourceAccessor mensagens;
+    private AuditoriaService auditoriaService;
 
     private Organizacao organizacaoAtual;
     private Usuario usuarioLogado;
@@ -84,6 +90,7 @@ class PerfilNutricionalServiceTest {
         contexto = mock(OrganizacaoScopedContext.class);
         contextoDeAutenticacao = mock(ContextoDeAutenticacao.class);
         mensagens = mock(MessageSourceAccessor.class);
+        auditoriaService = mock(AuditoriaService.class);
 
         organizacaoAtual = organizacao(ORGANIZACAO_ATUAL_ID, "Clínica Atual");
         usuarioLogado = usuario(3L, "Joana Nutri");
@@ -100,7 +107,8 @@ class PerfilNutricionalServiceTest {
 
         service = new PerfilNutricionalService(
                 perfilNutricionalRepository, avaliacaoRepository, avaliacaoService,
-                modelMapper, imcCalculator, taxaMetabolicaCalculator, gastoCaloricoCalculator, contexto, validadorOrganizacional);
+                modelMapper, imcCalculator, taxaMetabolicaCalculator, gastoCaloricoCalculator, contexto,
+                auditoriaService, validadorOrganizacional);
     }
 
     private Organizacao organizacao(Long id, String nome) {
@@ -257,5 +265,57 @@ class PerfilNutricionalServiceTest {
         assertThat(response.getAvaliacaoAtualId()).isEqualTo(42L);
         assertThat(response.getImc()).isEqualByComparingTo("24.2");
         assertThat(response.getGastoCaloricoDiario()).isEqualByComparingTo("1800");
+    }
+
+    @Test
+    void deveRegistrarEventoCriacaoNaAuditoria() {
+        Paciente paciente = paciente(1L);
+        when(validadorOrganizacional.pacienteDaOrganizacao(1L, ORGANIZACAO_ATUAL_ID)).thenReturn(Optional.of(paciente));
+        when(avaliacaoService.buscarUltimaAvaliacaoComPeso(1L)).thenReturn(Optional.empty());
+        when(perfilNutricionalRepository.save(any(PerfilNutricional.class))).thenAnswer(invocation -> {
+            PerfilNutricional perfil = invocation.getArgument(0);
+            perfil.setId(10L);
+            return perfil;
+        });
+
+        service.create(1L, createRequest(new BigDecimal("58.00")));
+
+        verify(auditoriaService).registrar(eq(EntidadeAuditavel.PERFIL_NUTRICIONAL), eq(10L), eq(TipoEventoAuditoria.CRIACAO),
+                eq(ORGANIZACAO_ATUAL_ID), eq(3L), eq("Joana Nutri"), isNull(), any(String.class));
+    }
+
+    @Test
+    void deveRegistrarEventoEdicaoNaAuditoria() {
+        Paciente paciente = paciente(1L);
+        PerfilNutricional existente = perfil(paciente, null);
+        existente.setId(10L);
+        when(perfilNutricionalRepository.findByPacienteIdAndPacienteOrganizacaoId(1L, ORGANIZACAO_ATUAL_ID))
+                .thenReturn(Optional.of(existente));
+        when(avaliacaoService.buscarUltimaAvaliacaoComPeso(1L)).thenReturn(Optional.empty());
+
+        PerfilNutricionalUpdateRequestDTO request = PerfilNutricionalUpdateRequestDTO.builder()
+                .altura(new BigDecimal("1.71"))
+                .objetivo(Objetivo.GANHO_MASSA_MUSCULAR)
+                .nivelAtividade(NivelAtividade.MODERADAMENTE_ATIVO)
+                .build();
+
+        service.update(1L, request);
+
+        verify(auditoriaService).registrar(eq(EntidadeAuditavel.PERFIL_NUTRICIONAL), eq(10L), eq(TipoEventoAuditoria.EDICAO),
+                eq(ORGANIZACAO_ATUAL_ID), eq(3L), eq("Joana Nutri"), any(String.class), any(String.class));
+    }
+
+    @Test
+    void deveRegistrarEventoExclusaoNaAuditoria() {
+        Paciente paciente = paciente(1L);
+        PerfilNutricional existente = perfil(paciente, null);
+        existente.setId(10L);
+        when(perfilNutricionalRepository.findByPacienteIdAndPacienteOrganizacaoId(1L, ORGANIZACAO_ATUAL_ID))
+                .thenReturn(Optional.of(existente));
+
+        service.delete(1L);
+
+        verify(auditoriaService).registrar(eq(EntidadeAuditavel.PERFIL_NUTRICIONAL), eq(10L), eq(TipoEventoAuditoria.EXCLUSAO),
+                eq(ORGANIZACAO_ATUAL_ID), eq(3L), eq("Joana Nutri"), any(String.class), isNull());
     }
 }

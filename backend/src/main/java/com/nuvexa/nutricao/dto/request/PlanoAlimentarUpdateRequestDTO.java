@@ -3,6 +3,7 @@ package com.nuvexa.nutricao.dto.request;
 import com.nuvexa.core.model.Usuario;
 import com.nuvexa.nutricao.model.PlanoAlimentar;
 import com.nuvexa.nutricao.model.StatusPlanoAlimentar;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -38,10 +39,12 @@ public class PlanoAlimentarUpdateRequestDTO {
 
     @NotNull(message = "{planoAlimentar.calorias.obrigatorias}")
     @Positive(message = "{planoAlimentar.calorias.invalidas}")
+    @Schema(description = "Meta de calorias diárias (kcal)", example = "2000")
     private Integer calorias;
 
     @NotNull(message = "{planoAlimentar.refeicoesPorDia.obrigatorio}")
     @Positive(message = "{planoAlimentar.refeicoesPorDia.invalido}")
+    @Schema(example = "5")
     private Integer refeicoesPorDia;
 
     @NotNull(message = "{planoAlimentar.status.obrigatorio}")

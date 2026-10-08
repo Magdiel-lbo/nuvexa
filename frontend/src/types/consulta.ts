@@ -32,6 +32,9 @@ export interface ConsultaCreateRequest {
   status: ConsultaStatus
   observacoes: string | null
   motivo: string | null
+  // Motivo da transição de status (null->status inicial) — obrigatório no backend quando status
+  // é CANCELADA ou FALTOU. Não confundir com `motivo` acima, que é o motivo/razão da consulta.
+  motivoTransicao: string | null
 }
 
 export interface ConsultaUpdateRequest {
@@ -42,6 +45,9 @@ export interface ConsultaUpdateRequest {
   status: ConsultaStatus
   observacoes: string | null
   motivo: string | null
+  // Motivo da transição de status — obrigatório no backend quando o status muda para CANCELADA
+  // ou FALTOU; ignorado quando o status não muda. Não confundir com `motivo` acima.
+  motivoTransicao: string | null
 }
 
 export interface ConsultaRelatorioFiltro {

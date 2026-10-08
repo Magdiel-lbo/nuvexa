@@ -19,6 +19,12 @@ import lombok.experimental.SuperBuilder;
  * organização é sempre a do vínculo do profissional que criou a associação — replicada aqui
  * (e não derivada via paciente/profissional) pelo mesmo motivo de {@link Paciente#getOrganizacao()}
  * e {@link Consulta#getOrganizacao()}: escopo direto e simples de filtrar em query.
+ *
+ * <p><strong>Não define escopo de autorização.</strong> A regra de produto é que qualquer usuário
+ * com vínculo ativo na organização acessa todos os pacientes dela — ver
+ * {@link com.nuvexa.core.service.ValidadorOrganizacional}. Esta associação registra só quem é o
+ * profissional responsável por um paciente, sem restringir o acesso de outros profissionais da
+ * mesma organização a ele.
  */
 @Entity
 @Table(name = "paciente_profissionais", uniqueConstraints = @UniqueConstraint(

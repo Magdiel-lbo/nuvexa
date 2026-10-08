@@ -44,6 +44,13 @@ public class ConsultaCreateRequestDTO {
 
     private String motivo;
 
+    /**
+     * Motivo da transição de status (obrigatório quando {@code status} é CANCELADA ou FALTOU já
+     * na criação — validado em {@code ConsultaService}, não aqui, por depender do valor de
+     * outro campo). Não confundir com {@link #motivo}, que é o motivo/razão da consulta em si.
+     */
+    private String motivoTransicao;
+
     public Consulta toConsulta(Organizacao organizacao, Paciente paciente, Usuario profissional) {
         return Consulta.builder()
                 .organizacao(organizacao)

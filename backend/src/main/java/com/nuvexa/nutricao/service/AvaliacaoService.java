@@ -93,6 +93,7 @@ public class AvaliacaoService {
 
     public void delete(Long id) {
         Avaliacao avaliacao = buscarAvaliacaoOuFalhar(id);
+        garantirEditavel(avaliacao);
         String antes = descrever(avaliacao);
         Long avaliacaoId = avaliacao.getId();
 
