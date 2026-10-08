@@ -40,6 +40,8 @@ springdoc:
   auto-tag-classes: false
 
 app:
+  api:
+    base-url: ${API_BASE_URL:http://localhost:8080}
   cors:
     allowed-origin: ${FRONTEND_URL:http://localhost:5173}
   jwt:

@@ -1,0 +1,25 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5435}/${DB_NAME:nuvexa}
+    username: ${DB_USER:nuvexa}
+    password: ${DB_PASSWORD:nuvexa}
+
+server:
+  port: ${SERVER_PORT:8080}
+
+logging:
+  level:
+    root: INFO
+    com.nuvexa: DEBUG
+
+app:
+  api:
+    base-url: ${API_BASE_URL:http://api.nuvexa.dev:8080}
+  cors:
+    allowed-origin: ${FRONTEND_URL}
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true

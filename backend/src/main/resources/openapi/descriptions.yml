@@ -65,21 +65,6 @@ PacienteController:
         "404":
           description: "Paciente não encontrado"
           schema: "ApiErro"
-    "DELETE /api/v1/pacientes/{id}":
-      summary: "Remover perfil nutricional do paciente"
-      description: "Remove o perfil nutricional; o cadastro do paciente é preservado. Requer papel ADMIN"
-      parameters:
-        id:
-          description: "ID do paciente"
-      responses:
-        "204":
-          description: "Perfil nutricional removido com sucesso"
-        "403":
-          description: "Usuário sem papel ADMIN"
-          schema: "ApiErro"
-        "404":
-          description: "Paciente não encontrado"
-          schema: "ApiErro"
 
 ConsultaController:
   tag: "Consultas"
@@ -177,6 +162,550 @@ PacienteRelatorioController:
       responses:
         "200":
           description: "Planilha gerada com sucesso"
+
+PerfilNutricionalController:
+  tag: "Perfil nutricional"
+  tagDescription: "Cadastro, consulta e cálculos automáticos (IMC/TMB/gasto calórico) do perfil nutricional do paciente"
+  endpoints:
+    "GET /api/v1/perfis-nutricionais":
+      summary: "Listar perfis nutricionais"
+      description: "Retorna os perfis nutricionais dos pacientes da organização do usuário autenticado, opcionalmente filtrados por nome do paciente"
+      parameters:
+        busca:
+          description: "Termo de busca por nome do paciente"
+    "GET /api/v1/pacientes/{pacienteId}/perfil-nutricional":
+      summary: "Buscar perfil nutricional do paciente"
+      parameters:
+        pacienteId:
+          description: "ID do paciente"
+      responses:
+        "200":
+          description: "Perfil nutricional encontrado"
+        "404":
+          description: "Perfil nutricional não encontrado para o paciente"
+          schema: "ApiErro"
+    "GET /api/v1/perfis-nutricionais/enums":
+      summary: "Listar opções de enums do perfil nutricional"
+      description: "Retorna os valores possíveis (com rótulo traduzido) para objetivo e nível de atividade, usados para popular selects no frontend"
+    "POST /api/v1/pacientes/{pacienteId}/perfil-nutricional":
+      summary: "Cadastrar perfil nutricional do paciente"
+      description: "Cria o perfil nutricional do paciente; o peso informado (pesoInicial) vira a primeira avaliação com peso do paciente, não é um campo persistido no próprio perfil"
+      parameters:
+        pacienteId:
+          description: "ID do paciente"
+      responses:
+        "201":
+          description: "Perfil nutricional criado com sucesso"
+        "400":
+          description: "Dados inválidos"
+          schema: "ApiErro"
+        "404":
+          description: "Paciente não encontrado"
+          schema: "ApiErro"
+    "PUT /api/v1/pacientes/{pacienteId}/perfil-nutricional":
+      summary: "Atualizar perfil nutricional do paciente"
+      parameters:
+        pacienteId:
+          description: "ID do paciente"
+      responses:
+        "200":
+          description: "Perfil nutricional atualizado com sucesso"
+        "400":
+          description: "Dados inválidos"
+          schema: "ApiErro"
+        "404":
+          description: "Perfil nutricional não encontrado para o paciente"
+          schema: "ApiErro"
+    "DELETE /api/v1/pacientes/{pacienteId}/perfil-nutricional":
+      summary: "Remover perfil nutricional do paciente"
+      description: "Remove o perfil nutricional; o cadastro do paciente é preservado"
+      parameters:
+        pacienteId:
+          description: "ID do paciente"
+      responses:
+        "204":
+          description: "Perfil nutricional removido com sucesso"
+        "404":
+          description: "Perfil nutricional não encontrado para o paciente"
+          schema: "ApiErro"
+
+AvaliacaoController:
+  tag: "Avaliações"
+  tagDescription: "Registro de avaliações antropométricas do paciente (peso, percentual de gordura) e histórico de variação de peso"
+  endpoints:
+    "GET /api/v1/avaliacoes":
+      summary: "Listar avaliações"
+      description: "Retorna as avaliações da organização do usuário autenticado, com filtro opcional por paciente e por nome do paciente"
+      parameters:
+        pacienteId:
+          description: "ID do paciente para filtrar as avaliações"
+        busca:
+          description: "Termo de busca por nome do paciente"
+    "GET /api/v1/avaliacoes/{id}":
+      summary: "Buscar avaliação por ID"
+      parameters:
+        id:
+          description: "ID da avaliação"
+      responses:
+        "200":
+          description: "Avaliação encontrada"
+        "404":
+          description: "Avaliação não encontrada"
+          schema: "ApiErro"
+    "GET /api/v1/avaliacoes/enums":
+      summary: "Listar opções de enums da avaliação"
+      description: "Retorna os valores possíveis (com rótulo traduzido) para tipo e status, usados para popular selects no frontend"
+    "POST /api/v1/avaliacoes":
+      summary: "Registrar avaliação"
+      description: "Cria uma avaliação para o paciente; a data não pode ser futura quando o peso é informado"
+      responses:
+        "201":
+          description: "Avaliação registrada com sucesso"
+        "400":
+          description: "Dados inválidos"
+          schema: "ApiErro"
+        "404":
+          description: "Paciente não encontrado"
+          schema: "ApiErro"
+    "PUT /api/v1/avaliacoes/{id}":
+      summary: "Atualizar avaliação"
+      description: "O paciente da avaliação não é editável (fixo desde a criação); avaliação com status CONCLUIDA não pode ser alterada; a data não pode ser futura quando o peso é informado"
+      parameters:
+        id:
+          description: "ID da avaliação"
+      responses:
+        "200":
+          description: "Avaliação atualizada com sucesso"
+        "400":
+          description: "Dados inválidos"
+          schema: "ApiErro"
+        "404":
+          description: "Avaliação não encontrada"
+          schema: "ApiErro"
+    "DELETE /api/v1/avaliacoes/{id}":
+      summary: "Remover avaliação"
+      parameters:
+        id:
+          description: "ID da avaliação"
+      responses:
+        "204":
+          description: "Avaliação removida com sucesso"
+        "404":
+          description: "Avaliação não encontrada"
+          schema: "ApiErro"
+
+AvaliacaoRelatorioController:
+  tag: "Relatório de avaliações"
+  tagDescription: "Geração de relatório de avaliações em JSON ou planilha Excel"
+  endpoints:
+    "GET /api/v1/avaliacoes/relatorio":
+      summary: "Gerar relatório de avaliações"
+      description: "Retorna as linhas do relatório em JSON, com os mesmos filtros disponíveis na versão Excel"
+      parameters:
+        busca:
+          description: "Termo de busca por nome do paciente"
+        tipo:
+          description: "Filtro por tipo de avaliação"
+        status:
+          description: "Filtro por status da avaliação"
+        periodo:
+          description: "Filtro por período (hoje, 7d, 30d, 90d, ano)"
+        avaliadorId:
+          description: "Filtro por avaliador"
+        tendencia:
+          description: "Filtro por tendência de peso (queda, estavel, alta)"
+    "GET /api/v1/avaliacoes/relatorio/excel":
+      summary: "Baixar relatório de avaliações em Excel"
+      description: "Gera e retorna o relatório como planilha .xlsx (attachment) com os mesmos filtros da versão JSON"
+      parameters:
+        busca:
+          description: "Termo de busca por nome do paciente"
+        tipo:
+          description: "Filtro por tipo de avaliação"
+        status:
+          description: "Filtro por status da avaliação"
+        periodo:
+          description: "Filtro por período (hoje, 7d, 30d, 90d, ano)"
+        avaliadorId:
+          description: "Filtro por avaliador"
+        tendencia:
+          description: "Filtro por tendência de peso (queda, estavel, alta)"
+      responses:
+        "200":
+          description: "Planilha gerada com sucesso"
+
+PlanoAlimentarController:
+  tag: "Planos alimentares"
+  tagDescription: "Cadastro e consulta de planos alimentares do paciente (meta calórica, refeições por dia, status)"
+  endpoints:
+    "GET /api/v1/planos-alimentares":
+      summary: "Listar planos alimentares"
+      description: "Retorna os planos alimentares da organização do usuário autenticado, com filtro opcional por paciente e por nome do plano ou do paciente"
+      parameters:
+        pacienteId:
+          description: "ID do paciente para filtrar os planos alimentares"
+        busca:
+          description: "Termo de busca por nome do plano ou do paciente"
+    "GET /api/v1/planos-alimentares/{id}":
+      summary: "Buscar plano alimentar por ID"
+      parameters:
+        id:
+          description: "ID do plano alimentar"
+      responses:
+        "200":
+          description: "Plano alimentar encontrado"
+        "404":
+          description: "Plano alimentar não encontrado"
+          schema: "ApiErro"
+    "GET /api/v1/planos-alimentares/enums":
+      summary: "Listar opções de enums do plano alimentar"
+      description: "Retorna os valores possíveis (com rótulo traduzido) para status, usados para popular selects no frontend"
+    "POST /api/v1/planos-alimentares":
+      summary: "Cadastrar plano alimentar"
+      responses:
+        "201":
+          description: "Plano alimentar criado com sucesso"
+        "400":
+          description: "Dados inválidos"
+          schema: "ApiErro"
+        "404":
+          description: "Paciente não encontrado"
+          schema: "ApiErro"
+    "PUT /api/v1/planos-alimentares/{id}":
+      summary: "Atualizar plano alimentar"
+      description: "O paciente do plano não é editável (fixo desde a criação); plano com status ENCERRADO não pode ser alterado; não é possível voltar um plano ATIVO para RASCUNHO"
+      parameters:
+        id:
+          description: "ID do plano alimentar"
+      responses:
+        "200":
+          description: "Plano alimentar atualizado com sucesso"
+        "400":
+          description: "Dados inválidos"
+          schema: "ApiErro"
+        "404":
+          description: "Plano alimentar não encontrado"
+          schema: "ApiErro"
+    "DELETE /api/v1/planos-alimentares/{id}":
+      summary: "Remover plano alimentar"
+      parameters:
+        id:
+          description: "ID do plano alimentar"
+      responses:
+        "204":
+          description: "Plano alimentar removido com sucesso"
+        "404":
+          description: "Plano alimentar não encontrado"
+          schema: "ApiErro"
+
+PlanoAlimentarRelatorioController:
+  tag: "Relatório de planos alimentares"
+  tagDescription: "Geração de relatório de planos alimentares em JSON ou planilha Excel"
+  endpoints:
+    "GET /api/v1/planos-alimentares/relatorio":
+      summary: "Gerar relatório de planos alimentares"
+      description: "Retorna as linhas do relatório em JSON, com os mesmos filtros disponíveis na versão Excel"
+      parameters:
+        busca:
+          description: "Termo de busca por nome do plano ou do paciente"
+        status:
+          description: "Filtro por status do plano"
+        plano:
+          description: "Filtro por nome exato do plano"
+        faixaCalorica:
+          description: "Filtro por faixa de calorias (ate1600, entre1600e2200, acima2200)"
+        refeicoesPorDia:
+          description: "Filtro por quantidade de refeições por dia"
+    "GET /api/v1/planos-alimentares/relatorio/excel":
+      summary: "Baixar relatório de planos alimentares em Excel"
+      description: "Gera e retorna o relatório como planilha .xlsx (attachment) com os mesmos filtros da versão JSON"
+      parameters:
+        busca:
+          description: "Termo de busca por nome do plano ou do paciente"
+        status:
+          description: "Filtro por status do plano"
+        plano:
+          description: "Filtro por nome exato do plano"
+        faixaCalorica:
+          description: "Filtro por faixa de calorias (ate1600, entre1600e2200, acima2200)"
+        refeicoesPorDia:
+          description: "Filtro por quantidade de refeições por dia"
+      responses:
+        "200":
+          description: "Planilha gerada com sucesso"
+
+ConsultaRelatorioController:
+  tag: "Relatório de consultas"
+  tagDescription: "Geração de relatório de consultas em JSON ou planilha Excel"
+  endpoints:
+    "GET /api/v1/consultas/relatorio":
+      summary: "Gerar relatório de consultas"
+      description: "Retorna as linhas do relatório em JSON, com os mesmos filtros disponíveis na versão Excel"
+      parameters:
+        busca:
+          description: "Termo de busca por nome do paciente"
+        status:
+          description: "Filtro por status da consulta"
+        tipo:
+          description: "Filtro por tipo de consulta"
+        periodo:
+          description: "Filtro por período (hoje, 7d, 30d, 90d, ano)"
+        profissionalId:
+          description: "Filtro por profissional"
+    "GET /api/v1/consultas/relatorio/excel":
+      summary: "Baixar relatório de consultas em Excel"
+      description: "Gera e retorna o relatório como planilha .xlsx (attachment) com os mesmos filtros da versão JSON"
+      parameters:
+        busca:
+          description: "Termo de busca por nome do paciente"
+        status:
+          description: "Filtro por status da consulta"
+        tipo:
+          description: "Filtro por tipo de consulta"
+        periodo:
+          description: "Filtro por período (hoje, 7d, 30d, 90d, ano)"
+        profissionalId:
+          description: "Filtro por profissional"
+      responses:
+        "200":
+          description: "Planilha gerada com sucesso"
+
+ProntuarioController:
+  tag: "Prontuários"
+  tagDescription: "Registro clínico do paciente (prontuário), com fluxo rascunho/pendente → assinatura e trilha de auditoria"
+  endpoints:
+    "GET /api/v1/prontuarios":
+      summary: "Listar prontuários"
+      description: "Retorna os prontuários da organização do usuário autenticado, com filtro opcional por paciente e por nome do paciente"
+      parameters:
+        pacienteId:
+          description: "ID do paciente para filtrar os prontuários"
+        busca:
+          description: "Termo de busca por nome do paciente"
+    "GET /api/v1/prontuarios/{id}":
+      summary: "Buscar prontuário por ID"
+      parameters:
+        id:
+          description: "ID do prontuário"
+      responses:
+        "200":
+          description: "Prontuário encontrado"
+        "404":
+          description: "Prontuário não encontrado"
+          schema: "ApiErro"
+    "GET /api/v1/prontuarios/enums":
+      summary: "Listar opções de enums do prontuário"
+      description: "Retorna os valores possíveis (com rótulo traduzido) para seção, status e tipo de evento de auditoria, usados para popular selects no frontend"
+    "POST /api/v1/prontuarios":
+      summary: "Cadastrar prontuário"
+      description: "Não é possível criar um prontuário já com status ASSINADO — use a ação de assinatura (PATCH /api/v1/prontuarios/{id}/assinar) para finalizar o registro"
+      responses:
+        "201":
+          description: "Prontuário criado com sucesso"
+        "400":
+          description: "Dados inválidos"
+          schema: "ApiErro"
+        "404":
+          description: "Paciente não encontrado"
+          schema: "ApiErro"
+    "PUT /api/v1/prontuarios/{id}":
+      summary: "Atualizar prontuário"
+      description: "O paciente do prontuário não é editável (fixo desde a criação); prontuário assinado não pode ser alterado; não é possível definir status ASSINADO por aqui — use a ação de assinatura (PATCH /api/v1/prontuarios/{id}/assinar)"
+      parameters:
+        id:
+          description: "ID do prontuário"
+      responses:
+        "200":
+          description: "Prontuário atualizado com sucesso"
+        "400":
+          description: "Dados inválidos"
+          schema: "ApiErro"
+        "404":
+          description: "Prontuário não encontrado"
+          schema: "ApiErro"
+    "DELETE /api/v1/prontuarios/{id}":
+      summary: "Remover prontuário"
+      description: "Prontuário assinado não pode ser excluído; prontuário com adendo ou anexo associado também não pode ser excluído (exclua os filhos primeiro)"
+      parameters:
+        id:
+          description: "ID do prontuário"
+      responses:
+        "204":
+          description: "Prontuário removido com sucesso"
+        "400":
+          description: "Prontuário assinado não pode ser excluído, ou possui adendo/anexo associado"
+          schema: "ApiErro"
+        "404":
+          description: "Prontuário não encontrado"
+          schema: "ApiErro"
+    "PATCH /api/v1/prontuarios/{id}/assinar":
+      summary: "Assinar prontuário"
+      description: "Finaliza o registro: define status ASSINADO, o autor da assinatura e a data/hora; a partir daqui o prontuário fica imutável (não pode mais ser alterado ou excluído)"
+      parameters:
+        id:
+          description: "ID do prontuário"
+      responses:
+        "200":
+          description: "Prontuário assinado com sucesso"
+        "400":
+          description: "Prontuário já assinado (imutável), ou sem conteúdo preenchido"
+          schema: "ApiErro"
+        "404":
+          description: "Prontuário não encontrado"
+          schema: "ApiErro"
+    "GET /api/v1/prontuarios/{id}/auditoria":
+      summary: "Listar eventos de auditoria do prontuário"
+      description: "Retorna o histórico de criação/edição/assinatura/exclusão do prontuário — quem alterou, quando, e o snapshot antes/depois de cada mudança"
+      parameters:
+        id:
+          description: "ID do prontuário"
+      responses:
+        "200":
+          description: "Eventos de auditoria encontrados"
+        "404":
+          description: "Prontuário não encontrado"
+          schema: "ApiErro"
+
+ProntuarioAdendoController:
+  tag: "Adendos de prontuário"
+  tagDescription: "Notas complementares adicionadas a um prontuário já assinado, sem alterar o conteúdo original — imutáveis desde a criação (sem edição ou exclusão)"
+  endpoints:
+    "GET /api/v1/prontuarios/{prontuarioId}/adendos":
+      summary: "Listar adendos do prontuário"
+      parameters:
+        prontuarioId:
+          description: "ID do prontuário"
+      responses:
+        "200":
+          description: "Adendos encontrados"
+        "404":
+          description: "Prontuário não encontrado"
+          schema: "ApiErro"
+    "POST /api/v1/prontuarios/{prontuarioId}/adendos":
+      summary: "Adicionar adendo ao prontuário"
+      description: "Só é possível adicionar adendo a um prontuário já assinado"
+      parameters:
+        prontuarioId:
+          description: "ID do prontuário"
+      responses:
+        "201":
+          description: "Adendo criado com sucesso"
+        "400":
+          description: "Dados inválidos"
+          schema: "ApiErro"
+        "404":
+          description: "Prontuário não encontrado"
+          schema: "ApiErro"
+
+ProntuarioAnexoController:
+  tag: "Anexos de prontuário"
+  tagDescription: "Upload, listagem, download e exclusão de arquivos anexados a um prontuário — upload e exclusão bloqueados depois que o prontuário é assinado"
+  endpoints:
+    "GET /api/v1/prontuarios/{prontuarioId}/anexos":
+      summary: "Listar anexos do prontuário"
+      parameters:
+        prontuarioId:
+          description: "ID do prontuário"
+      responses:
+        "200":
+          description: "Anexos encontrados"
+        "404":
+          description: "Prontuário não encontrado"
+          schema: "ApiErro"
+    "POST /api/v1/prontuarios/{prontuarioId}/anexos":
+      summary: "Enviar anexo ao prontuário"
+      description: "Só é possível enviar anexo a um prontuário ainda não assinado; tamanho máximo 10MB; tipos permitidos: PDF, JPG, PNG, DOC, DOCX, XLS, XLSX"
+      parameters:
+        prontuarioId:
+          description: "ID do prontuário"
+      responses:
+        "201":
+          description: "Anexo enviado com sucesso"
+        "400":
+          description: "Arquivo vazio, maior que 10MB, de tipo/extensão não permitidos, ilegível, ou prontuário já assinado (imutável)"
+          schema: "ApiErro"
+        "404":
+          description: "Prontuário não encontrado"
+          schema: "ApiErro"
+    "GET /api/v1/prontuarios/{prontuarioId}/anexos/{anexoId}/download":
+      summary: "Baixar anexo do prontuário"
+      description: "Retorna o conteúdo binário do arquivo como anexo (Content-Disposition), com tipo MIME e nome original preservados"
+      parameters:
+        prontuarioId:
+          description: "ID do prontuário"
+        anexoId:
+          description: "ID do anexo"
+      responses:
+        "200":
+          description: "Arquivo retornado com sucesso"
+        "404":
+          description: "Prontuário não encontrado, ou anexo não encontrado nesse prontuário"
+          schema: "ApiErro"
+    "DELETE /api/v1/prontuarios/{prontuarioId}/anexos/{anexoId}":
+      summary: "Remover anexo do prontuário"
+      description: "Só é possível excluir anexo de um prontuário ainda não assinado"
+      parameters:
+        prontuarioId:
+          description: "ID do prontuário"
+        anexoId:
+          description: "ID do anexo"
+      responses:
+        "204":
+          description: "Anexo removido com sucesso"
+        "400":
+          description: "Não é possível excluir anexo de um prontuário assinado"
+          schema: "ApiErro"
+        "404":
+          description: "Prontuário não encontrado, ou anexo não encontrado nesse prontuário"
+          schema: "ApiErro"
+
+ProntuarioRelatorioController:
+  tag: "Relatório de prontuários"
+  tagDescription: "Geração de relatório de prontuários em JSON ou planilha Excel"
+  endpoints:
+    "GET /api/v1/prontuarios/relatorio":
+      summary: "Gerar relatório de prontuários"
+      description: "Retorna as linhas do relatório em JSON, com os mesmos filtros disponíveis na versão Excel"
+      parameters:
+        busca:
+          description: "Termo de busca por nome do paciente"
+        status:
+          description: "Filtro por status do prontuário"
+        secao:
+          description: "Filtro por seção do prontuário"
+        periodo:
+          description: "Filtro por período (hoje, 7d, 30d, 90d, ano), baseado na data da última atualização do prontuário"
+        autorId:
+          description: "Filtro por autor"
+        anexo:
+          description: "Filtro por presença de anexo (sim, nao) — informar as duas opções juntas equivale a não filtrar"
+    "GET /api/v1/prontuarios/relatorio/excel":
+      summary: "Baixar relatório de prontuários em Excel"
+      description: "Gera e retorna o relatório como planilha .xlsx (attachment) com os mesmos filtros da versão JSON"
+      parameters:
+        busca:
+          description: "Termo de busca por nome do paciente"
+        status:
+          description: "Filtro por status do prontuário"
+        secao:
+          description: "Filtro por seção do prontuário"
+        periodo:
+          description: "Filtro por período (hoje, 7d, 30d, 90d, ano), baseado na data da última atualização do prontuário"
+        autorId:
+          description: "Filtro por autor"
+        anexo:
+          description: "Filtro por presença de anexo (sim, nao) — informar as duas opções juntas equivale a não filtrar"
+      responses:
+        "200":
+          description: "Planilha gerada com sucesso"
+
+MenuController:
+  tag: "Menus"
+  tagDescription: "Estrutura de navegação (menu lateral) do frontend"
+  endpoints:
+    "GET /api/v1/menus":
+      summary: "Listar itens de menu"
+      description: "Retorna a árvore de navegação (grupos e itens navegáveis) usada para renderizar o menu lateral do frontend; a estrutura vem de menu.yml no backend, igual para todo usuário/organização (não é personalizável)"
 
 AutenticacaoController:
   tag: "Autenticação"

@@ -1,0 +1,10 @@
+logging:
+  level:
+    root: INFO
+    com.nuvexa: DEBUG
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
