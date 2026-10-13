@@ -1,5 +1,6 @@
 package com.nuvexa.core.repository;
 
+import com.nuvexa.core.model.Especialidade;
 import com.nuvexa.core.model.Organizacao;
 import com.nuvexa.core.model.StatusOrganizacao;
 import com.nuvexa.core.model.TipoOrganizacao;
@@ -57,6 +58,15 @@ class OrganizacaoRepositoryTest {
         assertThat(found.getRazaoSocial()).isEqualTo("Bem Estar Serviços de Saúde LTDA");
         assertThat(found.getDocumento()).isEqualTo("12345678000199");
         assertThat(found.getTipo()).isEqualTo(TipoOrganizacao.CLINICA);
+    }
+
+    @Test
+    void organizacaoSemEspecialidadeInformadaNasceComoNutricao() {
+        Organizacao saved = organizationRepository.saveAndFlush(novaOrganizacaoIndividual("Dra. Bia Nutricionista"));
+
+        Organizacao found = organizationRepository.findById(saved.getId()).orElseThrow();
+
+        assertThat(found.getEspecialidade()).isEqualTo(Especialidade.NUTRICAO);
     }
 
     @Test

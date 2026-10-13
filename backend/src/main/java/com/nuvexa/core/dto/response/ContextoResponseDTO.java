@@ -34,6 +34,8 @@ public class ContextoResponseDTO {
     private String organizacaoNome;
 
     private String organizacaoTipo;
+    /** Vertical clínica da organização (ex.: NUTRICAO) — o frontend usa para decidir o que exibir. */
+    private String especialidade;
 
     /** Papel dentro da organização (PROPRIETARIO/GESTOR/MEMBRO). */
     private String papelOrganizacional;
@@ -50,6 +52,7 @@ public class ContextoResponseDTO {
                 .organizacaoId(organizacao.getId())
                 .organizacaoNome(organizacao.getNome())
                 .organizacaoTipo(organizacao.getTipo().name())
+                .especialidade(organizacao.getEspecialidade().name())
                 .papelOrganizacional(vinculo.getPapel().name())
                 .build();
     }

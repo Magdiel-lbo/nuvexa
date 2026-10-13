@@ -29,6 +29,8 @@ public class MenuProperties {
         private String labelKey;
         private String icon;
         private String route;
+        /** Especialidades (nome do enum) que veem o item; vazio = todas. */
+        private List<String> especialidades = new ArrayList<>();
         private List<Item> children = new ArrayList<>();
     }
 }

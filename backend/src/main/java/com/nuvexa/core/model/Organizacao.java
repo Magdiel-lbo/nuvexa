@@ -6,6 +6,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -31,6 +32,11 @@ public class Organizacao extends ModeloAbstrato {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private TipoOrganizacao tipo;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    @Builder.Default
+    private Especialidade especialidade = Especialidade.NUTRICAO;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)

@@ -1,5 +1,8 @@
 export type PapelOrganizacional = 'PROPRIETARIO' | 'GESTOR' | 'MEMBRO'
 
+/** Vertical clínica da organização — espelha `Especialidade` do backend. */
+export type Especialidade = 'NUTRICAO'
+
 export interface ContextoResponse {
   usuarioId: number
   nome: string
@@ -9,6 +12,7 @@ export interface ContextoResponse {
   organizacaoId: number
   organizacaoNome: string
   organizacaoTipo: string
+  especialidade: Especialidade
   /** Papel dentro da organização. */
   papelOrganizacional: PapelOrganizacional
 }

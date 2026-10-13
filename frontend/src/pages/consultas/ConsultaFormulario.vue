@@ -58,6 +58,7 @@ import { carregarRotulosEnum } from '../../nutricao/utils/enum-rotulos'
 import type { Consulta, ConsultaStatus } from '../../types/consulta'
 import type { PerfilNutricionalResponse } from '../../nutricao/types/perfil-nutricional'
 import { useAppStore } from '../../store/app.store'
+import { useContextoStore } from '../../core/contexto/contexto.store'
 import { extrairMensagemErro } from '../../util/api-util'
 
 function toDatetimeLocal(iso: string): string {
@@ -101,6 +102,11 @@ export default class ConsultaFormulario extends Vue {
 
   get appStore() {
     return useAppStore()
+  }
+
+  /** O cabeçalho de contexto do paciente (peso, IMC, objetivo) vem do perfil nutricional. */
+  get temNutricao(): boolean {
+    return useContextoStore().temNutricao
   }
 
   get consultaId(): number | null {
@@ -160,8 +166,8 @@ export default class ConsultaFormulario extends Vue {
 
   async carregarDetalhe(consulta: Consulta) {
     const [perfil, rotulosEnum, outrasConsultas] = await Promise.all([
-      perfilNutricionalService.buscarPorPaciente(consulta.pacienteId),
-      carregarRotulosEnum(),
+      this.temNutricao ? perfilNutricionalService.buscarPorPaciente(consulta.pacienteId) : Promise.resolve(null),
+      this.temNutricao ? carregarRotulosEnum() : Promise.resolve<Record<string, string>>({}),
       consultaService.buscarPorPaciente(consulta.pacienteId).catch(() => []),
     ])
     this.perfil = perfil ?? null

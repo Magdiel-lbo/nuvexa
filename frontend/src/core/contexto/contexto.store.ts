@@ -19,6 +19,8 @@ export const useContextoStore = defineStore('contexto', {
   getters: {
     organizacaoNome: (state) => state.contexto?.organizacaoNome ?? '',
     papelOrganizacional: (state) => state.contexto?.papelOrganizacional ?? null,
+    especialidade: (state) => state.contexto?.especialidade ?? null,
+    temNutricao: (state) => state.contexto?.especialidade === 'NUTRICAO',
     isAdmin: (state) => state.contexto?.perfil === 'ADMIN',
     podeExcluirPaciente: (state) => state.contexto?.perfil === 'ADMIN',
     podeAdministrarOrganizacao: (state) =>

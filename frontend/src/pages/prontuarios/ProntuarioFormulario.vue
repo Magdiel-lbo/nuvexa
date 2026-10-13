@@ -187,14 +187,16 @@ export default class ProntuarioFormulario extends Vue {
   async carregarDetalhe(prontuario: Prontuario) {
     const [historico, perfil, rotulosProntuario, rotulosEnum, rotulosAvaliacao, adendos, anexos, eventosAuditoria, planosAlimentares] = await Promise.all([
       prontuarioService.buscarPorPaciente(prontuario.pacienteId).catch(() => []),
-      perfilNutricionalService.buscarPorPaciente(prontuario.pacienteId),
+      this.contextoStore.temNutricao ? perfilNutricionalService.buscarPorPaciente(prontuario.pacienteId) : Promise.resolve(null),
       carregarRotulosProntuario(),
-      carregarRotulosEnum(),
-      carregarRotulosAvaliacao(),
+      this.contextoStore.temNutricao ? carregarRotulosEnum() : Promise.resolve<Record<string, string>>({}),
+      this.contextoStore.temNutricao ? carregarRotulosAvaliacao() : Promise.resolve<Record<string, string>>({}),
       prontuarioService.listarAdendos(prontuario.id).catch(() => []),
       prontuarioService.listarAnexos(prontuario.id).catch(() => []),
       prontuarioService.listarAuditoria(prontuario.id).catch(() => []),
-      planoAlimentarService.buscarPorPaciente(prontuario.pacienteId).catch(() => []),
+      this.contextoStore.temNutricao
+        ? planoAlimentarService.buscarPorPaciente(prontuario.pacienteId).catch(() => [])
+        : Promise.resolve<PlanoAlimentar[]>([]),
     ])
     this.historico = historico
     this.perfil = perfil ?? null

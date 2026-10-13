@@ -71,6 +71,7 @@ import planoAlimentarService from '../../nutricao/services/plano-alimentar-servi
 import prontuarioService from '../../service/prontuario-service'
 import { extrairMensagemErro } from '../../util/api-util'
 import { useAppStore } from '../../store/app.store'
+import { useContextoStore } from '../../core/contexto/contexto.store'
 import { carregarRotulosEnum } from '../../nutricao/utils/enum-rotulos'
 import { carregarRotulosAvaliacao } from '../../nutricao/utils/avaliacao-rotulos'
 import { carregarRotulosProntuario } from '../../util/prontuario-rotulos'
@@ -127,6 +128,11 @@ export default class PacienteFormulario extends Vue {
     return useAppStore()
   }
 
+  /** Perfil, avaliações e plano alimentar só existem para organizações de nutrição. */
+  get temNutricao(): boolean {
+    return useContextoStore().temNutricao
+  }
+
   get pacienteId(): number | null {
     const id = this.$route.params.id as string | undefined
     return id ? Number(id) : null
@@ -157,10 +163,12 @@ export default class PacienteFormulario extends Vue {
 
     this.carregando = true
     try {
-      this.rotulos = await carregarRotulosEnum()
+      if (this.temNutricao) {
+        this.rotulos = await carregarRotulosEnum()
+      }
       const [paciente, perfil] = await Promise.all([
         pacienteService.buscarPorId(this.pacienteId as number),
-        perfilNutricionalService.buscarPorPaciente(this.pacienteId as number),
+        this.temNutricao ? perfilNutricionalService.buscarPorPaciente(this.pacienteId as number) : Promise.resolve(null),
       ])
       this.paciente = paciente
       this.perfil = perfil ?? null
@@ -187,14 +195,15 @@ export default class PacienteFormulario extends Vue {
   }
 
   async carregarDetalhe(pacienteId: number, perfil: PerfilNutricionalResponse | null) {
+    const nutricao = this.temNutricao
     const [avaliacoes, consultas, planos, prontuarios, rotulosAvaliacao, rotulosProntuario, rotulosPlanoAlimentar] = await Promise.all([
-      avaliacaoService.buscarPorPaciente(pacienteId).catch(() => []),
+      nutricao ? avaliacaoService.buscarPorPaciente(pacienteId).catch(() => []) : Promise.resolve<Avaliacao[]>([]),
       consultaService.buscarPorPaciente(pacienteId).catch(() => []),
-      planoAlimentarService.buscarPorPaciente(pacienteId).catch(() => []),
+      nutricao ? planoAlimentarService.buscarPorPaciente(pacienteId).catch(() => []) : Promise.resolve<PlanoAlimentar[]>([]),
       prontuarioService.buscarPorPaciente(pacienteId).catch(() => []),
-      carregarRotulosAvaliacao(),
+      nutricao ? carregarRotulosAvaliacao() : Promise.resolve<Record<string, string>>({}),
       carregarRotulosProntuario(),
-      carregarRotulosPlanoAlimentar(),
+      nutricao ? carregarRotulosPlanoAlimentar() : Promise.resolve<Record<string, string>>({}),
     ])
     this.avaliacoes = avaliacoes
     this.consultas = consultas
@@ -219,14 +228,20 @@ export default class PacienteFormulario extends Vue {
 
       if (this.isCriacao) {
         const paciente = await pacienteService.criar({ nome: this.form.nome, dataNascimento: this.form.dataNascimento, sexo: this.form.sexo })
-        await perfilNutricionalService.criar(paciente.id, { ...perfilPayloadBase, pesoInicial: this.form.peso })
+        if (this.temNutricao) {
+          await perfilNutricionalService.criar(paciente.id, { ...perfilPayloadBase, pesoInicial: this.form.peso })
+        }
       } else {
         const pacienteId = this.pacienteId as number
         await Promise.all([
           pacienteService.atualizar(pacienteId, { nome: this.form.nome, dataNascimento: this.form.dataNascimento, sexo: this.form.sexo }),
-          this.perfil
-            ? perfilNutricionalService.atualizar(pacienteId, perfilPayloadBase)
-            : perfilNutricionalService.criar(pacienteId, { ...perfilPayloadBase, pesoInicial: this.form.peso }),
+          ...(this.temNutricao
+            ? [
+                this.perfil
+                  ? perfilNutricionalService.atualizar(pacienteId, perfilPayloadBase)
+                  : perfilNutricionalService.criar(pacienteId, { ...perfilPayloadBase, pesoInicial: this.form.peso }),
+              ]
+            : []),
         ])
       }
       this.appStore.setToast({ mensagem: this.$t('sucesso.salvo') as string, erro: false })

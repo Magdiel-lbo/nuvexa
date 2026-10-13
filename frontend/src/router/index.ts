@@ -8,12 +8,15 @@ import gestaoRoutes from './gestao.routes'
 import nutricaoRoutes from '../nutricao/routes/nutricao.routes'
 import { useAuthStore } from '../core/auth/auth.store'
 import { useContextoStore } from '../core/contexto/contexto.store'
+import type { Especialidade } from '../core/contexto/contexto'
 
 declare module 'vue-router' {
   interface RouteMeta {
     public?: boolean
     title?: string
     description?: string
+    /** Rota exclusiva de uma vertical: quem não tem essa especialidade volta ao dashboard. Conveniência — o backend barra de fato. */
+    especialidade?: Especialidade
   }
 }
 
@@ -24,7 +27,7 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../pages/dashboard/Dashboard.vue'),
     meta: { title: 'Dashboard' },
   },
-  ...nutricaoRoutes,
+  ...nutricaoRoutes.map((rota) => ({ ...rota, meta: { ...rota.meta, especialidade: 'NUTRICAO' as const } })),
   ...pacienteRoutes,
   ...consultaRoutes,
   ...prontuarioRoutes,
@@ -58,6 +61,11 @@ router.beforeEach(async (to) => {
     } catch {
       // 401 já é tratado pelo interceptor; 403 (usuário sem vínculo) não deve travar a navegação.
     }
+  }
+
+  const especialidadeExigida = to.meta.especialidade
+  if (especialidadeExigida && contextoStore.contexto && contextoStore.contexto.especialidade !== especialidadeExigida) {
+    return { name: 'dashboard' }
   }
 
   return true

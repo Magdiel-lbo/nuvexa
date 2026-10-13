@@ -17,9 +17,11 @@
       <DashboardInsights :consultas="consultas" :pacientes="pacientes" :loading="consultasCarregando || pacientesCarregando" />
     </div>
 
-    <h2 class="home__section-title">{{ $t('home.carteira.tituloSecao') }}</h2>
+    <template v-if="temNutricao">
+      <h2 class="home__section-title">{{ $t('home.carteira.tituloSecao') }}</h2>
 
-    <DashboardPatientIndicators class="home__section" :linhas="relatorioLinhas" :loading="indicadoresCarregando" />
+      <DashboardPatientIndicators class="home__section" :linhas="relatorioLinhas" :loading="indicadoresCarregando" />
+    </template>
   </div>
 </template>
 
@@ -88,6 +90,11 @@ export default class Dashboard extends Vue {
     return useContextoStore()
   }
 
+  /** Os indicadores da carteira (objetivo, IMC) vêm do relatório de nutrição. */
+  get temNutricao(): boolean {
+    return this.contextoStore.temNutricao
+  }
+
   get saudacao(): string {
     const saudacao = saudacaoPorHorario()
     const nome = this.contextoStore.contexto?.nome
@@ -143,7 +150,9 @@ export default class Dashboard extends Vue {
   mounted() {
     this.carregarConsultas()
     this.carregarPacientes()
-    this.carregarIndicadores()
+    if (this.temNutricao) {
+      this.carregarIndicadores()
+    }
   }
 
   async carregarConsultas() {

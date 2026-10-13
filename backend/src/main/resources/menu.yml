@@ -23,9 +23,11 @@ menu:
         - id: nutricao
           labelKey: menu.nutricao
           route: /nutricao
+          especialidades: [NUTRICAO]
         - id: avaliacoes
           labelKey: menu.avaliacoes
           route: /avaliacoes
+          especialidades: [NUTRICAO]
     - id: gestao
       labelKey: menu.grupoGestao
       icon: mdi-domain
