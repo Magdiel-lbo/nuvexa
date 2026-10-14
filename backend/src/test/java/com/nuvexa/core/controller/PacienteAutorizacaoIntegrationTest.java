@@ -1,6 +1,7 @@
 package com.nuvexa.core.controller;
 
 import com.nuvexa.core.service.PacienteService;
+import com.nuvexa.core.service.VerificadorDePermissoes;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -8,6 +9,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -31,6 +33,9 @@ class PacienteAutorizacaoIntegrationTest {
     @MockitoBean
     private PacienteService pacienteService;
 
+    @MockitoBean
+    private VerificadorDePermissoes permissoes;
+
     @Test
     void requisicaoAnonimaDeveSerRecusada() throws Exception {
         mockMvc.perform(get(BASE_URL))
@@ -38,8 +43,18 @@ class PacienteAutorizacaoIntegrationTest {
     }
 
     @Test
-    void usuarioAutenticadoDeveAlcancarListagem() throws Exception {
+    void usuarioAutenticadoComPermissaoDeCadastroDeveAlcancarListagem() throws Exception {
+        when(permissoes.pode("CADASTRO_AGENDA")).thenReturn(true);
+
         mockMvc.perform(get(BASE_URL).with(user("prof").roles("PROFISSIONAL")))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void usuarioSemPermissaoDeCadastroDeveSerNegado() throws Exception {
+        when(permissoes.pode("CADASTRO_AGENDA")).thenReturn(false);
+
+        mockMvc.perform(get(BASE_URL).with(user("prof").roles("PROFISSIONAL")))
+                .andExpect(status().isForbidden());
     }
 }

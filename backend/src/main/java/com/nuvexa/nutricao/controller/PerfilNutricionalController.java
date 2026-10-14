@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@PreAuthorize("@especialidades.permite('NUTRICAO')")
+@PreAuthorize("@especialidades.permite('NUTRICAO') and @permissoes.pode('CLINICO')")
 @RequiredArgsConstructor
 public class PerfilNutricionalController extends BaseController {
 

@@ -7,6 +7,7 @@ import com.nuvexa.platform.web.BaseController;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -24,6 +25,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/prontuarios/{prontuarioId}/anexos")
 @RequiredArgsConstructor
+@PreAuthorize("@permissoes.pode('CLINICO')")
 public class ProntuarioAnexoController extends BaseController {
 
     private final ProntuarioAnexoService prontuarioAnexoService;

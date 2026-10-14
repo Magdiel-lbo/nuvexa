@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@PreAuthorize("@especialidades.permite('NUTRICAO')")
+@PreAuthorize("@especialidades.permite('NUTRICAO') and @permissoes.pode('CLINICO')")
 @RequestMapping("/api/v1/planos-alimentares")
 @RequiredArgsConstructor
 public class PlanoAlimentarController extends BaseController {

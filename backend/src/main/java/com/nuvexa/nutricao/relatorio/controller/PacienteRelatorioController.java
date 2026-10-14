@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@PreAuthorize("@especialidades.permite('NUTRICAO')")
+@PreAuthorize("@especialidades.permite('NUTRICAO') and @permissoes.pode('CLINICO')")
 @RequestMapping("/api/v1/pacientes/relatorio")
 @RequiredArgsConstructor
 public class PacienteRelatorioController extends BaseController {
