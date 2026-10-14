@@ -4,7 +4,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/empresa',
     name: 'empresa',
-    component: () => import('../pages/EmConstrucao.vue'),
+    component: () => import('../pages/empresas/EmpresaLista.vue'),
     meta: { title: 'Empresa' },
   },
   {
