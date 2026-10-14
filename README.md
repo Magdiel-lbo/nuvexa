@@ -59,6 +59,14 @@ variável nenhuma:
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
+### Profile `prod`
+
+Com `SPRING_PROFILES_ACTIVE=prod` a aplicação **não sobe** se `JWT_SECRET`, `STORAGE_ACCESS_KEY` ou
+`STORAGE_SECRET_KEY` estiverem ausentes, em branco, iguais ao default de `application.yml` ou fracos
+(`JWT_SECRET` com menos de 32 bytes; `STORAGE_SECRET_KEY` com menos de 8 caracteres). A mensagem de
+erro diz qual propriedade falhou, nunca o valor. A checagem é `platform/security/ValidadorDeSegredos`;
+os profiles `local` e `dev` e a execução sem profile não são afetados.
+
 ### Ambiente de desenvolvimento remoto (profile `dev`)
 
 Profile Spring dedicado a subir o backend em um servidor remoto de dev/testes (container Docker),
