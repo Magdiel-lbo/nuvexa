@@ -147,7 +147,7 @@ export default class Cadastro extends Vue {
     this.carregando = true
     try {
       const response = await authService.cadastrar({ nome: this.nome, email: this.email, senha: this.senha })
-      this.authStore.setSession(response.token, response.perfil)
+      this.authStore.setSession(response.token, response.perfil, response.refreshToken)
       this.appStore.setToast({ mensagem: this.$t('sucesso.contaCriada') as string, erro: false })
       this.$router.push('/')
     } catch (e) {

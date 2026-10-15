@@ -12,5 +12,6 @@ public enum TipoEventoAutenticacao {
     TOKEN_BLOQUEADO,
     SENHA_REDEFINIDA,
     REFRESH,
+    REFRESH_REUTILIZADO,
     LOGOUT
 }

@@ -4,6 +4,7 @@ import com.nuvexa.core.dto.request.EsqueciSenhaRequestDTO;
 import com.nuvexa.core.dto.request.LoginRequestDTO;
 import com.nuvexa.core.dto.request.CadastroRequestDTO;
 import com.nuvexa.core.dto.request.RedefinirSenhaRequestDTO;
+import com.nuvexa.core.dto.request.RefreshRequestDTO;
 import com.nuvexa.core.dto.response.AutenticacaoResponseDTO;
 import com.nuvexa.core.dto.response.MensagemResponseDTO;
 import com.nuvexa.platform.auditoria.AutenticacaoAuditoriaService;
@@ -63,6 +64,7 @@ public class AutenticacaoService {
     private final EmailService emailService;
     private final AutenticacaoAuditoriaService autenticacaoAuditoria;
     private final LimiteDeTentativas limiteDeTentativas;
+    private final SessaoService sessaoService;
     private final SecureRandom secureRandom = new SecureRandom();
 
     @Value("${app.cors.allowed-origin}")
@@ -157,6 +159,7 @@ public class AutenticacaoService {
         usuario.setHashTokenRedefinicao(null);
         usuario.setTokenRedefinicaoExpiraEm(null);
         usuarioRepository.save(usuario);
+        sessaoService.revogarTodas(usuario.getId());
         autenticacaoAuditoria.registrar(TipoEventoAutenticacao.SENHA_REDEFINIDA, usuario.getId(), usuario.getEmail());
 
         log.info("Senha redefinida para usuário com id={}", usuario.getId());
@@ -202,7 +205,38 @@ public class AutenticacaoService {
     }
 
     private AutenticacaoResponseDTO buildAuthResponse(Usuario usuario) {
-        return AutenticacaoResponseDTO.of(jwtService.generateToken(usuario), usuario);
+        return responder(sessaoService.iniciar(usuario));
+    }
+
+    private AutenticacaoResponseDTO responder(SessaoService.Emissao emissao) {
+        Usuario usuario = emissao.sessao().getUsuario();
+        return AutenticacaoResponseDTO.of(jwtService.generateToken(usuario, emissao.sessao().getId()),
+                emissao.refreshToken(), jwtService.getExpiracaoSegundos(), usuario);
+    }
+
+    /** Troca o refresh token por um par novo (rotativo). Qualquer falha responde 401 igual. */
+    public AutenticacaoResponseDTO renovar(RefreshRequestDTO request) {
+        limiteDeTentativas.garantirTokenPermitido();
+        SessaoService.Emissao emissao;
+        try {
+            emissao = sessaoService.rotacionar(request.getRefreshToken());
+        } catch (NegocioException ex) {
+            limiteDeTentativas.registrarTokenInvalido();
+            throw ex;
+        }
+        Usuario usuario = emissao.sessao().getUsuario();
+        autenticacaoAuditoria.registrar(TipoEventoAutenticacao.REFRESH, usuario.getId(), usuario.getEmail());
+        return responder(emissao);
+    }
+
+    public void sair(Long sessaoId, Usuario usuario) {
+        sessaoService.revogarFamiliaDaSessao(sessaoId);
+        autenticacaoAuditoria.registrar(TipoEventoAutenticacao.LOGOUT, usuario.getId(), usuario.getEmail());
+    }
+
+    public void sairDeTodosOsDispositivos(Usuario usuario) {
+        sessaoService.revogarTodas(usuario.getId());
+        autenticacaoAuditoria.registrar(TipoEventoAutenticacao.LOGOUT, usuario.getId(), usuario.getEmail());
     }
 
     private String resolveMessage(String key, Object... args) {

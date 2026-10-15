@@ -41,6 +41,7 @@ class AuditoriaDeAcessoIntegrationTest {
 
     private static final String DONO = "auditoria.dono@nuvexa.test";
     private static final String OUTRO = "auditoria.outro@nuvexa.test";
+    private static final String USUARIO_DO_RESET = "auditoria.reset@nuvexa.test";
     private static final String SENHA = "senha12345";
 
     @Autowired
@@ -178,12 +179,13 @@ class AuditoriaDeAcessoIntegrationTest {
                 .andExpect(status().isOk());
         assertThat(contarAutenticacao("RESET_SOLICITADO", inexistente)).isEqualTo(1);
 
+        cadastrar(USUARIO_DO_RESET);
         jdbc.update("UPDATE usuarios SET hash_token_redefinicao = ?, token_redefinicao_expira_em = now() + interval '10 minutes' WHERE email = ?",
-                TokenOpaco.hash("token-de-teste-auditoria"), OUTRO);
+                TokenOpaco.hash("token-de-teste-auditoria"), USUARIO_DO_RESET);
         mockMvc.perform(post("/api/v1/auth/redefinir-senha").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"token\":\"token-de-teste-auditoria\",\"novaSenha\":\"nova-senha-12345\"}"))
                 .andExpect(status().isOk());
-        assertThat(contarAutenticacao("SENHA_REDEFINIDA", OUTRO)).isEqualTo(1);
+        assertThat(contarAutenticacao("SENHA_REDEFINIDA", USUARIO_DO_RESET)).isEqualTo(1);
 
         jdbc.update("DELETE FROM eventos_autenticacao WHERE email_informado = ?", inexistente);
     }
@@ -218,8 +220,8 @@ class AuditoriaDeAcessoIntegrationTest {
 
     private void limpar() {
         List<Long> organizacoes = new ArrayList<>(jdbc.queryForList(
-                "SELECT v.organizacao_id FROM vinculos v JOIN usuarios u ON u.id = v.usuario_id WHERE u.email IN (?, ?)", Long.class, DONO, OUTRO));
-        List<Long> usuarios = new ArrayList<>(jdbc.queryForList("SELECT id FROM usuarios WHERE email IN (?, ?)", Long.class, DONO, OUTRO));
+                "SELECT v.organizacao_id FROM vinculos v JOIN usuarios u ON u.id = v.usuario_id WHERE u.email IN (?, ?, ?)", Long.class, DONO, OUTRO, USUARIO_DO_RESET));
+        List<Long> usuarios = new ArrayList<>(jdbc.queryForList("SELECT id FROM usuarios WHERE email IN (?, ?, ?)", Long.class, DONO, OUTRO, USUARIO_DO_RESET));
         for (Long organizacaoId : organizacoes) {
             for (String tabela : List.of("eventos_auditoria", "prontuario_anexos", "prontuario_adendos", "avaliacoes", "planos_alimentares", "prontuarios")) {
                 jdbc.update("DELETE FROM " + tabela + " WHERE organizacao_id = ?", organizacaoId);

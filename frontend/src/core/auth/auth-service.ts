@@ -26,6 +26,10 @@ class AuthService {
     return data
   }
 
+  async sair(): Promise<void> {
+    await this.http.post('/auth/logout')
+  }
+
   async esqueciSenha(dto: EsqueciSenhaRequest): Promise<MensagemResponse> {
     const { data } = await this.http.post('/auth/esqueci-senha', dto)
     return data

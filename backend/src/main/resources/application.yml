@@ -46,7 +46,8 @@ app:
     allowed-origin: ${FRONTEND_URL:http://localhost:5173}
   jwt:
     secret: ${JWT_SECRET:change-this-secret-change-this-secret-change-this-secret}
-    expiration-minutes: ${JWT_EXPIRATION_MINUTES:60}
+    expiration-minutes: ${JWT_EXPIRATION_MINUTES:15}
+    refresh-expiration-days: ${JWT_REFRESH_EXPIRATION_DAYS:30}
   security:
     rate-limit:
       janela-minutos: 15

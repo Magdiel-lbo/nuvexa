@@ -111,7 +111,7 @@ export default class Login extends Vue {
     this.carregando = true
     try {
       const response = await authService.login({ email: this.email, senha: this.senha })
-      this.authStore.setSession(response.token, response.perfil)
+      this.authStore.setSession(response.token, response.perfil, response.refreshToken)
       const redirect = (this.$route.query.redirect as string) || '/'
       this.$router.push(redirect)
     } catch (e) {

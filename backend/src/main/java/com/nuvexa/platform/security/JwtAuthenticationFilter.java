@@ -22,10 +22,13 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
+    public static final String ATRIBUTO_SESSAO_ID = "nuvexa.sessaoId";
+
     private static final String BEARER_PREFIX = "Bearer ";
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
+    private final ValidadorDeSessao validadorDeSessao;
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
@@ -46,7 +49,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
-                if (jwtService.isTokenValid(token, userDetails)) {
+                Long sessaoId = jwtService.extractSessaoId(token);
+                if (jwtService.isTokenValid(token, userDetails) && sessaoId != null && validadorDeSessao.ativa(sessaoId, email)) {
+                    request.setAttribute(ATRIBUTO_SESSAO_ID, sessaoId);
                     UsernamePasswordAuthenticationToken authToken =
                             new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));

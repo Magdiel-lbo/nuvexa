@@ -11,6 +11,8 @@ export interface CadastroRequest {
 
 export interface AutenticacaoResponse {
   token: string
+  refreshToken: string
+  expiraEmSegundos: number
   tipoToken: string
   perfil: string
 }

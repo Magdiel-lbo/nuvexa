@@ -64,6 +64,7 @@ public class ConviteService {
     private final AuditoriaService auditoriaService;
     private final AutenticacaoAuditoriaService autenticacaoAuditoria;
     private final LimiteDeTentativas limiteDeTentativas;
+    private final SessaoService sessaoService;
     private final MessageSourceAccessor mensagens;
 
     @Value("${app.cors.allowed-origin}")
@@ -166,7 +167,9 @@ public class ConviteService {
         autenticacaoAuditoria.registrarNaTransacaoAtual(TipoEventoAutenticacao.CADASTRO_POR_CONVITE, usuario.getId(), usuario.getEmail());
 
         log.info("Convite id={} aceito; usuário id={} vinculado à organização id={}", convite.getId(), usuario.getId(), convite.getOrganizacao().getId());
-        return AutenticacaoResponseDTO.of(jwtService.generateToken(usuario), usuario);
+        SessaoService.Emissao emissao = sessaoService.iniciar(usuario);
+        return AutenticacaoResponseDTO.of(jwtService.generateToken(usuario, emissao.sessao().getId()),
+                emissao.refreshToken(), jwtService.getExpiracaoSegundos(), usuario);
     }
 
     private void garantirPodeConceder(PapelOrganizacional papelDoConvidador, PapelOrganizacional papelConcedido) {

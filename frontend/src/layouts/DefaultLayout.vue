@@ -99,6 +99,7 @@
 import { Component, Vue } from 'vue-facing-decorator'
 import { useAppStore } from '../store/app.store'
 import { useAuthStore } from '../core/auth/auth.store'
+import authService from '../core/auth/auth-service'
 import { useThemeStore } from '../store/theme.store'
 import { useContextoStore } from '../core/contexto/contexto.store'
 import { useMenuStore } from '../core/menu/menu.store'
@@ -182,7 +183,12 @@ export default class DefaultLayout extends Vue {
     }
   }
 
-  sair() {
+  async sair() {
+    try {
+      await authService.sair()
+    } catch {
+      // Sessão já inválida ou sem rede: o logout local segue de qualquer forma.
+    }
     this.authStore.logout()
     this.contextoStore.limpar()
     this.menuStore.limpar()

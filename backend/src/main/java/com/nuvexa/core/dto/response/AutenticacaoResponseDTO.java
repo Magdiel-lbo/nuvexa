@@ -16,13 +16,19 @@ public class AutenticacaoResponseDTO {
 
     private String token;
 
+    private String refreshToken;
+
+    private long expiraEmSegundos;
+
     private String tipoToken;
 
     private String perfil;
 
-    public static AutenticacaoResponseDTO of(String token, Usuario usuario) {
+    public static AutenticacaoResponseDTO of(String token, String refreshToken, long expiraEmSegundos, Usuario usuario) {
         return AutenticacaoResponseDTO.builder()
                 .token(token)
+                .refreshToken(refreshToken)
+                .expiraEmSegundos(expiraEmSegundos)
                 .tipoToken("Bearer")
                 .perfil(usuario.getPerfil().name())
                 .build();

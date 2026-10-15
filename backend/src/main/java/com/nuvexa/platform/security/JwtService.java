@@ -18,15 +18,21 @@ public class JwtService {
     @Value("${app.jwt.secret}")
     private String secret;
 
-    @Value("${app.jwt.expiration-minutes}")
+    @Value("${app.jwt.expiration-minutes:15}")
     private long expirationMinutes;
 
-    public String generateToken(UserDetails userDetails) {
+    public long getExpiracaoSegundos() {
+        return expirationMinutes * 60;
+    }
+
+    /** O claim {@code sid} liga o access token à sessão (refresh token) que o originou. */
+    public String generateToken(UserDetails userDetails, Long sessaoId) {
         Date now = new Date();
         Date expiration = new Date(now.getTime() + expirationMinutes * 60_000);
 
         return Jwts.builder()
                 .subject(userDetails.getUsername())
+                .claim("sid", sessaoId)
                 .issuedAt(now)
                 .expiration(expiration)
                 .signWith(getSigningKey())
@@ -35,6 +41,11 @@ public class JwtService {
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
+    }
+
+    public Long extractSessaoId(String token) {
+        Number sid = extractClaim(token, claims -> claims.get("sid", Number.class));
+        return sid == null ? null : sid.longValue();
     }
 
     public boolean isTokenValid(String token, UserDetails userDetails) {

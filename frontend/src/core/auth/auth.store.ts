@@ -15,10 +15,14 @@ export const useAuthStore = defineStore('auth', {
     isAuthenticated: (state) => !!state.token,
   },
   actions: {
-    setSession(token: string, perfil: string) {
+    setSession(token: string, perfil: string, refreshToken: string) {
       this.token = token
       this.perfil = perfil
-      authStorage.setSession(token, perfil)
+      authStorage.setSession(token, perfil, refreshToken)
+    },
+    setTokens(token: string, refreshToken: string) {
+      this.token = token
+      authStorage.setTokens(token, refreshToken)
     },
     logout() {
       this.token = null
