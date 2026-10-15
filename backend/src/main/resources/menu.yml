@@ -20,24 +20,33 @@ menu:
         - id: prontuarios
           labelKey: menu.prontuarios
           route: /prontuarios
+          permissoes: [CLINICO]
         - id: nutricao
           labelKey: menu.nutricao
           route: /nutricao
           especialidades: [NUTRICAO]
+          permissoes: [CLINICO]
         - id: avaliacoes
           labelKey: menu.avaliacoes
           route: /avaliacoes
           especialidades: [NUTRICAO]
+          permissoes: [CLINICO]
     - id: gestao
       labelKey: menu.grupoGestao
       icon: mdi-domain
       children:
-        - id: empresa
-          labelKey: menu.empresa
+        - id: empresas
+          labelKey: menu.empresas
           route: /empresa
-        - id: usuarios
-          labelKey: menu.usuarios
-          route: /usuarios
+          perfis: [ADMIN]
+        - id: minha-empresa
+          labelKey: menu.minhaEmpresa
+          route: /minha-empresa
+          permissoes: [GERENCIAR_ORGANIZACAO]
+        - id: equipe
+          labelKey: menu.equipe
+          route: /equipe
+          permissoes: [GERENCIAR_EQUIPE]
         - id: vinculos-permissoes
           labelKey: menu.vinculosPermissoes
           route: /vinculos-permissoes

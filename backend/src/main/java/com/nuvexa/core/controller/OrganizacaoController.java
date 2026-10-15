@@ -1,7 +1,9 @@
 package com.nuvexa.core.controller;
 
+import com.nuvexa.core.dto.request.ConviteProprietarioRequestDTO;
 import com.nuvexa.core.dto.request.OrganizacaoCreateRequestDTO;
 import com.nuvexa.core.dto.request.OrganizacaoUpdateRequestDTO;
+import com.nuvexa.core.dto.response.ConviteResponseDTO;
 import com.nuvexa.core.dto.response.OrganizacaoEnumsResponseDTO;
 import com.nuvexa.core.dto.response.OrganizacaoResponseDTO;
 import com.nuvexa.core.service.OrganizacaoService;
@@ -53,6 +55,12 @@ public class OrganizacaoController extends BaseController {
     @ResponseStatus(HttpStatus.CREATED)
     public OrganizacaoResponseDTO create(@Valid @RequestBody OrganizacaoCreateRequestDTO request) {
         return organizacaoService.create(request);
+    }
+
+    @PostMapping("/{id}/proprietario")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ConviteResponseDTO convidarProprietario(@PathVariable Long id, @Valid @RequestBody ConviteProprietarioRequestDTO request) {
+        return organizacaoService.convidarProprietario(id, request);
     }
 
     @PutMapping("/{id}")

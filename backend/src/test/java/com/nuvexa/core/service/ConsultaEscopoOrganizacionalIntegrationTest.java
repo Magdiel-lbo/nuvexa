@@ -122,6 +122,11 @@ class ConsultaEscopoOrganizacionalIntegrationTest {
     private void estarLogadoEm(Organizacao organizacao) {
         when(contextoDeAutenticacao.organizacaoAtual()).thenReturn(organizacao);
         when(contextoDeAutenticacao.organizacaoAtualId()).thenReturn(organizacao.getId());
+        when(contextoDeAutenticacao.vinculoAtual()).thenReturn(Vinculo.builder()
+                .organizacao(organizacao)
+                .papel(PapelOrganizacional.MEMBRO)
+                .ativo(true)
+                .build());
     }
 
     private Usuario novoProfissionalVinculado(Organizacao organizacao, String nome) {

@@ -8,12 +8,12 @@ import java.util.Set;
  * Não confundir com {@link com.nuvexa.core.model.Perfil}, que é o papel de acesso
  * à plataforma (ADMIN/PROFISSIONAL).
  *
- * <p>RECEPCAO cadastra e agenda, mas não acessa o dado clínico. Só PROPRIETARIO e GESTOR gerenciam
- * a equipe (convites); PROPRIETARIO e GESTOR têm clínico igual ao MEMBRO.
+ * <p>RECEPCAO cadastra e agenda, mas não acessa o dado clínico. PROPRIETARIO e GESTOR gerenciam a
+ * equipe (convites e membros); só PROPRIETARIO edita os dados da própria organização.
  */
 public enum PapelOrganizacional {
     PROPRIETARIO(EnumSet.allOf(Permissao.class)),
-    GESTOR(EnumSet.allOf(Permissao.class)),
+    GESTOR(EnumSet.of(Permissao.CADASTRO_AGENDA, Permissao.CLINICO, Permissao.GERENCIAR_EQUIPE)),
     MEMBRO(EnumSet.of(Permissao.CADASTRO_AGENDA, Permissao.CLINICO)),
     RECEPCAO(EnumSet.of(Permissao.CADASTRO_AGENDA));
 

@@ -11,6 +11,7 @@ import com.nuvexa.core.model.StatusConsulta;
 import com.nuvexa.core.repository.ConsultaRepository;
 import com.nuvexa.core.repository.ConsultaStatusHistoricoRepository;
 import com.nuvexa.core.model.Paciente;
+import com.nuvexa.core.model.Permissao;
 import com.nuvexa.core.model.Usuario;
 import com.nuvexa.core.model.Vinculo;
 import com.nuvexa.core.repository.VinculoRepository;
@@ -48,13 +49,16 @@ public class ConsultaService {
                 request.getDataHora(), request.getDuracaoMinutos(), request.getStatus(), null);
         garantirMotivoTransicaoQuandoExigido(request.getStatus(), request.getMotivoTransicao());
 
-        Consulta consulta = consultaRepository.save(
-                request.toConsulta(contexto.getContextoDeAutenticacao().organizacaoAtual(), paciente, profissional));
+        Consulta nova = request.toConsulta(contexto.getContextoDeAutenticacao().organizacaoAtual(), paciente, profissional);
+        if (!podeVerClinico()) {
+            nova.setObservacoes(null);
+        }
+        Consulta consulta = consultaRepository.save(nova);
 
         registrarTransicao(consulta, null, consulta.getStatus(), request.getMotivoTransicao());
 
         log.info("Consulta criada com id={}", consulta.getId());
-        return ConsultaResponseDTO.from(consulta);
+        return resposta(consulta, podeVerClinico());
     }
 
     public ConsultaResponseDTO update(Long id, ConsultaUpdateRequestDTO request) {
@@ -65,7 +69,13 @@ public class ConsultaService {
             garantirMotivoTransicaoQuandoExigido(request.getStatus(), request.getMotivoTransicao());
         }
         Usuario profissional = buscarProfissionalOuFalhar(request.getProfissionalId());
+        boolean podeVerClinico = podeVerClinico();
+        String observacoesAtuais = consulta.getObservacoes();
         request.atualizar(consulta, profissional, modelMapper);
+        if (!podeVerClinico) {
+            // Quem não vê as observações também não pode apagá-las nem sobrescrevê-las.
+            consulta.setObservacoes(observacoesAtuais);
+        }
 
         Long organizacaoId = contexto.getContextoDeAutenticacao().organizacaoAtualId();
         garantirSemConflitoDeHorario(organizacaoId, consulta.getProfissional().getId(), consulta.getPaciente().getId(),
@@ -78,16 +88,17 @@ public class ConsultaService {
         }
 
         log.info("Consulta atualizada com id={}", id);
-        return ConsultaResponseDTO.from(saved);
+        return resposta(saved, podeVerClinico);
     }
 
     public ConsultaResponseDTO findById(Long id) {
-        return ConsultaResponseDTO.from(buscarConsultaOuFalhar(id));
+        return resposta(buscarConsultaOuFalhar(id), podeVerClinico());
     }
 
     public List<ConsultaResponseDTO> findAll(Long pacienteId, String busca) {
+        boolean podeVerClinico = podeVerClinico();
         return buscarConsultas(pacienteId, normalizarBusca(busca)).stream()
-                .map(ConsultaResponseDTO::from)
+                .map(consulta -> resposta(consulta, podeVerClinico))
                 .toList();
     }
 
@@ -110,6 +121,22 @@ public class ConsultaService {
         garantirSemHistorico(consulta);
         consultaRepository.delete(consulta);
         log.info("Consulta removida com id={}", id);
+    }
+
+    /**
+     * As observações da consulta são anotação clínica: quem só tem CADASTRO_AGENDA (recepção) agenda,
+     * mas não as lê. O motivo da consulta continua visível, porque quem agenda precisa informá-lo.
+     */
+    private boolean podeVerClinico() {
+        return contexto.getContextoDeAutenticacao().vinculoAtual().getPapel().possui(Permissao.CLINICO);
+    }
+
+    private ConsultaResponseDTO resposta(Consulta consulta, boolean podeVerClinico) {
+        ConsultaResponseDTO dto = ConsultaResponseDTO.from(consulta);
+        if (!podeVerClinico) {
+            dto.setObservacoes(null);
+        }
+        return dto;
     }
 
     private List<Consulta> buscarConsultas(Long pacienteId, String busca) {

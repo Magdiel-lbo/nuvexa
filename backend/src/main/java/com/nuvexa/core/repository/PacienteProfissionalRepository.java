@@ -8,4 +8,6 @@ import java.util.Optional;
 public interface PacienteProfissionalRepository extends JpaRepository<PacienteProfissional, Long> {
 
     Optional<PacienteProfissional> findByPacienteIdAndProfissionalId(Long pacienteId, Long profissionalId);
+
+    java.util.List<PacienteProfissional> findByPacienteIdAndOrganizacaoIdOrderByAtivoDescProfissionalNomeAsc(Long pacienteId, Long organizacaoId);
 }

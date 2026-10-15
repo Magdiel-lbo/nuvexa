@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -56,6 +57,28 @@ public class PacienteProfissionalService {
         log.info("Vínculo paciente-profissional criado com id={} (paciente={}, profissional={})",
                 novo.getId(), paciente.getId(), profissional.getId());
         return PacienteProfissionalResponseDTO.from(novo);
+    }
+
+    @Transactional(readOnly = true)
+    public List<PacienteProfissionalResponseDTO> listarDoPaciente(Long pacienteId) {
+        Long organizacaoAtualId = contextoDeAutenticacao.organizacaoAtualId();
+        buscarPacienteOuFalhar(pacienteId, organizacaoAtualId);
+        return pacienteProfissionalRepository
+                .findByPacienteIdAndOrganizacaoIdOrderByAtivoDescProfissionalNomeAsc(pacienteId, organizacaoAtualId).stream()
+                .map(PacienteProfissionalResponseDTO::from)
+                .toList();
+    }
+
+    /** Desvincular desativa a associação (o histórico de quem já foi responsável fica). */
+    public void desvincular(Long pacienteId, Long profissionalId) {
+        Long organizacaoAtualId = contextoDeAutenticacao.organizacaoAtualId();
+        buscarPacienteOuFalhar(pacienteId, organizacaoAtualId);
+        PacienteProfissional vinculo = pacienteProfissionalRepository.findByPacienteIdAndProfissionalId(pacienteId, profissionalId)
+                .filter(encontrado -> encontrado.getOrganizacao().getId().equals(organizacaoAtualId))
+                .orElseThrow(() -> new NegocioException(HttpStatus.NOT_FOUND,
+                        resolveMessage("pacienteProfissional.vinculo.naoEncontrado", profissionalId)));
+        vinculo.setAtivo(false);
+        log.info("Vínculo paciente-profissional id={} desativado", vinculo.getId());
     }
 
     private PacienteProfissionalResponseDTO reativar(PacienteProfissional vinculo) {

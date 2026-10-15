@@ -31,6 +31,10 @@ public class MenuProperties {
         private String route;
         /** Especialidades (nome do enum) que veem o item; vazio = todas. */
         private List<String> especialidades = new ArrayList<>();
+        /** Permissões (nome do enum Permissao) que o papel do usuário precisa ter; vazio = qualquer. */
+        private List<String> permissoes = new ArrayList<>();
+        /** Perfis de plataforma (ADMIN/PROFISSIONAL) que veem o item; vazio = todos. */
+        private List<String> perfis = new ArrayList<>();
         private List<Item> children = new ArrayList<>();
     }
 }

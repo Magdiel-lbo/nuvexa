@@ -4,6 +4,7 @@ import com.nuvexa.core.model.Especialidade;
 import com.nuvexa.core.model.Organizacao;
 import com.nuvexa.core.model.StatusOrganizacao;
 import com.nuvexa.core.model.TipoOrganizacao;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -35,6 +36,11 @@ public class OrganizacaoCreateRequestDTO {
 
     @NotNull(message = "{organizacao.especialidade.obrigatoria}")
     private Especialidade especialidade;
+
+    /** Opcional: e-mail do primeiro PROPRIETARIO, que recebe o convite junto com a criação da empresa. */
+    @Email(message = "{autenticacao.email.invalido}")
+    @Size(max = 150, message = "{convite.email.tamanho}")
+    private String emailProprietario;
 
     public Organizacao toOrganizacao(String razaoSocialNormalizada, String documentoNormalizado) {
         return Organizacao.builder()

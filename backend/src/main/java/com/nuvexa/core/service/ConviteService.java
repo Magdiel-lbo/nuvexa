@@ -75,9 +75,19 @@ public class ConviteService {
     public ConviteResponseDTO convidar(ConviteCreateRequestDTO request) {
         Vinculo vinculoDoConvidador = contextoDeAutenticacao.vinculoAtual();
         garantirPodeConceder(vinculoDoConvidador.getPapel(), request.getPapel());
+        return ConviteResponseDTO.from(emitir(vinculoDoConvidador.getOrganizacao(), request.getEmail().trim(),
+                request.getPapel(), contextoDeAutenticacao.usuarioAtual()));
+    }
 
-        String email = request.getEmail().trim();
-        Organizacao organizacao = vinculoDoConvidador.getOrganizacao();
+    /**
+     * O ADMIN da plataforma convida o primeiro PROPRIETARIO da empresa que acabou de criar (ou outro
+     * depois). Sem checagem de papel: a autoridade vem do {@code hasRole('ADMIN')} do chamador.
+     */
+    public ConviteResponseDTO convidarProprietarioComoAdmin(Organizacao organizacao, String email) {
+        return ConviteResponseDTO.from(emitir(organizacao, email.trim(), PapelOrganizacional.PROPRIETARIO, contextoDeAutenticacao.usuarioAtual()));
+    }
+
+    private Convite emitir(Organizacao organizacao, String email, PapelOrganizacional papel, Usuario convidador) {
         boolean jaEMembro = usuarioRepository.findByEmail(email)
                 .flatMap(existente -> vinculoRepository.findByUsuarioIdAndOrganizacaoId(existente.getId(), organizacao.getId()))
                 .map(Vinculo::isAtivo)
@@ -94,24 +104,23 @@ public class ConviteService {
         Convite convite = conviteRepository.save(Convite.builder()
                 .organizacao(organizacao)
                 .email(email)
-                .papel(request.getPapel())
+                .papel(papel)
                 .hashToken(TokenOpaco.hash(token))
                 .expiraEm(agora.plusDays(VALIDADE_DIAS))
-                .convidadoPor(contextoDeAutenticacao.usuarioAtual())
+                .convidadoPor(convidador)
                 .build());
 
-        Usuario convidador = contextoDeAutenticacao.usuarioAtual();
         auditoriaService.registrar(EntidadeAuditavel.CONVITE, convite.getId(), TipoEventoAuditoria.CRIACAO, organizacao.getId(),
                 convidador.getId(), convidador.getNome(), null, descrever(convite));
 
         String link = frontendUrl + "/aceitar-convite?token=" + token;
         emailService.enviar(email, "Convite para a " + organizacao.getNome() + " — Nuvexa",
                 "<p>Você foi convidado(a) para participar de <b>" + escapar(organizacao.getNome()) + "</b> na Nuvexa.</p>"
-                        + "<p><a href=\"" + link + "\">Clique aqui para aceitar o convite e criar sua conta</a></p>"
+                        + "<p><a href=\"" + link + "\">Clique aqui para aceitar o convite</a></p>"
                         + "<p>Esse link expira em " + VALIDADE_DIAS + " dias e só pode ser usado uma vez.</p>");
 
         log.info("Convite criado com id={} para a organização id={}", convite.getId(), organizacao.getId());
-        return ConviteResponseDTO.from(convite);
+        return convite;
     }
 
     @Transactional(readOnly = true)

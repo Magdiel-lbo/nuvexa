@@ -11,5 +11,6 @@ public enum EntidadeAuditavel {
     AVALIACAO,
     PERFIL_NUTRICIONAL,
     PLANO_ALIMENTAR,
-    CONVITE
+    CONVITE,
+    VINCULO
 }

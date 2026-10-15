@@ -10,5 +10,7 @@ public enum Permissao {
     /** Prontuário, adendos, anexos e dado clínico das verticais (perfil, avaliação, plano). */
     CLINICO,
     /** Convidar e revogar convites de novos membros da organização. */
-    GERENCIAR_EQUIPE
+    GERENCIAR_EQUIPE,
+    /** Editar os dados da própria organização (nome, razão social, documento). */
+    GERENCIAR_ORGANIZACAO
 }

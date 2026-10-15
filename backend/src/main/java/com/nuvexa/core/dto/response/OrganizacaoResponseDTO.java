@@ -26,11 +26,18 @@ public class OrganizacaoResponseDTO {
     private TipoOrganizacao tipo;
     private Especialidade especialidade;
     private StatusOrganizacao status;
+    /** Existe ao menos um PROPRIETARIO ativo? Falso = empresa criada que ainda não foi assumida por ninguém. */
+    private boolean proprietarioAtivo;
     private LocalDateTime criadoEm;
     private LocalDateTime atualizadoEm;
 
     public static OrganizacaoResponseDTO from(Organizacao organizacao) {
+        return from(organizacao, true);
+    }
+
+    public static OrganizacaoResponseDTO from(Organizacao organizacao, boolean proprietarioAtivo) {
         return OrganizacaoResponseDTO.builder()
+                .proprietarioAtivo(proprietarioAtivo)
                 .id(organizacao.getId())
                 .nome(organizacao.getNome())
                 .razaoSocial(organizacao.getRazaoSocial())
