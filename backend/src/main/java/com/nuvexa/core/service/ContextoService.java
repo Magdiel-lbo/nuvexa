@@ -2,9 +2,12 @@ package com.nuvexa.core.service;
 
 import com.nuvexa.core.service.ContextoDeAutenticacao;
 import com.nuvexa.core.dto.response.ContextoResponseDTO;
+import com.nuvexa.core.dto.response.OrganizacaoDoUsuarioResponseDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 /**
  * Não é delegação pura: o @Transactional aqui é o que mantém a sessão do Hibernate aberta entre
@@ -23,5 +26,10 @@ public class ContextoService {
     @Transactional(readOnly = true)
     public ContextoResponseDTO atual() {
         return ContextoResponseDTO.from(contextoDeAutenticacao.vinculoAtual());
+    }
+
+    @Transactional(readOnly = true)
+    public List<OrganizacaoDoUsuarioResponseDTO> organizacoesDoUsuario() {
+        return contextoDeAutenticacao.vinculosAtivos().stream().map(OrganizacaoDoUsuarioResponseDTO::from).toList();
     }
 }

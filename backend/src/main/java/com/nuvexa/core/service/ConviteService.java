@@ -2,8 +2,10 @@ package com.nuvexa.core.service;
 
 import com.nuvexa.core.dto.request.ConviteAceiteRequestDTO;
 import com.nuvexa.core.dto.request.ConviteCreateRequestDTO;
+import com.nuvexa.core.dto.request.ConviteTokenRequestDTO;
 import com.nuvexa.core.dto.response.AutenticacaoResponseDTO;
 import com.nuvexa.core.dto.response.ConviteResponseDTO;
+import com.nuvexa.core.dto.response.OrganizacaoDoUsuarioResponseDTO;
 import com.nuvexa.core.model.Convite;
 import com.nuvexa.core.model.Organizacao;
 import com.nuvexa.core.model.PapelOrganizacional;
@@ -38,10 +40,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * Entrada de novas pessoas em uma organização existente. Só convida e-mail SEM conta: a conta é
- * criada no aceite, já vinculada à organização de quem convidou (sem organização individual
- * própria). Quem já tem conta fica de fora até existir escolha de organização na requisição —
- * hoje {@code ContextoDeAutenticacao.vinculoAtual()} sempre usa o vínculo mais antigo.
+ * Entrada de pessoas em uma organização existente. Quem não tem conta aceita criando a conta, já
+ * vinculada à organização de quem convidou (sem organização individual própria). Quem já tem conta
+ * aceita logado, ganhando mais um vínculo; passa a alternar entre organizações pelo cabeçalho
+ * {@code X-Organizacao-Id} ({@code ContextoDeAutenticacao.vinculoAtual()}).
  *
  * <p>Gerenciar convites exige {@code GERENCIAR_EQUIPE} (checado no controller) e ninguém concede
  * papel acima do próprio ({@link PapelOrganizacional#podeConceder}).
@@ -75,11 +77,15 @@ public class ConviteService {
         garantirPodeConceder(vinculoDoConvidador.getPapel(), request.getPapel());
 
         String email = request.getEmail().trim();
-        if (usuarioRepository.findByEmail(email).isPresent()) {
-            throw new NegocioException(HttpStatus.CONFLICT, mensagens.getMessage("convite.email.jaTemConta", new Object[]{email}));
+        Organizacao organizacao = vinculoDoConvidador.getOrganizacao();
+        boolean jaEMembro = usuarioRepository.findByEmail(email)
+                .flatMap(existente -> vinculoRepository.findByUsuarioIdAndOrganizacaoId(existente.getId(), organizacao.getId()))
+                .map(Vinculo::isAtivo)
+                .orElse(false);
+        if (jaEMembro) {
+            throw new NegocioException(HttpStatus.CONFLICT, mensagens.getMessage("convite.jaMembro", new Object[]{email}));
         }
 
-        Organizacao organizacao = vinculoDoConvidador.getOrganizacao();
         LocalDateTime agora = LocalDateTime.now();
         conviteRepository.findByOrganizacaoIdAndEmailAndUsadoEmIsNullAndRevogadoEmIsNull(organizacao.getId(), email)
                 .forEach(pendente -> pendente.setRevogadoEm(agora));
@@ -142,6 +148,10 @@ public class ConviteService {
                     return new NegocioException(HttpStatus.BAD_REQUEST, mensagens.getMessage("convite.invalido"));
                 });
 
+        if (usuarioRepository.findByEmail(convite.getEmail()).isPresent()) {
+            throw new NegocioException(HttpStatus.CONFLICT, mensagens.getMessage("convite.contaExistente"));
+        }
+
         Usuario usuario;
         try {
             usuario = usuarioRepository.saveAndFlush(Usuario.builder()
@@ -170,6 +180,42 @@ public class ConviteService {
         SessaoService.Emissao emissao = sessaoService.iniciar(usuario);
         return AutenticacaoResponseDTO.of(jwtService.generateToken(usuario, emissao.sessao().getId()),
                 emissao.refreshToken(), jwtService.getExpiracaoSegundos(), usuario);
+    }
+
+    /** Aceite por quem já tem conta: o token é a credencial do convite, o login prova que o e-mail é dele. */
+    public OrganizacaoDoUsuarioResponseDTO aceitarComoUsuarioLogado(ConviteTokenRequestDTO request) {
+        limiteDeTentativas.garantirTokenPermitido();
+        Usuario usuario = contextoDeAutenticacao.usuarioAtual();
+        Convite convite = conviteRepository.findByHashToken(TokenOpaco.hash(request.getToken()))
+                .filter(c -> c.status(LocalDateTime.now()) == StatusConvite.PENDENTE)
+                .filter(c -> c.getEmail().equalsIgnoreCase(usuario.getEmail()))
+                .orElseThrow(() -> {
+                    limiteDeTentativas.registrarTokenInvalido();
+                    return new NegocioException(HttpStatus.BAD_REQUEST, mensagens.getMessage("convite.invalido"));
+                });
+
+        Vinculo vinculo = vinculoRepository.findByUsuarioIdAndOrganizacaoId(usuario.getId(), convite.getOrganizacao().getId())
+                .map(existente -> {
+                    if (existente.isAtivo()) {
+                        throw new NegocioException(HttpStatus.CONFLICT, mensagens.getMessage("convite.jaMembro", new Object[]{usuario.getEmail()}));
+                    }
+                    existente.setAtivo(true);
+                    existente.setPapel(convite.getPapel());
+                    return existente;
+                })
+                .orElseGet(() -> Vinculo.builder()
+                        .usuario(usuario)
+                        .organizacao(convite.getOrganizacao())
+                        .papel(convite.getPapel())
+                        .ativo(true)
+                        .build());
+        vinculo = vinculoRepository.save(vinculo);
+        convite.setUsadoEm(LocalDateTime.now());
+        auditoriaService.registrar(EntidadeAuditavel.CONVITE, convite.getId(), TipoEventoAuditoria.CONVITE_ACEITO,
+                convite.getOrganizacao().getId(), usuario.getId(), usuario.getNome(), null, descrever(convite));
+
+        log.info("Convite id={} aceito por usuário existente id={}", convite.getId(), usuario.getId());
+        return OrganizacaoDoUsuarioResponseDTO.from(vinculo);
     }
 
     private void garantirPodeConceder(PapelOrganizacional papelDoConvidador, PapelOrganizacional papelConcedido) {

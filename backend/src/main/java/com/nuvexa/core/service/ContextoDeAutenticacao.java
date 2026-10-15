@@ -11,6 +11,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.List;
 
@@ -25,6 +27,8 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 public class ContextoDeAutenticacao {
+
+    public static final String CABECALHO_ORGANIZACAO = "X-Organizacao-Id";
 
     private final VinculoRepository vinculoRepository;
     private final MessageSourceAccessor mensagens;
@@ -49,7 +53,40 @@ public class ContextoDeAutenticacao {
         if (vinculos.isEmpty()) {
             throw new NegocioException(HttpStatus.FORBIDDEN, resolveMessage("contexto.semVinculo"));
         }
-        return vinculos.getFirst();
+        Long organizacaoEscolhida = organizacaoEscolhidaNaRequisicao();
+        if (organizacaoEscolhida == null) {
+            return vinculos.getFirst();
+        }
+        return vinculos.stream()
+                .filter(vinculo -> vinculo.getOrganizacao().getId().equals(organizacaoEscolhida))
+                .findFirst()
+                .orElseThrow(() -> new NegocioException(HttpStatus.FORBIDDEN, resolveMessage("contexto.organizacaoNaoPermitida")));
+    }
+
+    /** Organizações em que o usuário autenticado tem vínculo ativo — as que ele pode escolher. */
+    public List<Vinculo> vinculosAtivos() {
+        return vinculoRepository.findByUsuarioIdAndAtivoTrueOrderByIdAsc(usuarioAtual().getId());
+    }
+
+    /**
+     * Organização pedida no cabeçalho {@value #CABECALHO_ORGANIZACAO}. Sem o cabeçalho vale o
+     * vínculo mais antigo (comportamento de quem tem uma organização só). Só aceita organização em
+     * que o usuário tem vínculo ativo — o cabeçalho nunca concede acesso, apenas escolhe entre os
+     * vínculos que o usuário já tem.
+     */
+    private Long organizacaoEscolhidaNaRequisicao() {
+        if (!(RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes atributos)) {
+            return null;
+        }
+        String valor = atributos.getRequest().getHeader(CABECALHO_ORGANIZACAO);
+        if (valor == null || valor.isBlank()) {
+            return null;
+        }
+        try {
+            return Long.valueOf(valor.trim());
+        } catch (NumberFormatException ex) {
+            throw new NegocioException(HttpStatus.BAD_REQUEST, resolveMessage("contexto.organizacaoInvalida"));
+        }
     }
 
     public Organizacao organizacaoAtual() {
