@@ -9,6 +9,7 @@ import com.nuvexa.core.dto.response.MensagemResponseDTO;
 import com.nuvexa.platform.auditoria.AutenticacaoAuditoriaService;
 import com.nuvexa.platform.auditoria.TipoEventoAutenticacao;
 import com.nuvexa.platform.email.EmailService;
+import com.nuvexa.platform.security.LimiteDeTentativas;
 import com.nuvexa.platform.exception.NegocioException;
 import com.nuvexa.core.model.Perfil;
 import com.nuvexa.core.model.Usuario;
@@ -61,6 +62,7 @@ public class AutenticacaoService {
     private final MessageSourceAccessor mensagens;
     private final EmailService emailService;
     private final AutenticacaoAuditoriaService autenticacaoAuditoria;
+    private final LimiteDeTentativas limiteDeTentativas;
     private final SecureRandom secureRandom = new SecureRandom();
 
     @Value("${app.cors.allowed-origin}")
@@ -92,6 +94,7 @@ public class AutenticacaoService {
     }
 
     public AutenticacaoResponseDTO login(LoginRequestDTO request) {
+        limiteDeTentativas.garantirLoginPermitido(request.getEmail());
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getSenha()));
@@ -110,6 +113,9 @@ public class AutenticacaoService {
     }
 
     public MensagemResponseDTO esqueciSenha(EsqueciSenhaRequestDTO request) {
+        if (!limiteDeTentativas.resetPermitido(request.getEmail())) {
+            return new MensagemResponseDTO(resolveMessage("autenticacao.esqueciSenha.enviado"));
+        }
         Optional<Usuario> userOptional = usuarioRepository.findByEmail(request.getEmail());
         autenticacaoAuditoria.registrar(TipoEventoAutenticacao.RESET_SOLICITADO, userOptional.map(Usuario::getId).orElse(null), request.getEmail());
 
@@ -139,9 +145,13 @@ public class AutenticacaoService {
     }
 
     public MensagemResponseDTO redefinirSenha(RedefinirSenhaRequestDTO request) {
+        limiteDeTentativas.garantirTokenPermitido();
         Usuario usuario = usuarioRepository.findByHashTokenRedefinicao(hashToken(request.getToken()))
                 .filter(u -> u.getTokenRedefinicaoExpiraEm() != null && u.getTokenRedefinicaoExpiraEm().isAfter(LocalDateTime.now()))
-                .orElseThrow(() -> new NegocioException(HttpStatus.BAD_REQUEST, resolveMessage("autenticacao.token.invalido")));
+                .orElseThrow(() -> {
+                    limiteDeTentativas.registrarTokenInvalido();
+                    return new NegocioException(HttpStatus.BAD_REQUEST, resolveMessage("autenticacao.token.invalido"));
+                });
 
         usuario.setSenha(passwordEncoder.encode(request.getNovaSenha()));
         usuario.setHashTokenRedefinicao(null);

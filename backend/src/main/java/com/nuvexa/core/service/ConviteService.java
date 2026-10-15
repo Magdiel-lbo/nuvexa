@@ -22,6 +22,7 @@ import com.nuvexa.platform.auditoria.TipoEventoAutenticacao;
 import com.nuvexa.platform.email.EmailService;
 import com.nuvexa.platform.exception.NegocioException;
 import com.nuvexa.platform.security.JwtService;
+import com.nuvexa.platform.security.LimiteDeTentativas;
 import com.nuvexa.platform.security.TokenOpaco;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -62,6 +63,7 @@ public class ConviteService {
     private final EmailService emailService;
     private final AuditoriaService auditoriaService;
     private final AutenticacaoAuditoriaService autenticacaoAuditoria;
+    private final LimiteDeTentativas limiteDeTentativas;
     private final MessageSourceAccessor mensagens;
 
     @Value("${app.cors.allowed-origin}")
@@ -131,9 +133,13 @@ public class ConviteService {
 
     /** Público (sem login): o token do e-mail é a credencial. Qualquer falha de validade responde igual. */
     public AutenticacaoResponseDTO aceitar(ConviteAceiteRequestDTO request) {
+        limiteDeTentativas.garantirTokenPermitido();
         Convite convite = conviteRepository.findByHashToken(TokenOpaco.hash(request.getToken()))
                 .filter(c -> c.status(LocalDateTime.now()) == StatusConvite.PENDENTE)
-                .orElseThrow(() -> new NegocioException(HttpStatus.BAD_REQUEST, mensagens.getMessage("convite.invalido")));
+                .orElseThrow(() -> {
+                    limiteDeTentativas.registrarTokenInvalido();
+                    return new NegocioException(HttpStatus.BAD_REQUEST, mensagens.getMessage("convite.invalido"));
+                });
 
         Usuario usuario;
         try {

@@ -50,6 +50,7 @@ class ConviteIntegrationTest {
     private static final String MEMBRO = "convite.membro@nuvexa.test";
     private static final String RECEPCAO = "convite.recepcao@nuvexa.test";
     private static final String SENHA = "senha12345";
+    private static final String IP_DO_TESTE = "10.250.1.1";
     private static final Pattern TOKEN = Pattern.compile("token=([^\"]+)\"");
 
     @Autowired
@@ -225,7 +226,10 @@ class ConviteIntegrationTest {
     }
 
     private org.springframework.test.web.servlet.ResultActions aceitar(String token, String nome) throws Exception {
-        return mockMvc.perform(post("/api/v1/auth/convites/aceitar").contentType(MediaType.APPLICATION_JSON)
+        return mockMvc.perform(post("/api/v1/auth/convites/aceitar").with(request -> {
+                    request.setRemoteAddr(IP_DO_TESTE);
+                    return request;
+                }).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"token\":\"%s\",\"nome\":\"%s\",\"senha\":\"%s\"}".formatted(token, nome, SENHA)));
     }
 
@@ -270,6 +274,7 @@ class ConviteIntegrationTest {
 
     /** Remove só o que o teste criou: organizações dos dois donos, convites, convidados e tudo escopado por elas. */
     private void limpar() {
+        jdbc.update("DELETE FROM eventos_autenticacao WHERE ip = ?", IP_DO_TESTE);
         List<Long> organizacoes = new ArrayList<>(jdbc.queryForList(
                 "SELECT v.organizacao_id FROM vinculos v JOIN usuarios u ON u.id = v.usuario_id WHERE u.email IN (?, ?)", Long.class, DONO, OUTRO_DONO));
         List<Long> usuarios = new ArrayList<>();
