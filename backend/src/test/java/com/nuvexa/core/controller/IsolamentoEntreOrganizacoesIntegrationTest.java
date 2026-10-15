@@ -7,6 +7,7 @@ import com.nuvexa.core.repository.ProntuarioAnexoRepository;
 import com.nuvexa.core.repository.ProntuarioRepository;
 import com.nuvexa.core.repository.UsuarioRepository;
 import com.nuvexa.core.repository.VinculoRepository;
+import com.nuvexa.testsupport.LimpezaDeUsuarios;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -372,6 +373,7 @@ class IsolamentoEntreOrganizacoesIntegrationTest {
             jdbc.update("DELETE FROM organizacoes WHERE id = ?", organizacaoId);
         }
         for (Long usuarioId : ids) {
+            LimpezaDeUsuarios.removerEventosDe(jdbc, usuarioId);
             jdbc.update("DELETE FROM usuarios WHERE id = ?", usuarioId);
         }
     }

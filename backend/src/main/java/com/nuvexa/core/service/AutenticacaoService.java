@@ -6,6 +6,8 @@ import com.nuvexa.core.dto.request.CadastroRequestDTO;
 import com.nuvexa.core.dto.request.RedefinirSenhaRequestDTO;
 import com.nuvexa.core.dto.response.AutenticacaoResponseDTO;
 import com.nuvexa.core.dto.response.MensagemResponseDTO;
+import com.nuvexa.platform.auditoria.AutenticacaoAuditoriaService;
+import com.nuvexa.platform.auditoria.TipoEventoAutenticacao;
 import com.nuvexa.platform.email.EmailService;
 import com.nuvexa.platform.exception.NegocioException;
 import com.nuvexa.core.model.Perfil;
@@ -58,6 +60,7 @@ public class AutenticacaoService {
     private final JwtService jwtService;
     private final MessageSourceAccessor mensagens;
     private final EmailService emailService;
+    private final AutenticacaoAuditoriaService autenticacaoAuditoria;
     private final SecureRandom secureRandom = new SecureRandom();
 
     @Value("${app.cors.allowed-origin}")
@@ -83,6 +86,7 @@ public class AutenticacaoService {
         log.info("Usuário registrado com id={}", saved.getId());
 
         provisionarOrganizacaoInicial(saved);
+        autenticacaoAuditoria.registrarNaTransacaoAtual(TipoEventoAutenticacao.CADASTRO, saved.getId(), saved.getEmail());
 
         return buildAuthResponse(saved);
     }
@@ -92,18 +96,22 @@ public class AutenticacaoService {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getSenha()));
         } catch (AuthenticationException ex) {
+            autenticacaoAuditoria.registrar(TipoEventoAutenticacao.LOGIN_FALHA,
+                    usuarioRepository.findByEmail(request.getEmail()).map(Usuario::getId).orElse(null), request.getEmail());
             throw new NegocioException(HttpStatus.UNAUTHORIZED, resolveMessage("autenticacao.credenciaisInvalidas"));
         }
 
         Usuario usuario = usuarioRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new NegocioException(HttpStatus.UNAUTHORIZED, resolveMessage("autenticacao.credenciaisInvalidas")));
 
+        autenticacaoAuditoria.registrar(TipoEventoAutenticacao.LOGIN_SUCESSO, usuario.getId(), usuario.getEmail());
         log.info("Usuário autenticado com id={}", usuario.getId());
         return buildAuthResponse(usuario);
     }
 
     public MensagemResponseDTO esqueciSenha(EsqueciSenhaRequestDTO request) {
         Optional<Usuario> userOptional = usuarioRepository.findByEmail(request.getEmail());
+        autenticacaoAuditoria.registrar(TipoEventoAutenticacao.RESET_SOLICITADO, userOptional.map(Usuario::getId).orElse(null), request.getEmail());
 
         if (userOptional.isPresent()) {
             Usuario usuario = userOptional.get();
@@ -124,7 +132,7 @@ public class AutenticacaoService {
             );
             log.info("E-mail de recuperação de senha disparado para usuário id={}", usuario.getId());
         } else {
-            log.info("Recuperação de senha solicitada para e-mail não cadastrado: {}", request.getEmail());
+            log.info("Recuperação de senha solicitada para e-mail não cadastrado");
         }
 
         return new MensagemResponseDTO(resolveMessage("autenticacao.esqueciSenha.enviado"));
@@ -139,6 +147,7 @@ public class AutenticacaoService {
         usuario.setHashTokenRedefinicao(null);
         usuario.setTokenRedefinicaoExpiraEm(null);
         usuarioRepository.save(usuario);
+        autenticacaoAuditoria.registrar(TipoEventoAutenticacao.SENHA_REDEFINIDA, usuario.getId(), usuario.getEmail());
 
         log.info("Senha redefinida para usuário com id={}", usuario.getId());
         return new MensagemResponseDTO(resolveMessage("autenticacao.redefinirSenha.sucesso"));

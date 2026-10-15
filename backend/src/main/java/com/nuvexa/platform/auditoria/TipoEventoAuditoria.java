@@ -9,7 +9,11 @@ public enum TipoEventoAuditoria implements ComRotulo {
     ADENDO("Adendo"),
     EXCLUSAO("Exclusão"),
     UPLOAD_ANEXO("Anexo adicionado"),
-    EXCLUSAO_ANEXO("Anexo excluído");
+    EXCLUSAO_ANEXO("Anexo excluído"),
+    LEITURA("Leitura"),
+    DOWNLOAD_ANEXO("Anexo baixado"),
+    REVOGACAO("Revogação"),
+    CONVITE_ACEITO("Convite aceito");
 
     private final String rotulo;
 

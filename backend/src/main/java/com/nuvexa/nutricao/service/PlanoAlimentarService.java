@@ -68,7 +68,9 @@ public class PlanoAlimentarService {
     }
 
     public PlanoAlimentarResponseDTO findById(Long id) {
-        return PlanoAlimentarResponseDTO.from(buscarPlanoAlimentarOuFalhar(id));
+        PlanoAlimentar planoAlimentar = buscarPlanoAlimentarOuFalhar(id);
+        registrarAcesso(planoAlimentar.getId(), planoAlimentar.getPaciente().getId(), TipoEventoAuditoria.LEITURA, null);
+        return PlanoAlimentarResponseDTO.from(planoAlimentar);
     }
 
     public List<PlanoAlimentarResponseDTO> findAll(Long pacienteId, String busca) {
@@ -151,6 +153,14 @@ public class PlanoAlimentarService {
      * Mesmo helper de {@code ProntuarioService.registrarAuditoria} — empacota a resolução de
      * usuário/organização atuais antes de chamar {@link AuditoriaService#registrar}.
      */
+    /** Acesso (leitura/download) a dado clínico — registra quem, quando, organização e paciente. */
+    private void registrarAcesso(Long entidadeId, Long pacienteId, TipoEventoAuditoria tipoEvento, String detalhe) {
+        Usuario usuarioAtual = contexto.getContextoDeAutenticacao().usuarioAtual();
+        auditoriaService.registrarAcesso(EntidadeAuditavel.PLANO_ALIMENTAR, entidadeId, tipoEvento,
+                contexto.getContextoDeAutenticacao().organizacaoAtualId(), usuarioAtual.getId(), usuarioAtual.getNome(),
+                pacienteId, detalhe);
+    }
+
     private void registrarAuditoria(Long planoAlimentarId, TipoEventoAuditoria tipoEvento, String antes, String depois) {
         Usuario usuarioAtual = contexto.getContextoDeAutenticacao().usuarioAtual();
         auditoriaService.registrar(EntidadeAuditavel.PLANO_ALIMENTAR, planoAlimentarId, tipoEvento,

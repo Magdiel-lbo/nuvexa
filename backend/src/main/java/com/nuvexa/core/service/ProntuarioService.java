@@ -106,7 +106,9 @@ public class ProntuarioService {
     }
 
     public ProntuarioResponseDTO findById(Long id) {
-        return ProntuarioResponseDTO.from(buscarProntuarioOuFalhar(id));
+        Prontuario prontuario = buscarProntuarioOuFalhar(id);
+        registrarAcesso(prontuario.getId(), prontuario.getPaciente().getId(), TipoEventoAuditoria.LEITURA, null);
+        return ProntuarioResponseDTO.from(prontuario);
     }
 
     public List<ProntuarioResponseDTO> findAll(Long pacienteId, String busca) {
@@ -137,6 +139,14 @@ public class ProntuarioService {
      * Empacota a resolução de usuário/organização atuais que os 4 sites de auditoria deste
      * service repetiam antes de chamar {@link AuditoriaService#registrar}.
      */
+    /** Acesso (leitura/download) a dado clínico — registra quem, quando, organização e paciente. */
+    private void registrarAcesso(Long entidadeId, Long pacienteId, TipoEventoAuditoria tipoEvento, String detalhe) {
+        Usuario usuarioAtual = contexto.getContextoDeAutenticacao().usuarioAtual();
+        auditoriaService.registrarAcesso(EntidadeAuditavel.PRONTUARIO, entidadeId, tipoEvento,
+                contexto.getContextoDeAutenticacao().organizacaoAtualId(), usuarioAtual.getId(), usuarioAtual.getNome(),
+                pacienteId, detalhe);
+    }
+
     private void registrarAuditoria(Long prontuarioId, TipoEventoAuditoria tipoEvento, String antes, String depois) {
         Usuario usuarioAtual = contexto.getContextoDeAutenticacao().usuarioAtual();
         auditoriaService.registrar(EntidadeAuditavel.PRONTUARIO, prontuarioId, tipoEvento,

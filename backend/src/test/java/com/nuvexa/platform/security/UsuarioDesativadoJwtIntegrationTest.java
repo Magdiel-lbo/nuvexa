@@ -6,6 +6,7 @@ import com.nuvexa.core.model.Vinculo;
 import com.nuvexa.core.repository.OrganizacaoRepository;
 import com.nuvexa.core.repository.UsuarioRepository;
 import com.nuvexa.core.repository.VinculoRepository;
+import com.nuvexa.testsupport.LimpezaDeUsuarios;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,12 +44,16 @@ class UsuarioDesativadoJwtIntegrationTest {
     @Autowired
     private OrganizacaoRepository organizacaoRepository;
 
+    @Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbc;
+
     @AfterEach
     void limparUsuarioCriado() {
         usuarioRepository.findByEmail(EMAIL).ifPresent(usuario -> {
             List<Vinculo> vinculos = vinculoRepository.findByUsuarioIdAndAtivoTrueOrderByIdAsc(usuario.getId());
             vinculoRepository.deleteAll(vinculos);
             vinculos.forEach(vinculo -> organizacaoRepository.deleteById(vinculo.getOrganizacao().getId()));
+            LimpezaDeUsuarios.removerEventosDe(jdbc, usuario.getId());
             usuarioRepository.delete(usuario);
         });
     }

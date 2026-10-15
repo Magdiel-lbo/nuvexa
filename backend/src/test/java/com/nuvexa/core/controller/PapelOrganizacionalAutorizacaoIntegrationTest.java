@@ -5,6 +5,7 @@ import com.nuvexa.core.model.PapelOrganizacional;
 import com.nuvexa.core.model.Vinculo;
 import com.nuvexa.core.repository.UsuarioRepository;
 import com.nuvexa.core.repository.VinculoRepository;
+import com.nuvexa.testsupport.LimpezaDeUsuarios;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -199,6 +200,7 @@ class PapelOrganizacionalAutorizacaoIntegrationTest {
                 jdbc.update("DELETE FROM vinculos WHERE organizacao_id = ?", organizacaoId);
                 jdbc.update("DELETE FROM organizacoes WHERE id = ?", organizacaoId);
             }
+            LimpezaDeUsuarios.removerEventosDe(jdbc, usuario.getId());
             jdbc.update("DELETE FROM usuarios WHERE id = ?", usuario.getId());
         });
     }

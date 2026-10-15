@@ -32,6 +32,21 @@ public class AuditoriaService {
         eventoAuditoriaRepository.save(evento);
     }
 
+    /** Acesso a dado clínico (leitura, download): igual a {@link #registrar}, mais o paciente afetado. */
+    public void registrarAcesso(EntidadeAuditavel entidadeTipo, Long entidadeId, TipoEventoAuditoria tipoEvento,
+                                 Long organizacaoId, Long usuarioId, String usuarioNome, Long pacienteId, String detalhe) {
+        eventoAuditoriaRepository.save(EventoAuditoria.builder()
+                .organizacaoId(organizacaoId)
+                .entidadeTipo(entidadeTipo)
+                .entidadeId(entidadeId)
+                .tipoEvento(tipoEvento)
+                .usuarioId(usuarioId)
+                .usuarioNome(usuarioNome)
+                .pacienteId(pacienteId)
+                .dadosDepois(detalhe)
+                .build());
+    }
+
     public List<EventoAuditoria> listar(EntidadeAuditavel entidadeTipo, Long entidadeId, Long organizacaoId) {
         return eventoAuditoriaRepository.findByEntidadeTipoAndEntidadeIdAndOrganizacaoIdOrderByCriadoEmDesc(entidadeTipo, entidadeId, organizacaoId);
     }

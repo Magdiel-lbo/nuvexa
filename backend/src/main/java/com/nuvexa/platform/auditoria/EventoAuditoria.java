@@ -50,6 +50,10 @@ public class EventoAuditoria extends ModeloAbstrato {
     @Column(name = "usuario_nome", nullable = false, length = 150)
     private String usuarioNome;
 
+    /** Paciente cujo dado foi acessado — preenchido só nos eventos de acesso (leitura/download). */
+    @Column(name = "paciente_id")
+    private Long pacienteId;
+
     @Column(name = "dados_antes", columnDefinition = "TEXT")
     private String dadosAntes;
 

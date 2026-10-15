@@ -10,5 +10,6 @@ public enum EntidadeAuditavel {
     PRONTUARIO_ADENDO,
     AVALIACAO,
     PERFIL_NUTRICIONAL,
-    PLANO_ALIMENTAR
+    PLANO_ALIMENTAR,
+    CONVITE
 }

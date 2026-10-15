@@ -80,6 +80,7 @@ public class AvaliacaoService {
 
     public AvaliacaoResponseDTO findById(Long id) {
         Avaliacao avaliacao = buscarAvaliacaoOuFalhar(id);
+        registrarAcesso(avaliacao.getId(), avaliacao.getPaciente().getId(), TipoEventoAuditoria.LEITURA, null);
         return AvaliacaoResponseDTO.from(avaliacao, calcularVariacao(avaliacao));
     }
 
@@ -273,6 +274,14 @@ public class AvaliacaoService {
      * Mesmo helper de {@code ProntuarioService.registrarAuditoria} — empacota a resolução de
      * usuário/organização atuais antes de chamar {@link AuditoriaService#registrar}.
      */
+    /** Acesso (leitura/download) a dado clínico — registra quem, quando, organização e paciente. */
+    private void registrarAcesso(Long entidadeId, Long pacienteId, TipoEventoAuditoria tipoEvento, String detalhe) {
+        Usuario usuarioAtual = contexto.getContextoDeAutenticacao().usuarioAtual();
+        auditoriaService.registrarAcesso(EntidadeAuditavel.AVALIACAO, entidadeId, tipoEvento,
+                contexto.getContextoDeAutenticacao().organizacaoAtualId(), usuarioAtual.getId(), usuarioAtual.getNome(),
+                pacienteId, detalhe);
+    }
+
     private void registrarAuditoria(Long avaliacaoId, TipoEventoAuditoria tipoEvento, String antes, String depois) {
         Usuario usuarioAtual = contexto.getContextoDeAutenticacao().usuarioAtual();
         auditoriaService.registrar(EntidadeAuditavel.AVALIACAO, avaliacaoId, tipoEvento,

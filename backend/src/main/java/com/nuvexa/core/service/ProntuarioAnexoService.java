@@ -112,6 +112,8 @@ public class ProntuarioAnexoService {
         buscarProntuarioOuFalhar(prontuarioId);
         ProntuarioAnexo anexo = buscarAnexoOuFalhar(prontuarioId, anexoId);
         byte[] conteudo = storageService.download(anexo.getChaveStorage());
+        registrarAcesso(prontuarioId, anexo.getProntuario().getPaciente().getId(), TipoEventoAuditoria.DOWNLOAD_ANEXO,
+                "anexo id=" + anexo.getId() + ": " + anexo.getNomeOriginal());
         return new ProntuarioAnexoDownloadDTO(anexo.getNomeOriginal(), anexo.getTipoMime(), conteudo);
     }
 
@@ -188,6 +190,14 @@ public class ProntuarioAnexoService {
      * Mesmo helper de {@code ProntuarioService.registrarAuditoria} — empacota a resolução de
      * usuário/organização atuais antes de chamar {@link AuditoriaService#registrar}.
      */
+    /** Acesso (leitura/download) a dado clínico — registra quem, quando, organização e paciente. */
+    private void registrarAcesso(Long entidadeId, Long pacienteId, TipoEventoAuditoria tipoEvento, String detalhe) {
+        Usuario usuarioAtual = contexto.getContextoDeAutenticacao().usuarioAtual();
+        auditoriaService.registrarAcesso(EntidadeAuditavel.PRONTUARIO, entidadeId, tipoEvento,
+                contexto.getContextoDeAutenticacao().organizacaoAtualId(), usuarioAtual.getId(), usuarioAtual.getNome(),
+                pacienteId, detalhe);
+    }
+
     private void registrarAuditoria(Long prontuarioId, TipoEventoAuditoria tipoEvento, String antes, String depois) {
         Usuario usuarioAtual = contexto.getContextoDeAutenticacao().usuarioAtual();
         auditoriaService.registrar(EntidadeAuditavel.PRONTUARIO, prontuarioId, tipoEvento,

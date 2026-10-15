@@ -14,6 +14,11 @@ import com.nuvexa.core.model.Vinculo;
 import com.nuvexa.core.repository.ConviteRepository;
 import com.nuvexa.core.repository.UsuarioRepository;
 import com.nuvexa.core.repository.VinculoRepository;
+import com.nuvexa.platform.auditoria.AuditoriaService;
+import com.nuvexa.platform.auditoria.AutenticacaoAuditoriaService;
+import com.nuvexa.platform.auditoria.EntidadeAuditavel;
+import com.nuvexa.platform.auditoria.TipoEventoAuditoria;
+import com.nuvexa.platform.auditoria.TipoEventoAutenticacao;
 import com.nuvexa.platform.email.EmailService;
 import com.nuvexa.platform.exception.NegocioException;
 import com.nuvexa.platform.security.JwtService;
@@ -55,6 +60,8 @@ public class ConviteService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final EmailService emailService;
+    private final AuditoriaService auditoriaService;
+    private final AutenticacaoAuditoriaService autenticacaoAuditoria;
     private final MessageSourceAccessor mensagens;
 
     @Value("${app.cors.allowed-origin}")
@@ -84,6 +91,10 @@ public class ConviteService {
                 .convidadoPor(contextoDeAutenticacao.usuarioAtual())
                 .build());
 
+        Usuario convidador = contextoDeAutenticacao.usuarioAtual();
+        auditoriaService.registrar(EntidadeAuditavel.CONVITE, convite.getId(), TipoEventoAuditoria.CRIACAO, organizacao.getId(),
+                convidador.getId(), convidador.getNome(), null, descrever(convite));
+
         String link = frontendUrl + "/aceitar-convite?token=" + token;
         emailService.enviar(email, "Convite para a " + organizacao.getNome() + " — Nuvexa",
                 "<p>Você foi convidado(a) para participar de <b>" + escapar(organizacao.getNome()) + "</b> na Nuvexa.</p>"
@@ -111,6 +122,9 @@ public class ConviteService {
         }
         if (convite.getRevogadoEm() == null) {
             convite.setRevogadoEm(LocalDateTime.now());
+            Usuario revogador = contextoDeAutenticacao.usuarioAtual();
+            auditoriaService.registrar(EntidadeAuditavel.CONVITE, convite.getId(), TipoEventoAuditoria.REVOGACAO,
+                    convite.getOrganizacao().getId(), revogador.getId(), revogador.getNome(), descrever(convite), null);
         }
         log.info("Convite revogado com id={}", id);
     }
@@ -141,6 +155,9 @@ public class ConviteService {
                 .ativo(true)
                 .build());
         convite.setUsadoEm(LocalDateTime.now());
+        auditoriaService.registrar(EntidadeAuditavel.CONVITE, convite.getId(), TipoEventoAuditoria.CONVITE_ACEITO,
+                convite.getOrganizacao().getId(), usuario.getId(), usuario.getNome(), null, descrever(convite));
+        autenticacaoAuditoria.registrarNaTransacaoAtual(TipoEventoAutenticacao.CADASTRO_POR_CONVITE, usuario.getId(), usuario.getEmail());
 
         log.info("Convite id={} aceito; usuário id={} vinculado à organização id={}", convite.getId(), usuario.getId(), convite.getOrganizacao().getId());
         return AutenticacaoResponseDTO.of(jwtService.generateToken(usuario), usuario);
@@ -150,6 +167,10 @@ public class ConviteService {
         if (!papelDoConvidador.podeConceder(papelConcedido)) {
             throw new NegocioException(HttpStatus.FORBIDDEN, mensagens.getMessage("convite.papel.naoPodeConceder", new Object[]{papelConcedido}));
         }
+    }
+
+    private String descrever(Convite convite) {
+        return "email=%s, papel=%s".formatted(convite.getEmail(), convite.getPapel());
     }
 
     private String escapar(String texto) {

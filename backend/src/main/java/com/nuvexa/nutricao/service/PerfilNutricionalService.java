@@ -95,7 +95,9 @@ public class PerfilNutricionalService {
     }
 
     public PerfilNutricionalResponseDTO findByPacienteId(Long pacienteId) {
-        return toResponseComCalculos(buscarPerfilOuFalhar(pacienteId));
+        PerfilNutricional perfilNutricional = buscarPerfilOuFalhar(pacienteId);
+        registrarAcesso(perfilNutricional.getId(), pacienteId, TipoEventoAuditoria.LEITURA, null);
+        return toResponseComCalculos(perfilNutricional);
     }
 
     /**
@@ -193,6 +195,14 @@ public class PerfilNutricionalService {
      * Mesmo helper de {@code ProntuarioService.registrarAuditoria} — empacota a resolução de
      * usuário/organização atuais antes de chamar {@link AuditoriaService#registrar}.
      */
+    /** Acesso (leitura/download) a dado clínico — registra quem, quando, organização e paciente. */
+    private void registrarAcesso(Long entidadeId, Long pacienteId, TipoEventoAuditoria tipoEvento, String detalhe) {
+        Usuario usuarioAtual = contexto.getContextoDeAutenticacao().usuarioAtual();
+        auditoriaService.registrarAcesso(EntidadeAuditavel.PERFIL_NUTRICIONAL, entidadeId, tipoEvento,
+                contexto.getContextoDeAutenticacao().organizacaoAtualId(), usuarioAtual.getId(), usuarioAtual.getNome(),
+                pacienteId, detalhe);
+    }
+
     private void registrarAuditoria(Long perfilNutricionalId, TipoEventoAuditoria tipoEvento, String antes, String depois) {
         Usuario usuarioAtual = contexto.getContextoDeAutenticacao().usuarioAtual();
         auditoriaService.registrar(EntidadeAuditavel.PERFIL_NUTRICIONAL, perfilNutricionalId, tipoEvento,

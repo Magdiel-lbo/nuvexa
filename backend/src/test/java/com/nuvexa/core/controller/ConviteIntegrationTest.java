@@ -2,6 +2,7 @@ package com.nuvexa.core.controller;
 
 import com.jayway.jsonpath.JsonPath;
 import com.nuvexa.platform.email.EmailService;
+import com.nuvexa.testsupport.LimpezaDeUsuarios;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -287,6 +288,7 @@ class ConviteIntegrationTest {
         for (Long usuarioId : usuarios.stream().distinct().toList()) {
             jdbc.update("DELETE FROM convites WHERE convidado_por_id = ?", usuarioId);
             jdbc.update("DELETE FROM vinculos WHERE usuario_id = ?", usuarioId);
+            LimpezaDeUsuarios.removerEventosDe(jdbc, usuarioId);
             jdbc.update("DELETE FROM usuarios WHERE id = ?", usuarioId);
         }
     }
