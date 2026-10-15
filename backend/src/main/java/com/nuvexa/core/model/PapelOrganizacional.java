@@ -8,13 +8,13 @@ import java.util.Set;
  * Não confundir com {@link com.nuvexa.core.model.Perfil}, que é o papel de acesso
  * à plataforma (ADMIN/PROFISSIONAL).
  *
- * <p>Hoje só RECEPCAO difere dos demais: cadastra e agenda, mas não acessa o dado clínico.
- * PROPRIETARIO, GESTOR e MEMBRO têm as mesmas permissões até existir uma regra que as separe.
+ * <p>RECEPCAO cadastra e agenda, mas não acessa o dado clínico. Só PROPRIETARIO e GESTOR gerenciam
+ * a equipe (convites); PROPRIETARIO e GESTOR têm clínico igual ao MEMBRO.
  */
 public enum PapelOrganizacional {
     PROPRIETARIO(EnumSet.allOf(Permissao.class)),
     GESTOR(EnumSet.allOf(Permissao.class)),
-    MEMBRO(EnumSet.allOf(Permissao.class)),
+    MEMBRO(EnumSet.of(Permissao.CADASTRO_AGENDA, Permissao.CLINICO)),
     RECEPCAO(EnumSet.of(Permissao.CADASTRO_AGENDA));
 
     private final Set<Permissao> permissoes;
@@ -25,5 +25,14 @@ public enum PapelOrganizacional {
 
     public boolean possui(Permissao permissao) {
         return permissoes.contains(permissao);
+    }
+
+    /** Ninguém concede papel acima do próprio: GESTOR convida MEMBRO e RECEPCAO; só PROPRIETARIO concede PROPRIETARIO e GESTOR. */
+    public boolean podeConceder(PapelOrganizacional alvo) {
+        return switch (this) {
+            case PROPRIETARIO -> true;
+            case GESTOR -> alvo == MEMBRO || alvo == RECEPCAO;
+            default -> false;
+        };
     }
 }

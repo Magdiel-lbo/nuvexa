@@ -8,5 +8,7 @@ public enum Permissao {
     /** Cadastro de pacientes e agenda de consultas. */
     CADASTRO_AGENDA,
     /** Prontuário, adendos, anexos e dado clínico das verticais (perfil, avaliação, plano). */
-    CLINICO
+    CLINICO,
+    /** Convidar e revogar convites de novos membros da organização. */
+    GERENCIAR_EQUIPE
 }

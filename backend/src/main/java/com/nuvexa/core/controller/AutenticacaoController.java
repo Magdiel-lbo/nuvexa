@@ -1,5 +1,6 @@
 package com.nuvexa.core.controller;
 
+import com.nuvexa.core.dto.request.ConviteAceiteRequestDTO;
 import com.nuvexa.core.dto.request.EsqueciSenhaRequestDTO;
 import com.nuvexa.core.dto.request.LoginRequestDTO;
 import com.nuvexa.core.dto.request.CadastroRequestDTO;
@@ -7,6 +8,7 @@ import com.nuvexa.core.dto.request.RedefinirSenhaRequestDTO;
 import com.nuvexa.core.dto.response.AutenticacaoResponseDTO;
 import com.nuvexa.core.dto.response.MensagemResponseDTO;
 import com.nuvexa.core.service.AutenticacaoService;
+import com.nuvexa.core.service.ConviteService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +33,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AutenticacaoController {
 
     private final AutenticacaoService autenticacaoService;
+    private final ConviteService conviteService;
 
     @PostMapping("/cadastrar")
     @ResponseStatus(HttpStatus.CREATED)
@@ -42,6 +45,12 @@ public class AutenticacaoController {
     @ResponseStatus(HttpStatus.OK)
     public AutenticacaoResponseDTO login(@Valid @RequestBody LoginRequestDTO request) {
         return autenticacaoService.login(request);
+    }
+
+    @PostMapping("/convites/aceitar")
+    @ResponseStatus(HttpStatus.CREATED)
+    public AutenticacaoResponseDTO aceitarConvite(@Valid @RequestBody ConviteAceiteRequestDTO request) {
+        return conviteService.aceitar(request);
     }
 
     @PostMapping("/esqueci-senha")
