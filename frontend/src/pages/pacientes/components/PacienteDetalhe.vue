@@ -170,6 +170,7 @@
           <span v-else class="paciente-detalhe__vazio">{{ $t('paciente.detalhe.semPlanoAtivo') }}</span>
         </v-card-text>
       </v-card>
+      <PacienteProfissionais :paciente-id="paciente.id" />
     </div>
 
     <!-- ABA: FICHA -->
@@ -228,6 +229,7 @@
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-facing-decorator'
 import NuvexaStatusChip from '../../../components/common/NuvexaStatusChip.vue'
+import PacienteProfissionais from './PacienteProfissionais.vue'
 import NuvexaBarChart from '../../../components/common/NuvexaBarChart.vue'
 import type { NuvexaBarChartRow } from '../../../components/common/NuvexaBarChart.vue'
 import type { PacienteResponse } from '../../../types/paciente'
@@ -307,7 +309,7 @@ interface Bloco {
 
 @Component({
   name: 'PacienteDetalhe',
-  components: { NuvexaStatusChip, NuvexaBarChart },
+  components: { NuvexaStatusChip, NuvexaBarChart, PacienteProfissionais },
   emits: [
     'voltar',
     'abrir-prontuario',

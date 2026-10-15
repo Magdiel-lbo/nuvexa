@@ -75,6 +75,17 @@
             :title="organizacaoNome"
             :subtitle="$t('contexto.organizacaoAtual')"
           />
+          <template v-if="contextoStore.temVariasOrganizacoes">
+            <v-list-subheader>{{ $t('contexto.trocarOrganizacao') }}</v-list-subheader>
+            <v-list-item
+              v-for="organizacao in contextoStore.organizacoes"
+              :key="organizacao.organizacaoId"
+              :title="organizacao.nome"
+              :subtitle="$t(`equipe.papeis.${organizacao.papel}`)"
+              :active="organizacao.organizacaoId === contextoStore.contexto?.organizacaoId"
+              @click="trocarOrganizacao(organizacao.organizacaoId)"
+            />
+          </template>
           <v-divider v-if="organizacaoNome" class="my-1" />
           <v-list-item prepend-icon="mdi-logout" :title="$t('auth.sair')" @click="sair" />
         </v-list>
@@ -180,6 +191,12 @@ export default class DefaultLayout extends Vue {
   onDrawerUpdate(value: boolean) {
     if (this.isMobile) {
       this.mobileDrawerOpen = value
+    }
+  }
+
+  trocarOrganizacao(organizacaoId: number) {
+    if (organizacaoId !== this.contextoStore.contexto?.organizacaoId) {
+      this.contextoStore.selecionarOrganizacao(organizacaoId)
     }
   }
 

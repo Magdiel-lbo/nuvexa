@@ -17,6 +17,12 @@ declare module 'vue-router' {
     description?: string
     /** Rota exclusiva de uma vertical: quem não tem essa especialidade volta ao dashboard. Conveniência — o backend barra de fato. */
     especialidade?: Especialidade
+    /** Rota só do perfil de plataforma ADMIN. */
+    perfil?: 'ADMIN'
+    /** Rota que exige uma permissão do papel na organização atual. Conveniência — o backend barra de fato. */
+    permissao?: 'gerenciarEquipe' | 'editarOrganizacao'
+    /** Rota de dado clínico: a recepção não acessa. */
+    clinico?: boolean
   }
 }
 
@@ -27,10 +33,10 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../pages/dashboard/Dashboard.vue'),
     meta: { title: 'Dashboard' },
   },
-  ...nutricaoRoutes.map((rota) => ({ ...rota, meta: { ...rota.meta, especialidade: 'NUTRICAO' as const } })),
+  ...nutricaoRoutes.map((rota) => ({ ...rota, meta: { ...rota.meta, especialidade: 'NUTRICAO' as const, clinico: true } })),
   ...pacienteRoutes,
   ...consultaRoutes,
-  ...prontuarioRoutes,
+  ...prontuarioRoutes.map((rota) => ({ ...rota, meta: { ...rota.meta, clinico: true } })),
   ...workspaceRoutes,
   ...gestaoRoutes,
   ...authRoutes,
@@ -66,6 +72,18 @@ router.beforeEach(async (to) => {
   const especialidadeExigida = to.meta.especialidade
   if (especialidadeExigida && contextoStore.contexto && contextoStore.contexto.especialidade !== especialidadeExigida) {
     return { name: 'dashboard' }
+  }
+
+  const contexto = contextoStore.contexto
+  if (contexto) {
+    const negado =
+      (to.meta.perfil === 'ADMIN' && !contextoStore.isAdmin) ||
+      (to.meta.permissao === 'gerenciarEquipe' && !contextoStore.podeGerenciarEquipe) ||
+      (to.meta.permissao === 'editarOrganizacao' && !contextoStore.podeEditarOrganizacao) ||
+      (to.meta.clinico && !contextoStore.podeVerClinico)
+    if (negado) {
+      return { name: 'dashboard' }
+    }
   }
 
   return true

@@ -20,6 +20,12 @@ const routes: RouteRecordRaw[] = [
     meta: { public: true },
   },
   {
+    path: '/aceitar-convite',
+    name: 'aceitar-convite',
+    component: () => import('../pages/auth/AceitarConvite.vue'),
+    meta: { public: true },
+  },
+  {
     path: '/redefinir-senha',
     name: 'redefinir-senha',
     component: () => import('../pages/auth/RedefinirSenha.vue'),

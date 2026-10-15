@@ -63,7 +63,7 @@
       </v-col>
 
       <v-col cols="12">
-        <v-textarea v-model="model.observacoes" :label="$t('consulta.observacoes')" rows="3" />
+        <v-textarea v-if="podeVerClinico" v-model="model.observacoes" :label="$t('consulta.observacoes')" rows="3" />
       </v-col>
     </v-row>
 
@@ -78,6 +78,7 @@
 import { Component, Prop, VModel, Emit, Vue } from 'vue-facing-decorator'
 import NuvexaProfissionalSelect from '../../../components/common/NuvexaProfissionalSelect.vue'
 import NuvexaPacienteSelect from '../../../components/common/NuvexaPacienteSelect.vue'
+import { useContextoStore } from '../../../core/contexto/contexto.store'
 import type { ConsultaStatus, ConsultaTipo } from '../../../types/consulta'
 
 export interface ConsultaFormModel {
@@ -96,6 +97,11 @@ export interface ConsultaFormModel {
 export default class ConsultaForm extends Vue {
   @VModel({ required: true })
   model!: ConsultaFormModel
+
+  /** As observações são anotação clínica: a recepção agenda sem vê-las. */
+  get podeVerClinico(): boolean {
+    return useContextoStore().podeVerClinico
+  }
 
   @Prop({ default: '' })
   submitLabel!: string

@@ -2,6 +2,20 @@
   <div class="paciente-formulario">
     <template v-if="isView">
       <p v-if="carregando">...</p>
+      <PacienteDetalheBasico
+        v-else-if="paciente && !temNutricao"
+        :paciente="paciente"
+        :consultas="consultas"
+        :prontuarios="prontuarios"
+        :rotulos="rotulos"
+        :rotulos-prontuario="rotulosProntuario"
+        @voltar="voltar"
+        @abrir-prontuario="irParaProntuario"
+        @nova-consulta="irParaNovaConsulta"
+        @abrir-consulta="irParaConsulta"
+        @novo-registro="irParaNovoRegistro"
+        @abrir-registro="irParaRegistro"
+      />
       <PacienteDetalhe
         v-else-if="paciente"
         :paciente="paciente"
@@ -63,6 +77,7 @@ import { Component, Vue } from 'vue-facing-decorator'
 import PacienteForm from './components/PacienteForm.vue'
 import type { PacienteFormModel } from './components/PacienteForm.vue'
 import PacienteDetalhe from './components/PacienteDetalhe.vue'
+import PacienteDetalheBasico from './components/PacienteDetalheBasico.vue'
 import pacienteService from '../../service/paciente-service'
 import perfilNutricionalService from '../../nutricao/services/perfil-nutricional-service'
 import consultaService from '../../service/consulta-service'
@@ -107,7 +122,7 @@ function formModelPadrao(): PacienteFormModel {
  * perfil nutricional. Se o perfil tiver sido removido (ver "Excluir" na listagem, que só apaga o
  * perfil, preservando o Paciente), `perfil` vem `null` e salvar() cria um novo em vez de atualizar.
  */
-@Component({ name: 'PacienteFormulario', components: { PacienteForm, PacienteDetalhe } })
+@Component({ name: 'PacienteFormulario', components: { PacienteForm, PacienteDetalhe, PacienteDetalheBasico } })
 export default class PacienteFormulario extends Vue {
   paciente: PacienteResponse | null = null
   perfil: PerfilNutricionalResponse | null = null
@@ -128,9 +143,14 @@ export default class PacienteFormulario extends Vue {
     return useAppStore()
   }
 
-  /** Perfil, avaliações e plano alimentar só existem para organizações de nutrição. */
+  /** Perfil, avaliações e plano alimentar só existem para organizações de nutrição e para quem vê o clínico. */
   get temNutricao(): boolean {
-    return useContextoStore().temNutricao
+    const contexto = useContextoStore()
+    return contexto.temNutricao && contexto.podeVerClinico
+  }
+
+  get podeVerClinico(): boolean {
+    return useContextoStore().podeVerClinico
   }
 
   get pacienteId(): number | null {
@@ -165,6 +185,8 @@ export default class PacienteFormulario extends Vue {
     try {
       if (this.temNutricao) {
         this.rotulos = await carregarRotulosEnum()
+      } else {
+        this.rotulos = Object.fromEntries((await pacienteService.enums()).sexos.map((opcao) => [opcao.valor, opcao.rotulo]))
       }
       const [paciente, perfil] = await Promise.all([
         pacienteService.buscarPorId(this.pacienteId as number),
@@ -200,9 +222,9 @@ export default class PacienteFormulario extends Vue {
       nutricao ? avaliacaoService.buscarPorPaciente(pacienteId).catch(() => []) : Promise.resolve<Avaliacao[]>([]),
       consultaService.buscarPorPaciente(pacienteId).catch(() => []),
       nutricao ? planoAlimentarService.buscarPorPaciente(pacienteId).catch(() => []) : Promise.resolve<PlanoAlimentar[]>([]),
-      prontuarioService.buscarPorPaciente(pacienteId).catch(() => []),
+      this.podeVerClinico ? prontuarioService.buscarPorPaciente(pacienteId).catch(() => []) : Promise.resolve<Prontuario[]>([]),
       nutricao ? carregarRotulosAvaliacao() : Promise.resolve<Record<string, string>>({}),
-      carregarRotulosProntuario(),
+      this.podeVerClinico ? carregarRotulosProntuario() : Promise.resolve<Record<string, string>>({}),
       nutricao ? carregarRotulosPlanoAlimentar() : Promise.resolve<Record<string, string>>({}),
     ])
     this.avaliacoes = avaliacoes

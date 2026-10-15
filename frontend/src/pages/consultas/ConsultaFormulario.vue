@@ -106,7 +106,8 @@ export default class ConsultaFormulario extends Vue {
 
   /** O cabeçalho de contexto do paciente (peso, IMC, objetivo) vem do perfil nutricional. */
   get temNutricao(): boolean {
-    return useContextoStore().temNutricao
+    const contexto = useContextoStore()
+    return contexto.temNutricao && contexto.podeVerClinico
   }
 
   get consultaId(): number | null {

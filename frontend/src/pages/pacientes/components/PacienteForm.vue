@@ -25,6 +25,7 @@
         />
       </v-col>
 
+      <template v-if="temNutricao">
       <v-col cols="12" md="6">
         <v-text-field
           v-model.number="model.altura"
@@ -79,6 +80,7 @@
       <v-col cols="6">
         <v-textarea v-model="model.observacoes" :label="$t('paciente.observacoes')" rows="3" />
       </v-col>
+      </template>
     </v-row>
 
     <div v-if="!readonly" class="d-flex ga-2 mt-4">
@@ -91,6 +93,7 @@
 <script lang="ts">
 import { Component, Prop, VModel, Emit, Vue } from 'vue-facing-decorator'
 import pacienteService from '../../../service/paciente-service'
+import { useContextoStore } from '../../../core/contexto/contexto.store'
 import perfilNutricionalService from '../../../nutricao/services/perfil-nutricional-service'
 import type { EnumOpcao } from '../../../util/enum-rotulos'
 import type { Sexo } from '../../../types/paciente'
@@ -136,11 +139,19 @@ export default class PacienteForm extends Vue {
     }
   }
 
+  /** Altura, peso, objetivo e nível de atividade são do perfil nutricional: só para organizações de nutrição. */
+  get temNutricao(): boolean {
+    const contexto = useContextoStore()
+    return contexto.temNutricao && contexto.podeVerClinico
+  }
+
   async created() {
-    const [pacienteEnums, perfilEnums] = await Promise.all([pacienteService.enums(), perfilNutricionalService.enums()])
-    this.opcoesSexo = pacienteEnums.sexos
-    this.opcoesObjetivo = perfilEnums.objetivos
-    this.opcoesNivelAtividade = perfilEnums.niveisAtividade
+    this.opcoesSexo = (await pacienteService.enums()).sexos
+    if (this.temNutricao) {
+      const perfilEnums = await perfilNutricionalService.enums()
+      this.opcoesObjetivo = perfilEnums.objetivos
+      this.opcoesNivelAtividade = perfilEnums.niveisAtividade
+    }
   }
 
   @Emit('cancel')

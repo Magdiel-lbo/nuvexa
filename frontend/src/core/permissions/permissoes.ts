@@ -11,6 +11,9 @@ export function usePermissoes() {
   const contexto = useContextoStore()
   return {
     isAdmin: contexto.isAdmin,
+    podeVerClinico: contexto.podeVerClinico,
+    podeGerenciarEquipe: contexto.podeGerenciarEquipe,
+    podeEditarOrganizacao: contexto.podeEditarOrganizacao,
     podeExcluirPaciente: contexto.podeExcluirPaciente,
     podeAdministrarOrganizacao: contexto.podeAdministrarOrganizacao,
   }

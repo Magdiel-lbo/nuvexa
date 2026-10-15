@@ -5,6 +5,7 @@
         <h1 class="empresa-lista__title">{{ $t('dashboardEmpresas.titulo') }}</h1>
         <p class="empresa-lista__subtitle">{{ $t('dashboardEmpresas.subtitulo') }}</p>
       </div>
+      <NuvexaButton variant="primary" icon="mdi-plus" @click="nova">{{ $t('dashboardEmpresas.nova') }}</NuvexaButton>
     </div>
 
     <NuvexaSummaryCards class="empresa-lista__section" :cards="summaryCards" />
@@ -85,12 +86,29 @@
           <NuvexaStatusChip :label="rotulo('status', item.status)" :color="item.status === 'ATIVA' ? 'success' : 'error'" />
         </template>
 
+        <template #item.proprietarioAtivo="{ item }">
+          <NuvexaStatusChip v-if="!item.proprietarioAtivo" :label="$t('dashboardEmpresas.tabela.semProprietario') as string" color="warning" />
+          <span v-else>—</span>
+        </template>
+
+        <template #item.acoes="{ item }">
+          <div class="d-flex justify-end">
+            <v-tooltip :text="$t('acao.editar')" location="top">
+              <template #activator="{ props }">
+                <v-btn v-bind="props" icon="mdi-pencil-outline" variant="text" density="comfortable" size="small" @click="editar(item.id)" />
+              </template>
+            </v-tooltip>
+          </div>
+        </template>
+
         <template #no-data>
           <NuvexaEmptyState
             v-if="empresas.length === 0"
             icon="mdi-domain"
             :title="$t('dashboardEmpresas.vazio.titulo') as string"
             :description="$t('dashboardEmpresas.vazio.descricao') as string"
+            :action-label="$t('dashboardEmpresas.nova') as string"
+            @action="nova"
           />
           <NuvexaEmptyState
             v-else
@@ -121,6 +139,7 @@ import NuvexaDataTable, { type NuvexaTableHeader } from '../../components/common
 import NuvexaEmptyState from '../../components/common/NuvexaEmptyState.vue'
 import NuvexaField from '../../components/common/NuvexaField.vue'
 import NuvexaStatusChip from '../../components/common/NuvexaStatusChip.vue'
+import NuvexaButton from '../../components/common/NuvexaButton.vue'
 
 const ITENS_POR_PAGINA_OPCOES = [10, 25, 50]
 
@@ -142,6 +161,7 @@ function somenteDigitos(texto: string | null): string {
     NuvexaEmptyState,
     NuvexaField,
     NuvexaStatusChip,
+    NuvexaButton,
   },
 })
 export default class EmpresaLista extends Vue {
@@ -189,6 +209,8 @@ export default class EmpresaLista extends Vue {
       { title: this.$t('dashboardEmpresas.tabela.tipo') as string, key: 'tipo', sortable: false },
       { title: this.$t('dashboardEmpresas.tabela.especialidade') as string, key: 'especialidade', sortable: false },
       { title: this.$t('dashboardEmpresas.tabela.status') as string, key: 'status', sortable: false },
+      { title: this.$t('dashboardEmpresas.tabela.proprietario') as string, key: 'proprietarioAtivo', sortable: false },
+      { title: this.$t('acao.titulo') as string, key: 'acoes', sortable: false, align: 'end' },
     ]
   }
 
@@ -307,6 +329,14 @@ export default class EmpresaLista extends Vue {
   async removerChip(chip: ActiveChip) {
     await this.filtros.removeChip(chip)
     this.sincronizarDraftComAplicado()
+  }
+
+  nova() {
+    this.$router.push('/empresa/nova')
+  }
+
+  editar(id: number) {
+    this.$router.push(`/empresa/${id}`)
   }
 
   iniciais(nome: string): string {

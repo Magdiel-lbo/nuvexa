@@ -1,6 +1,7 @@
 import axios from 'axios'
 import configs from '../../configs/env'
 import { authStorage } from '../auth/auth-storage'
+import { organizacaoStorage } from '../contexto/organizacao-storage'
 import { useAppStore } from '../../store/app.store'
 import i18n from '../../plugins/i18n'
 
@@ -12,6 +13,10 @@ http.interceptors.request.use((config) => {
   const token = authStorage.getToken()
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
+  }
+  const organizacaoId = organizacaoStorage.get()
+  if (organizacaoId !== null) {
+    config.headers['X-Organizacao-Id'] = String(organizacaoId)
   }
   return config
 })
@@ -41,6 +46,7 @@ function renovarSessao(): Promise<string> {
 
 function encerrarSessao() {
   authStorage.clear()
+  organizacaoStorage.clear()
   if (window.location.pathname !== '/login') {
     window.location.href = '/login'
   }

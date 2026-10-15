@@ -92,7 +92,7 @@ export default class Dashboard extends Vue {
 
   /** Os indicadores da carteira (objetivo, IMC) vêm do relatório de nutrição. */
   get temNutricao(): boolean {
-    return this.contextoStore.temNutricao
+    return this.contextoStore.temNutricao && this.contextoStore.podeVerClinico
   }
 
   get saudacao(): string {
